@@ -18,5 +18,5 @@ You can also contribute by [reporting bugs here](https://github.com/smlab-niser/
 This project will also be open-sourced in the near future, so stay tuned!
 
 ## List of known issues
-- [ ] On Chrome / Chromium-based browsers (Edge, Brave, Opera), models might be displayed without lighting (dark, texture-less). We are working on a fix. In the meantime, you can use Firefox on Android to view the models properly.
+- [ ] On Chrome / Chromium-based browsers (Edge, Brave, Opera), models might be displayed without lighting (dark, texture-less). We are working on a fix. In the meantime, you can use Firefox on Android to view the models properly. See https://github.com/smlab-niser/tirtha-public/issues/1 & https://github.com/smlab-niser/tirtha-public/issues/2.
 - [ ] ...
