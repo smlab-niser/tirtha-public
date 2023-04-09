@@ -20,6 +20,7 @@ assignees: 'JeS24'
 ### Platform Details
 * Browser (with Version): <!-- For example, "Microsoft Edge	112.0.1722.17 (Official build) dev (64-bit)" -->
 * Operating System (with Version): <!-- Windows 10/Ubuntu 18.04/macOS 12/iPadOS 15.2/Android 11/iOS 15.2 etc. -->
+* Device Model: <!-- iPhone 13/iPad 11/Galaxy S22 etc. -->
 
 ### Additional context
 <!-- Optional; Add any other context about the problem here. -->
