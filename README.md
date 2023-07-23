@@ -1,5 +1,5 @@
 <h1 align="center">
-
+<img src="./tirtha_bk/static/media/tirtha_logo.png" width=32 height=32>
 $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$
 </h1>
 
