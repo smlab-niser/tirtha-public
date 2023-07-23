@@ -7,7 +7,6 @@ paper/
 
 # Folders - django
 migrations/
-media/
 models/
 
 # Folders - Meshroom
