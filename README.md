@@ -1,21 +1,6 @@
-<style>
-    h1 {
-        color: #ff4c40;
-        text-align: center;
-    }
-    h1 img {
-        /* Thanks https://stackoverflow.com/a/76648616/11922029 */
-        position: relative;
-        top: 0.1em;
-        left: 0.15em;
-        filter: drop-shadow(0px 1000px 0 #ff4c40);
-        transform: translateY(-1000px);
-    }
-</style>
-
-<h1>
-<img src="./tirtha_bk/static/media/tirtha_logo.png" width=28 height=28>
-Project Tirtha [Beta]
+<h1 align="center">
+    <img src="https://github.com/smlab-niser/tirtha-public/blob/dev/tirtha_bk/static/media/tirtha_logo.png" width=27 height=27>
+    $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$
 </h1>
 
 [Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
