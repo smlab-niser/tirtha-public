@@ -30,7 +30,7 @@ server {
         alias <path_to_404_template>; # CHANGEME:
     }
     error_page 404             /404.html;
-    
+
     location /500.html {
         alias <path_to_500_template>; # CHANGEME:
     }
@@ -41,4 +41,3 @@ server {
         proxy_pass http://unix:<path_to_socket>; # CHANGEME: e.g., http://unix:/run/tirtha.sock;
     }
 }
-

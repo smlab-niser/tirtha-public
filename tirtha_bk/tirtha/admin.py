@@ -1,24 +1,26 @@
 from django.contrib import admin, messages
-from django.utils.translation import ngettext
 from django.urls import reverse
 from django.utils.html import mark_safe
+from django.utils.translation import ngettext
 
-from .models import Mesh, Contributor, Contribution, Image, Run, ARK
+from .models import ARK, Contribution, Contributor, Image, Mesh, Run
 
 
 class ContributionsInline(admin.TabularInline):
     def contribution_ts(self, obj):
         return obj.contributed_at
-    contribution_ts.short_description = 'Contribution Timestamp'
+
+    contribution_ts.short_description = "Contribution Timestamp"
 
     def contribution_link(self, obj):
-        url = reverse('admin:tirtha_contribution_change', args=[obj.ID])
+        url = reverse("admin:tirtha_contribution_change", args=[obj.ID])
         return mark_safe(f'<a href="{url}">{obj.ID}</a>')
-    contribution_link.short_description = 'Link to Contribution'
+
+    contribution_link.short_description = "Link to Contribution"
 
     model = Contribution
-    readonly_fields = ('contribution_ts', 'contribution_link', 'processed')
-    fields = ('ID', 'contribution_ts', 'contribution_link', 'processed')
+    readonly_fields = ("contribution_ts", "contribution_link", "processed")
+    fields = ("ID", "contribution_ts", "contribution_link", "processed")
     extra = 0
     max_num = 0
     can_delete = True
@@ -27,25 +29,27 @@ class ContributionsInline(admin.TabularInline):
 class ContributionInlineMesh(ContributionsInline):
     def contributor_email(self, obj):
         return obj.contributor.email
+
     contributor_email.short_description = "Contributor Email"
 
-    readonly_fields = ContributionsInline.readonly_fields + ('contributor_email',)
-    fields = ContributionsInline.fields + ('contributor_email',)
+    readonly_fields = ContributionsInline.readonly_fields + ("contributor_email",)
+    fields = ContributionsInline.fields + ("contributor_email",)
 
 
 class ContributionInlineContributor(ContributionsInline):
     def mesh_id(self, obj):
         return obj.mesh.verbose_id
+
     mesh_id.short_description = "Mesh ID (Verbose)"
 
-    readonly_fields = ContributionsInline.readonly_fields + ('mesh_id',)
-    fields = ContributionsInline.fields + ('mesh_id',)
+    readonly_fields = ContributionsInline.readonly_fields + ("mesh_id",)
+    fields = ContributionsInline.fields + ("mesh_id",)
 
 
 class RunInlineMesh(admin.TabularInline):
     model = Run
-    readonly_fields = ('ID', 'ark', 'status', 'started_at', 'ended_at')
-    fields = ('ID', 'ark', 'status', 'started_at', 'ended_at')
+    readonly_fields = ("ID", "ark", "status", "started_at", "ended_at")
+    fields = ("ID", "ark", "status", "started_at", "ended_at")
     extra = 0
     max_num = 0
     can_delete = False
@@ -54,25 +58,34 @@ class RunInlineMesh(admin.TabularInline):
 @admin.register(Mesh)
 class MeshAdmin(admin.ModelAdmin):
     def get_preview(self, obj):
-        return mark_safe(f'<img src="{obj.preview.url}" alt="{str(obj.verbose_id)}" style="width: 400px; height: 400px">')
+        return mark_safe(
+            f'<img src="{obj.preview.url}" alt="{str(obj.verbose_id)}" style="width: 400px; height: 400px">'
+        )
+
     get_preview.short_description = "Preview"
 
     def get_thumbnail(self, obj):
-        return mark_safe(f'<img src="{obj.thumbnail.url}" alt="{str(obj.verbose_id)}" style="width: 400px; height: 400px">')
+        return mark_safe(
+            f'<img src="{obj.thumbnail.url}" alt="{str(obj.verbose_id)}" style="width: 400px; height: 400px">'
+        )
+
     get_thumbnail.short_description = "Thumbnail"
 
     def mesh_id_verbose(self, obj):
         return obj.verbose_id
+
     mesh_id_verbose.short_description = "ID (Verbose)"
-    
+
     def contrib_count(self, obj):
         return obj.contributions.count()
+
     contrib_count.short_description = "Contribution Count"
 
     def image_count(self, obj):
         return Image.objects.filter(contribution__mesh=obj).count()
+
     image_count.short_description = "Total Image Count"
-    
+
     @admin.action(description="Mark selected meshes as completed")
     def mark_completed(self, request, queryset):
         updated = queryset.update(completed=True)
@@ -131,34 +144,64 @@ class MeshAdmin(admin.ModelAdmin):
 
     actions = [mark_completed, mark_incomplete, mark_hidden, mark_not_hidden]
     fieldsets = (
-        ('Mesh Details', {
-            'fields': (
-                ('ID', 'verbose_id'),
-                ('created_at', 'updated_at', 'reconstructed_at'),
-                ('status', 'completed', 'hidden'),
-                ('name', 'country', 'state', 'district'),
-                'description',
-                ('center_image', 'denoise'),
-                ('rotaZ', 'rotaX', 'rotaY', 'minObsAng', 'orientMesh'), # Mimicking <model-viewer> attributes (ZXY)
-                ('thumbnail', 'get_thumbnail'),
-                ('preview', 'get_preview')
-            )
-        }),
+        (
+            "Mesh Details",
+            {
+                "fields": (
+                    ("ID", "verbose_id"),
+                    ("created_at", "updated_at", "reconstructed_at"),
+                    ("status", "completed", "hidden"),
+                    ("name", "country", "state", "district"),
+                    "description",
+                    ("center_image", "denoise"),
+                    (
+                        "rotaZ",
+                        "rotaX",
+                        "rotaY",
+                        "minObsAng",
+                        "orientMesh",
+                    ),  # Mimicking <model-viewer> attributes (ZXY)
+                    ("thumbnail", "get_thumbnail"),
+                    ("preview", "get_preview"),
+                )
+            },
+        ),
     )
-    readonly_fields = ('ID', 'verbose_id', 'created_at', 'updated_at', 'reconstructed_at', 'get_preview', 'get_thumbnail')
-    list_display = ('ID', 'mesh_id_verbose', 'name', 'reconstructed_at', 'status', 'completed', 'hidden', 'contrib_count', 'image_count', 'get_thumbnail')
+    readonly_fields = (
+        "ID",
+        "verbose_id",
+        "created_at",
+        "updated_at",
+        "reconstructed_at",
+        "get_preview",
+        "get_thumbnail",
+    )
+    list_display = (
+        "ID",
+        "mesh_id_verbose",
+        "name",
+        "reconstructed_at",
+        "status",
+        "completed",
+        "hidden",
+        "contrib_count",
+        "image_count",
+        "get_thumbnail",
+    )
     list_per_page = 25
-    inlines = [ContributionInlineMesh] # , RunInlineMesh FIXME: Error while saving
+    inlines = [ContributionInlineMesh]  # , RunInlineMesh FIXME: Error while saving
 
 
 @admin.register(Contributor)
 class ContributorAdmin(admin.ModelAdmin):
     def contrib_count(self, obj):
         return obj.contributions.count()
+
     contrib_count.short_description = "Contribution Count"
 
     def image_count(self, obj):
         return Image.objects.filter(contribution__contributor=obj).count()
+
     image_count.short_description = "Total Image Count"
 
     @admin.action(description="Ban selected contributors")
@@ -174,7 +217,7 @@ class ContributorAdmin(admin.ModelAdmin):
             % updated,
             messages.SUCCESS,
         )
-    
+
     @admin.action(description="Unban selected contributors")
     def unban_contributors(self, request, queryset):
         updated = queryset.update(banned=False)
@@ -190,20 +233,35 @@ class ContributorAdmin(admin.ModelAdmin):
         )
 
     actions = [ban_contributors, unban_contributors]
-    readonly_fields = ('ID', 'created_at', 'updated_at',)
+    readonly_fields = (
+        "ID",
+        "created_at",
+        "updated_at",
+    )
     fieldsets = (
-        ('Contributor Details', {
-            'fields': (
-                'ID',
-                ('created_at', 'updated_at'),
-                ('name', 'email'),
-                'banned',
-                'ban_reason'
-            )
-        }),
+        (
+            "Contributor Details",
+            {
+                "fields": (
+                    "ID",
+                    ("created_at", "updated_at"),
+                    ("name", "email"),
+                    "banned",
+                    "ban_reason",
+                )
+            },
+        ),
     )
     inlines = [ContributionInlineContributor]
-    list_display = ('ID', 'name', 'email', 'updated_at', 'contrib_count', 'image_count', 'banned')
+    list_display = (
+        "ID",
+        "name",
+        "email",
+        "updated_at",
+        "contrib_count",
+        "image_count",
+        "banned",
+    )
     list_per_page = 50
 
 
@@ -212,13 +270,20 @@ class ImageInlineContribution(admin.TabularInline):
     Shows images in the Contribution admin page
 
     """
+
     def get_image(self, obj):
-        return mark_safe(f'<img src="{obj.image.url}" style="width: 400px; height: 400px">')
+        return mark_safe(
+            f'<img src="{obj.image.url}" style="width: 400px; height: 400px">'
+        )
+
     get_image.short_description = "Preview"
 
     model = Image
-    readonly_fields = ('get_image',)
-    fields = ('ID', 'get_image',)
+    readonly_fields = ("get_image",)
+    fields = (
+        "ID",
+        "get_image",
+    )
     extra = 0
     max_num = 0
     can_delete = True
@@ -228,17 +293,42 @@ class ImageInlineContribution(admin.TabularInline):
 class ContributionAdmin(admin.ModelAdmin):
     def mesh_id_verbose(self, obj):
         return obj.mesh.verbose_id
+
     mesh_id_verbose.short_description = "Mesh ID (Verbose)"
-    
+
     def image_count(self, obj):
         return obj.images.count()
+
     image_count.short_description = "Image Count"
 
-    readonly_fields = ('ID', 'mesh', 'contributor', 'contributed_at', 'processed', 'processed_at')
-    fields = ('ID', 'contributed_at', 'mesh', 'contributor', 'processed', 'processed_at')
-    list_display = ('ID', 'contributed_at', 'mesh_id_verbose', 'contributor', 'image_count', 'processed')
+    readonly_fields = (
+        "ID",
+        "mesh",
+        "contributor",
+        "contributed_at",
+        "processed",
+        "processed_at",
+    )
+    fields = (
+        "ID",
+        "contributed_at",
+        "mesh",
+        "contributor",
+        "processed",
+        "processed_at",
+    )
+    list_display = (
+        "ID",
+        "contributed_at",
+        "mesh_id_verbose",
+        "contributor",
+        "image_count",
+        "processed",
+    )
     list_per_page = 50
-    inlines = [ImageInlineContribution,]
+    inlines = [
+        ImageInlineContribution,
+    ]
 
 
 @admin.register(Image)
@@ -247,24 +337,30 @@ class ImageAdmin(admin.ModelAdmin):
         return "PLEASE USE THE WEB INTERFACE TO ADD IMAGES. ALSO, USE `label` FOR MANUAL MODERATION."
 
     def get_thumbnail(self, obj):
-        return mark_safe(f'<img src="{obj.image.url}" style="width: 400px; height: 400px">')
+        return mark_safe(
+            f'<img src="{obj.image.url}" style="width: 400px; height: 400px">'
+        )
+
     get_thumbnail.short_description = "Preview"
 
-    readonly_fields = ('ID', 'created_at', 'image', 'note', 'get_thumbnail')
+    readonly_fields = ("ID", "created_at", "image", "note", "get_thumbnail")
     fieldsets = (
-        ('Image Details', {
-            'fields': (
-                ('note'),
-                ('ID'),
-                ('contribution'),
-                ('created_at'),
-                ('image', 'get_thumbnail'),
-                ('label'),
-                ('remark')
-            )
-        }),
+        (
+            "Image Details",
+            {
+                "fields": (
+                    ("note"),
+                    ("ID"),
+                    ("contribution"),
+                    ("created_at"),
+                    ("image", "get_thumbnail"),
+                    ("label"),
+                    ("remark"),
+                )
+            },
+        ),
     )
-    list_display = ('ID', 'created_at', 'contribution', 'label', 'get_thumbnail')
+    list_display = ("ID", "created_at", "contribution", "label", "get_thumbnail")
     list_per_page = 100
 
 
@@ -273,6 +369,7 @@ class ImageInlineRun(admin.TabularInline):
     Shows images in the Run admin page
 
     """
+
     model = Run.images.through
     extra = 0
 
@@ -282,6 +379,7 @@ class ContributorInlineRun(admin.TabularInline):
     Shows contributors in the Run admin page
 
     """
+
     model = Run.contributors.through
     extra = 0
 
@@ -290,28 +388,53 @@ class ContributorInlineRun(admin.TabularInline):
 class RunAdmin(admin.ModelAdmin):
     def mesh_id_verbose(self, obj):
         return obj.mesh.verbose_id
+
     mesh_id_verbose.short_description = "Mesh ID (Verbose)"
 
     def image_count(self, obj):
         return obj.images.count()
+
     image_count.short_description = "Image Count"
 
-    readonly_fields = ('ID', 'ark', 'mesh_id_verbose', 'started_at', 'ended_at', 'image_count', 'status', 'directory',)
-    fieldsets = (
-        ('Run Details', {
-            'fields': (
-                ('ID'),
-                ('ark'),
-                ('mesh_id_verbose'),
-                ('status'),
-                ('started_at', 'ended_at'),
-                ('directory'),
-                ('image_count'),
-                ('rotaZ', 'rotaX', 'rotaY') # Used only for <model-viewer>'s orientation
-            )
-        }),
+    readonly_fields = (
+        "ID",
+        "ark",
+        "mesh_id_verbose",
+        "started_at",
+        "ended_at",
+        "image_count",
+        "status",
+        "directory",
     )
-    list_display = ('ID', 'mesh_id_verbose', 'image_count', 'status', 'started_at', 'ark')
+    fieldsets = (
+        (
+            "Run Details",
+            {
+                "fields": (
+                    ("ID"),
+                    ("ark"),
+                    ("mesh_id_verbose"),
+                    ("status"),
+                    ("started_at", "ended_at"),
+                    ("directory"),
+                    ("image_count"),
+                    (
+                        "rotaZ",
+                        "rotaX",
+                        "rotaY",
+                    ),  # Used only for <model-viewer>'s orientation
+                )
+            },
+        ),
+    )
+    list_display = (
+        "ID",
+        "mesh_id_verbose",
+        "image_count",
+        "status",
+        "started_at",
+        "ark",
+    )
     list_per_page = 50
     inlines = [ImageInlineRun, ContributorInlineRun]
 
@@ -320,31 +443,48 @@ class RunAdmin(admin.ModelAdmin):
 class ARKAdmin(admin.ModelAdmin):
     def mesh_id_verbose(self, obj):
         return obj.run.mesh.verbose_id
+
     mesh_id_verbose.short_description = "Mesh ID (Verbose)"
-    
+
     def get_run(self, obj):
         return obj.run
+
     get_run.short_description = "Run"
 
     def image_count(self, obj):
         return obj.run.images.count()
+
     image_count.short_description = "Total Image Count"
-    
-    readonly_fields = ('ark', 'get_run', 'mesh_id_verbose', 'image_count', 'naan', 'shoulder', 'assigned_name', 'created_at', 'url', 'metadata')
-    fieldsets = (
-        ('ARK Details', {
-            'fields': (
-                ('ark'),
-                ('url'),
-                ('created_at'),
-                ('get_run'),
-                ('mesh_id_verbose'),
-                ('image_count'),
-                ('naan', 'shoulder', 'assigned_name'),
-                ('metadata'),
-                ('commitment')
-            )
-        }),
+
+    readonly_fields = (
+        "ark",
+        "get_run",
+        "mesh_id_verbose",
+        "image_count",
+        "naan",
+        "shoulder",
+        "assigned_name",
+        "created_at",
+        "url",
+        "metadata",
     )
-    list_display = ('ark', 'mesh_id_verbose', 'get_run', 'created_at', 'image_count')
+    fieldsets = (
+        (
+            "ARK Details",
+            {
+                "fields": (
+                    ("ark"),
+                    ("url"),
+                    ("created_at"),
+                    ("get_run"),
+                    ("mesh_id_verbose"),
+                    ("image_count"),
+                    ("naan", "shoulder", "assigned_name"),
+                    ("metadata"),
+                    ("commitment"),
+                )
+            },
+        ),
+    )
+    list_display = ("ark", "mesh_id_verbose", "get_run", "created_at", "image_count")
     list_per_page = 50

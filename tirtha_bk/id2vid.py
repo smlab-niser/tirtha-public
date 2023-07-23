@@ -1,14 +1,14 @@
 """
-This is intended to be used as a CLI tool 
+This is intended to be used as a CLI tool
 to get the verbose ID of a model (mesh), given its ID.
 
 """
-import os, django
+import os
+
+import django
 
 # Setup Django pre-run to access the DB layer
-os.environ.setdefault(
-    'DJANGO_SETTINGS_MODULE', 'tirtha_bk.settings'
-)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tirtha_bk.settings")
 django.setup()
 
 from tirtha.models import Mesh
@@ -22,14 +22,22 @@ def _get_mesh_details(meshID: str) -> dict:
             "verbose_id": mesh.verbose_id,
             "status": mesh.status,
             "completed": mesh.completed,
-            "updated_at": mesh.updated_at.astimezone().strftime("%d %b %Y, %H:%M:%S %Z"),
-            "reconstructed_at": mesh.reconstructed_at.astimezone().strftime("%d %b %Y, %H:%M:%S %Z") if mesh.reconstructed_at else None
+            "updated_at": mesh.updated_at.astimezone().strftime(
+                "%d %b %Y, %H:%M:%S %Z"
+            ),
+            "reconstructed_at": mesh.reconstructed_at.astimezone().strftime(
+                "%d %b %Y, %H:%M:%S %Z"
+            )
+            if mesh.reconstructed_at
+            else None,
         }
     except Mesh.DoesNotExist as excep:
         return "Corresponding mesh not found."
 
+
 if __name__ == "__main__":
     import argparse
+
     from rich.console import Console
     from rich.table import Table
 

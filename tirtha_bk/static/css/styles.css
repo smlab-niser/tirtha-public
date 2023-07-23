@@ -240,7 +240,7 @@ ol {
 /* floating-controls props end here */
 
 /* ==================
-   Combined props 
+   Combined props
   ================== */
 #side, nav {
     max-height: calc(100lvh - var(--body-margin) * 2);
@@ -353,7 +353,7 @@ details summary {
 }
 
 details summary:hover {
-    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);  
+    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
     transform: scale(1.02);
 }
 
@@ -921,7 +921,7 @@ progress::-webkit-progress-bar {
 }
 
 progress::-webkit-progress-value {
-    background-color: var(--progress-bar-val-col);   
+    background-color: var(--progress-bar-val-col);
     border-radius: 2rem;
 }
 /* Progress bar-related props end here */
@@ -1201,9 +1201,9 @@ footer p a img {
     #side h1 {
         position: unset;
         padding: 1rem 0 0;
-    
+
         font-size: 1.75rem;
-    
+
         background-color: unset;
         -webkit-backdrop-filter: unset;
         backdrop-filter: unset;

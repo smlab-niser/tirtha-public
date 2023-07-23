@@ -269,7 +269,7 @@ $(".model-previews").on('click', function(e) {
                     const ms_html = modStat.html();
                     const ms_bg = modStat.css('background-color');
 
-                    // Set model-status to this for 5 seconds                
+                    // Set model-status to this for 5 seconds
                     modStat.html('Model pending');
                     modStat.css('background-color', 'orange');
 
@@ -508,7 +508,7 @@ async function createGallery(files, signal) {
 
                             let imgWidth = image.width;
                             let imgHeight = image.height;
- 
+
                             // Validate resolution
                             if (imgWidth < MIN_DIM || imgHeight < MIN_DIM) {
                                 alert(`File ${pic.name} has a low resolution! It will be ignored.`);
@@ -633,7 +633,7 @@ function preventDefaults (e) {
 
 // Prevents default drag behaviors
 ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
-    upGal.addEventListener(evt, preventDefaults, false)   
+    upGal.addEventListener(evt, preventDefaults, false)
     doc.body.addEventListener(evt, preventDefaults, false)
 })
 

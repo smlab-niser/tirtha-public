@@ -1,13 +1,13 @@
 """
-Utility code adapted for Project Tirtha from `arklet` - 
+Utility code adapted for Project Tirtha from `arklet` -
 https://github.com/internetarchive/arklet (MIT license)
 
 """
 import secrets
 from typing import Tuple
 
-
 BETANUMERIC = "0123456789bcdfghjkmnpqrstvwxz"
+
 
 def noid_check_digit(noid: str) -> str:
     """
@@ -17,12 +17,12 @@ def noid_check_digit(noid: str) -> str:
     ----------
     noid : str
         The noid portion of an ARK
-    
+
     Returns
     -------
     str
         The check digit for the ARK
-    
+
     References
     ----------
     .. [1] https://metacpan.org/dist/Noid/view/noid#NOID-CHECK-DIGIT-ALGORITHM
@@ -36,6 +36,7 @@ def noid_check_digit(noid: str) -> str:
     remainder = total % 29  # 29 == len(BETANUMERIC)
 
     return BETANUMERIC[remainder]  # IndexError may be long ARK
+
 
 def generate_noid(length: int) -> str:
     """
@@ -53,6 +54,7 @@ def generate_noid(length: int) -> str:
 
     """
     return "".join(secrets.choice(BETANUMERIC) for _ in range(length))
+
 
 def parse_ark(ark: str) -> Tuple[int, str]:
     """

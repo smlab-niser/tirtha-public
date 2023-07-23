@@ -5,6 +5,10 @@
 - You can [suggest improvements](https://github.com/smlab-niser/tirtha-public/issues/new/choose).
 - You can contribute code by [forking this repo](https://github.com/smlab-niser/tirtha-public/fork), making changes and opening [pull requests](https://github.com/smlab-niser/tirtha-public/pulls). Consult [README](./README.md) for more details on setting up the project.
 
+### Some notes on contributing code
+- Please follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide for Python code.
+- Before committing, please run `tox -e reformat` *twice* or `pre-commit run --all-files` *once* to ensure that the code is formatted correctly.
+
 ## If you are a user
 - You can submit images of heritage sites through the [Tirtha website](https://tirtha.niser.ac.in), so that they can be reconstructed and added to the Tirtha database.
 - You can suggest heritage sites to be added to the Tirtha database, also through the [Tirtha website](https://tirtha.niser.ac.in).

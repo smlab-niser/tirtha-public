@@ -18,17 +18,17 @@
 Project Tirtha [Beta]
 </h1>
 
-[Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create 
-3D models of heritage sites using crowdsourced images. The word *Tirtha* is Sanskrit 
-for "a place of pilgrimage", and is commonly used to refer to the sacred sites of 
-Hinduism. Our goal is to preserve and showcase the beauty and cultural significance 
-of heritage sites. We believe that by allowing the general public to contribute to 
-the creation of these models, and by providing open access to these models, we can 
-increase awareness and appreciation of these important cultural landmarks and inspire 
+[Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
+3D models of heritage sites using crowdsourced images. The word *Tirtha* is Sanskrit
+for "a place of pilgrimage", and is commonly used to refer to the sacred sites of
+Hinduism. Our goal is to preserve and showcase the beauty and cultural significance
+of heritage sites. We believe that by allowing the general public to contribute to
+the creation of these models, and by providing open access to these models, we can
+increase awareness and appreciation of these important cultural landmarks and inspire
 future generations to maintain them for years to come.
 
-This project is now open-source under the [GNU Affero General Public License v3.0](./LICENSE) 
-and is under active development. All contributions are welcome. Please read 
+This project is now open-source under the [GNU Affero General Public License v3.0](./LICENSE)
+and is under active development. All contributions are welcome. Please read
 [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 ## Requirements
@@ -45,7 +45,7 @@ and is under active development. All contributions are welcome. Please read
         ```
     * `cd` to the extracted directory - `cd ./Meshroom-2021.1.0-av2.4.0-centos7-cuda10.2/aliceVision/`.
     * Copy the compiled binaries and libraries from `./bin/aliceVision/bin/` & `./bin/aliceVision/lib/` and place them in the `bin21/` directory. Also, copy `cameraSensors.db` & `vlfeat_K80L3.SIFT.tree` from `./share/aliceVision/` to `bin21/`. See [below](#python) for the directory structure.
-    * NOTE: We will upgrade to Meshroom 2023.x.x soon. 
+    * NOTE: We will upgrade to Meshroom 2023.x.x soon.
 * [PostgreSQL](https://www.postgresql.org/download/)
 * [Nginx](https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-22-04)
 * [RabbitMQ](https://www.rabbitmq.com/download.html) (for Celery)
@@ -94,7 +94,7 @@ and is under active development. All contributions are welcome. Please read
 - Install the system packages as listed under [`Requirements` > `System Packages`](#system-packages).
 - Install the Python requirements via `pip install -r requirements.txt`. Note that `protobuf==3.20.3` is required by `nsfw-detector`. So, install it separately if you face any issues.
 - For testing purposes, you can use SQLite as the database. For production, you will need to use PostgreSQL. Consult [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-22-04) to set up `postgres`, `nginx` and `gunicorn`. Sample configuration files for `nginx` and `gunicorn` are provided in `tirtha_bk/config/`.
-- A sample `local_settings.example.py` file is provided. Rename it to `local_settings.py` and edit it as required. 
+- A sample `local_settings.example.py` file is provided. Rename it to `local_settings.py` and edit it as required.
 - Run `python manage.py makemigrations` and `python manage.py migrate` to create the database.
 - Run `python manage.py runserver` to start the server. Or, use `gunicorn` as described [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-22-04).
 - Open `localhost:8000` in your browser to view the website.

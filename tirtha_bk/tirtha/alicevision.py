@@ -3,39 +3,48 @@ Python API for AliceVision (Meshroom)
 For Internal Use
 
 """
-from time import sleep
-from pathlib import Path
-from subprocess import check_output, STDOUT, PIPE, Popen, CalledProcessError, TimeoutExpired
-from multiprocessing import Pool, cpu_count
 from dataclasses import dataclass, field
-from typing import Union, Optional, Dict, Iterable
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
+from subprocess import (
+    PIPE,
+    STDOUT,
+    CalledProcessError,
+    Popen,
+    TimeoutExpired,
+    check_output,
+)
+from time import sleep
+from typing import Dict, Iterable, Optional, Union
 
 # Local imports
 from .utils import Logger
 
-
 # NOTE: Tweak as needed
 CAMERAINIT_MAX_RETRIES = 5
-CAMERAINIT_RETRY_INTERVAL = 1 # seconds
-CAMERAINIT_MAX_RUNTIME = 2 # seconds
+CAMERAINIT_RETRY_INTERVAL = 1  # seconds
+CAMERAINIT_MAX_RUNTIME = 2  # seconds
+
 
 @dataclass
 class AliceVision:
     # NOTE: Path to a folder containinng files from both Meshroom/aliceVision/bin + Meshroom/aliceVision/lib
-    # Oherwise, it raises a .so file not found error. .so files reside in lib. 
+    # Oherwise, it raises a .so file not found error. .so files reside in lib.
     # `cameraSensors.db` & `vlfeat_K80L3.SIFT.tree` should also be in the this folder
-    exec_path: Union[str, Path] # settings.ALICEVISION_PATH
-    input_dir: Union[str, Path] # Folder with images
-    cache_dir: Union[str, Path] # Folder to store the node outputs | runDir
-    logger: Logger # Logger object from the calling script
+    exec_path: Union[str, Path]  # settings.ALICEVISION_PATH
+    input_dir: Union[str, Path]  # Folder with images
+    cache_dir: Union[str, Path]  # Folder to store the node outputs | runDir
+    logger: Logger  # Logger object from the calling script
 
     # Optional
-    verboseLevel: Optional[str] = "info" # among "trace", "debug", "info", "warning", "error", "fatal" (decreasing verbosity)
+    verboseLevel: Optional[
+        str
+    ] = "info"  # among "trace", "debug", "info", "warning", "error", "fatal" (decreasing verbosity)
     descPresets: Optional[Dict] = field(
         default_factory=lambda: {
             "Preset": "normal",
             "Quality": "normal",
-            "Types": "dspsift", # NOTE: String of comma separated values (no spaces & no trailing comma) NOTE: dspsift is absent from docs, but available in MR21/23.
+            "Types": "dspsift",  # NOTE: String of comma separated values (no spaces & no trailing comma) NOTE: dspsift is absent from docs, but available in MR21/23.
         }
     )
 
@@ -44,7 +53,7 @@ class AliceVision:
         Initializes the path inputs as `pathlib.Path` objects.
         Creates the output directory if it doesn't exist.
         Stores the node executable names in a dict.
-        
+
         Raises
         ------
         FileNotFoundError
@@ -63,13 +72,9 @@ class AliceVision:
 
         # Tracks the state of the pipeline (intended for when we want to continue despite errors)
         # NOTE: Defined as class variable to be accessible from the static method `_serialRunner`
-        AliceVision.state = {
-            "error": False,
-            "source": None,
-            "log_file": None
-        }
+        AliceVision.state = {"error": False, "source": None, "log_file": None}
         AliceVision.logger = self.logger
-        
+
         self.exec_path = Path(self.exec_path)
         self.input_dir = Path(self.input_dir)
         if not self.input_dir.exists():
@@ -84,21 +89,37 @@ class AliceVision:
             raise FileNotFoundError(err)
 
         self.cache_dir = Path(self.cache_dir)
-        if not self.cache_dir.exists(): # TODO: Redundant check, since Run.save() creates runDir.
+        if (
+            not self.cache_dir.exists()
+        ):  # TODO: Redundant check, since Run.save() creates runDir.
             self.cache_dir.mkdir(parents=True)
 
         # Check describer presets
         describerPreset, describerQuality, describerTypes = self.descPresets.values()
-        allowed_types = ['sift', 'sift_float', 'sift_upright', 'dspsift', 'akaze', 'akaze_liop', 'akaze_mldb', 'cctag3', 'cctag3', 'akaze_ocv']
-        describerTypesList = describerTypes.split(',')
+        allowed_types = [
+            "sift",
+            "sift_float",
+            "sift_upright",
+            "dspsift",
+            "akaze",
+            "akaze_liop",
+            "akaze_mldb",
+            "cctag3",
+            "cctag3",
+            "akaze_ocv",
+        ]
+        describerTypesList = describerTypes.split(",")
         for describerType in describerTypesList:
             if describerType not in allowed_types:
                 err = f"Invalid describerType. Allowed values are {allowed_types}. Ensure that there are no spaces in the string, e.g. 'dspsift,akaze,cctag3'."
                 self.logger.error(err)
                 raise ValueError(err)
 
-        allowed_presets = ['low', 'medium', 'normal', 'high', 'ultra']
-        if describerPreset not in allowed_presets or describerQuality not in allowed_presets:
+        allowed_presets = ["low", "medium", "normal", "high", "ultra"]
+        if (
+            describerPreset not in allowed_presets
+            or describerQuality not in allowed_presets
+        ):
             err = f"Invalid describerPreset or describerQuality. Allowed values are {allowed_presets}."
             self.logger.error(err)
             raise ValueError(err)
@@ -119,7 +140,7 @@ class AliceVision:
             "meshDecimate": "aliceVision_meshDecimate",
             "meshResampling": "aliceVision_meshResampling",
             "meshDenoising": "aliceVision_meshDenoising",
-            "texturing": "aliceVision_texturing"
+            "texturing": "aliceVision_texturing",
         }
 
     @property
@@ -164,7 +185,9 @@ class AliceVision:
             Number of blocks to process
 
         """
-        return (self.inputSize // self.blockSize) + 1 # NOTE: +1 to account for the remainder
+        return (
+            self.inputSize // self.blockSize
+        ) + 1  # NOTE: +1 to account for the remainder
 
     @classmethod
     def _check_state(cls):
@@ -183,7 +206,7 @@ class AliceVision:
             cls.logger.error(msg)
             raise RuntimeError(msg)
 
-    @staticmethod # NOTE: Won't be picklable as a regular method
+    @staticmethod  # NOTE: Won't be picklable as a regular method
     def _serialRunner(cmd: str, log_file: Path):
         """
         Run a command serially and log the output
@@ -194,7 +217,7 @@ class AliceVision:
             Command to run
         log_file : Path
             Path to the log file
-            
+
         Raises
         ------
         CalledProcessError
@@ -204,20 +227,28 @@ class AliceVision:
         logger = Logger(log_file.stem, log_file.parent)
         log_path = Path(log_file).resolve()
         try:
-            AliceVision.logger.info(f"Starting command execution. Log file: {log_path}.")
+            AliceVision.logger.info(
+                f"Starting command execution. Log file: {log_path}."
+            )
             logger.info(f"Command:\n{cmd}")
             output = check_output(cmd, shell=True, stderr=STDOUT)
             logger.info(f"Output:\n{output.decode().strip()}")
-            AliceVision.logger.info(f"Finished command execution. Log file: {log_path}.")
+            AliceVision.logger.info(
+                f"Finished command execution. Log file: {log_path}."
+            )
         except CalledProcessError as error:
             logger.error(f"\n{error.output.decode().strip()}")
-            AliceVision.logger.error(f"Error in command execution for {logger.name}. Check log file: {log_path}.")
+            AliceVision.logger.error(
+                f"Error in command execution for {logger.name}. Check log file: {log_path}."
+            )
             AliceVision.state = {
                 "error": True,
                 "source": logger.name,
-                "log_file": log_path
+                "log_file": log_path,
             }
-            error.add_note(f"{logger.name} failed. Check log file: {log_path}.") # NOTE: Won't appear in VSCode's Jupyter Notebook (March 2023)
+            error.add_note(
+                f"{logger.name} failed. Check log file: {log_path}."
+            )  # NOTE: Won't appear in VSCode's Jupyter Notebook (March 2023)
             raise error
 
     def _parallelRunner(self, cmd: str, log_path: Path, caller: str):
@@ -243,7 +274,7 @@ class AliceVision:
         cmds_and_logs = list(zip(cmds, logs))
 
         with Pool(self.cpu_count) as pool:
-            pool.starmap(self._serialRunner, cmds_and_logs) # NOTE: Blocking call
+            pool.starmap(self._serialRunner, cmds_and_logs)  # NOTE: Blocking call
 
     def _timeoutRunner(self, cmd: Iterable, timeout: int):
         """
@@ -275,9 +306,11 @@ class AliceVision:
         try:
             stdout, stderr = process.communicate(timeout=timeout)
             if process.returncode == 0:
-                return stdout.decode('utf-8').strip()
+                return stdout.decode("utf-8").strip()
             else:
-                raise CalledProcessError(process.returncode, cmd, stderr.decode('utf-8'))
+                raise CalledProcessError(
+                    process.returncode, cmd, stderr.decode("utf-8")
+                )
         except TimeoutExpired:
             process.kill()
             raise
@@ -287,7 +320,7 @@ class AliceVision:
         cmd: str,
         inp: Union[str, Path],
         alt: Optional[Union[str, Path]] = None,
-        arg: Optional[str] = '-i'
+        arg: Optional[str] = "-i",
     ):
         """
         Check if the input file exists and updates the command with the input file path.
@@ -317,7 +350,7 @@ class AliceVision:
         cmd += f" {arg} {inp}"
 
         return cmd, inp
-        
+
     def _add_desc_presets(self, cmd: str, addAll: bool = False):
         """
         Add describer presets to the command.
@@ -341,11 +374,7 @@ class AliceVision:
         return cmd
 
     def _check_value(
-        self,
-        cmd: str,
-        name: str,
-        value: Union[int, float],
-        rng: Iterable
+        self, cmd: str, name: str, value: Union[int, float], rng: Iterable
     ):
         """
         Checks if value is in provided range.
@@ -359,7 +388,7 @@ class AliceVision:
         value : Union[int, float]
             Value to check.
         rng : Iterable
-            Range for checking with start and 
+            Range for checking with start and
             end values as first and second elements.
 
         Raises
@@ -374,17 +403,15 @@ class AliceVision:
 
         return cmd
 
-    def cameraInit(
-        self
-    ):
+    def cameraInit(self):
         """
-        Initializes the camera intrinsics from a set of images and 
+        Initializes the camera intrinsics from a set of images and
         save the result in a sfmData file, named `cameraInit.sfm`.
         Uses `aliceVision_cameraInit`.
-        Default location for the output file is 
+        Default location for the output file is
         `self.cache_dir`/01_cameraInit/cameraInit.sfm.
-        
-        NOTE: Ensure that the `cameraSensors.db` file is in the same 
+
+        NOTE: Ensure that the `cameraSensors.db` file is in the same
         folder as the `aliceVision_cameraInit` file (`exec_path`).
 
         """
@@ -400,11 +427,7 @@ class AliceVision:
 
         # Check & add other inputs
         sensorDatabase = self.exec_path / "cameraSensors.db"
-        cmd, sensorDatabase = self._check_input(
-            cmd,
-            sensorDatabase,
-            arg='-s'
-        )
+        cmd, sensorDatabase = self._check_input(cmd, sensorDatabase, arg="-s")
 
         # Set up logger
         log_file = out_path / "cameraInit.log"
@@ -415,41 +438,54 @@ class AliceVision:
         ret_int = CAMERAINIT_RETRY_INTERVAL
         self.logger.info(f"Starting command execution. Log file: {log_path}.")
         logger.info(f"Command:\n{cmd}")
-        cmd = cmd.split() # Split command into list of strings
+        cmd = cmd.split()  # Split command into list of strings
         for i in range(CAMERAINIT_MAX_RETRIES):
             try:
-                output = self._timeoutRunner(cmd, CAMERAINIT_MAX_RUNTIME) # NOTE: Blocking call
+                output = self._timeoutRunner(
+                    cmd, CAMERAINIT_MAX_RUNTIME
+                )  # NOTE: Blocking call
 
                 # Check if cameraInit.sfm is created
                 if not out_file.exists():
-                    logger.debug(f"cameraInit did not create cameraInit.sfm. Retrying in {ret_int}s...")
+                    logger.debug(
+                        f"cameraInit did not create cameraInit.sfm. Retrying in {ret_int}s..."
+                    )
                     sleep(ret_int)
                     continue
 
                 logger.info(f"Output:\n{output}")
-                self.logger.info(f"Finished command execution after {i} retries. Log file: {log_path}.")
+                self.logger.info(
+                    f"Finished command execution after {i} retries. Log file: {log_path}."
+                )
                 break
             except CalledProcessError as error:
                 # NOTE: Logging, but continuing execution till CAMERAINIT_MAX_RETRIES is reached
                 logger.error(f"\n{error.output.strip()}")
-                self.logger.error(f"Error in command execution for {logger.name}. Check log file: {log_path}.")
+                self.logger.error(
+                    f"Error in command execution for {logger.name}. Check log file: {log_path}."
+                )
             except TimeoutExpired:
-                logger.debug(f"cameraInit timed out {i + 1} time(s). Retrying in {ret_int}s...")
+                logger.debug(
+                    f"cameraInit timed out {i + 1} time(s). Retrying in {ret_int}s..."
+                )
                 sleep(ret_int)
         else:
-            logger.error(f"cameraInit did not finish after {CAMERAINIT_MAX_RETRIES} retries.")
-            self.logger.error(f"cameraInit did not finish after {CAMERAINIT_MAX_RETRIES} retries.")
-            self.logger.error(f"Error in command execution for {logger.name}. Check log file: {log_path}.")
+            logger.error(
+                f"cameraInit did not finish after {CAMERAINIT_MAX_RETRIES} retries."
+            )
+            self.logger.error(
+                f"cameraInit did not finish after {CAMERAINIT_MAX_RETRIES} retries."
+            )
+            self.logger.error(
+                f"Error in command execution for {logger.name}. Check log file: {log_path}."
+            )
             AliceVision.state = {
                 "error": True,
                 "source": logger.name,
-                "log_file": log_path
+                "log_file": log_path,
             }
 
-    def featureExtraction(
-        self,
-        inputSfm: Optional[Union[str, Path]] = None
-    ):
+    def featureExtraction(self, inputSfm: Optional[Union[str, Path]] = None):
         """
         Extracts features from a set of images using `aliceVision_featureExtraction`.
         Default location for the output file is `self.cache_dir`/02_featureExtraction/cameraInit.sfm.
@@ -472,24 +508,26 @@ class AliceVision:
         cmd = f"{node_path} -o {out_path} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm"
+        )
 
         # Add describer presets
         cmd = self._add_desc_presets(cmd, addAll=True)
 
         # Add other arguments
-        cmd += f" --forceCpuExtraction 0 --maxThreads 0" # NOTE: maxThreads 0 means "automatic"
+        cmd += f" --forceCpuExtraction 0 --maxThreads 0"  # NOTE: maxThreads 0 means "automatic"
 
-        self._parallelRunner(cmd, out_path, 'featureExtraction')
+        self._parallelRunner(cmd, out_path, "featureExtraction")
 
     def imageMatching(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
-        featuresFolders: Optional[Union[str, Path]] = None
+        featuresFolders: Optional[Union[str, Path]] = None,
     ):
         """
         Matches features between images using `aliceVision_featureMatching`.
-        
+
         Parameters
         ----------
         inputSfm : Optional[Union[str, Path]]
@@ -512,27 +550,26 @@ class AliceVision:
         cmd = f"{node_path} -o {out_file} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm"
+        )
 
         # Check & add featuresFolders
         cmd, featuresFolders = self._check_input(
-            cmd,
-            featuresFolders,
-            alt=self.cache_dir / "02_featureExtraction/",
-            arg='-f'
+            cmd, featuresFolders, alt=self.cache_dir / "02_featureExtraction/", arg="-f"
         )
 
         # Check & add path to tree file
-        cmd, tree_path = self._check_input(cmd, tree_path, arg='-t')
+        cmd, tree_path = self._check_input(cmd, tree_path, arg="-t")
 
         log_file = out_path / "imageMatching.log"
         self._serialRunner(cmd, log_file)
 
-    def featureMatching(    
+    def featureMatching(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         featuresFolders: Optional[Union[str, Path]] = None,
-        imagePairsList: Optional[Union[str, Path]] = None
+        imagePairsList: Optional[Union[str, Path]] = None,
     ):
         """
         Matches features between images using `aliceVision_featureMatching`.
@@ -549,7 +586,7 @@ class AliceVision:
             Optional, Path to the file containing image pairs
             Default: `self.cache_dir/03_imageMatching/imageMatches.txt`
 
-        """        
+        """
         self._check_state()
 
         node_path = self.exec_path / self._nodes["featureMatching"]
@@ -560,14 +597,13 @@ class AliceVision:
         cmd = f"{node_path} -o {out_path} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm"
+        )
 
         # Check & add featuresFolders
         cmd, featuresFolders = self._check_input(
-            cmd,
-            featuresFolders,
-            alt=self.cache_dir / "02_featureExtraction/",
-            arg='-f'
+            cmd, featuresFolders, alt=self.cache_dir / "02_featureExtraction/", arg="-f"
         )
 
         # Check & add path to imagePairsList
@@ -575,26 +611,26 @@ class AliceVision:
             cmd,
             imagePairsList,
             alt=self.cache_dir / "03_imageMatching/imageMatches.txt",
-            arg='-l'
+            arg="-l",
         )
 
         # Add describer types
         cmd = self._add_desc_presets(cmd)
 
         # Add other arguments
-        cmd += f" --guidedMatching 1" # NOTE: guidedMatching set to True
+        cmd += f" --guidedMatching 1"  # NOTE: guidedMatching set to True
 
-        self._parallelRunner(cmd, out_path, 'featureMatching')
+        self._parallelRunner(cmd, out_path, "featureMatching")
 
     def structureFromMotion(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         featuresFolders: Optional[Union[str, Path]] = None,
-        matchesFolders: Optional[Union[str, Path]] = None
+        matchesFolders: Optional[Union[str, Path]] = None,
     ):
         """
         Computes structure from motion using `aliceVision_incrementalSfM`.
-        
+
         Parameters
         ----------
         inputSfm : Optional[Union[str, Path]]
@@ -623,22 +659,18 @@ class AliceVision:
         cmd += f" -o {out_file} --outputViewsAndPoses {outputViewsAndPoses} --extraInfoFolder {out_path}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "01_cameraInit/cameraInit.sfm"
+        )
 
         # Check & add featuresFolders
         cmd, featuresFolders = self._check_input(
-            cmd,
-            featuresFolders,
-            alt=self.cache_dir / "02_featureExtraction/",
-            arg='-f'
+            cmd, featuresFolders, alt=self.cache_dir / "02_featureExtraction/", arg="-f"
         )
 
         # Check & add matchesFolders
         cmd, matchesFolders = self._check_input(
-            cmd,
-            matchesFolders,
-            alt=self.cache_dir / "04_featureMatching/",
-            arg='-m'
+            cmd, matchesFolders, alt=self.cache_dir / "04_featureMatching/", arg="-m"
         )
 
         # Add describer presets
@@ -658,7 +690,7 @@ class AliceVision:
     ):
         """
         Transforms the SfM data using `aliceVision_utils_sfmTransform`.
-        
+
         Parameters
         ----------
         inputSfm : Optional[Union[str, Path]]
@@ -669,8 +701,8 @@ class AliceVision:
             Default: `self.cache_dir/05_structureFromMotion/cameras.sfm`
         transformation : Optional[str]
             Optional, Name of the image to align with (no extensions)
-            If not provided, method = `auto_from_cameras` (AliceVision default) 
-            will be used, else, the method will be set to `from_single_camera` 
+            If not provided, method = `auto_from_cameras` (AliceVision default)
+            will be used, else, the method will be set to `from_single_camera`
             using the provided image.
             Default: `None`
 
@@ -686,11 +718,13 @@ class AliceVision:
         cmd = f"{node_path} -o {out_file} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "05_structureFromMotion/sfm.abc")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "05_structureFromMotion/sfm.abc"
+        )
 
         # Add method and transformation
         if transformation:
-            method = "from_single_camera" # NOTE: default is `auto_from_cameras`
+            method = "from_single_camera"  # NOTE: default is `auto_from_cameras`
             cmd += f" --method {method} --transformation {transformation}"
 
         # Check & add outputViewsAndPoses
@@ -698,7 +732,7 @@ class AliceVision:
             cmd,
             outputViewsAndPoses,
             alt=self.cache_dir / "05_structureFromMotion/cameras.sfm",
-            arg='--outputViewsAndPoses'
+            arg="--outputViewsAndPoses",
         )
 
         # Add transformation presets
@@ -712,12 +746,12 @@ class AliceVision:
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         outputViewsAndPoses: Optional[Union[str, Path]] = None,
-        rotation: Optional[Iterable[float]] = [0., 0., 0.],
-        orientMesh: Optional[bool] = False
+        rotation: Optional[Iterable[float]] = [0.0, 0.0, 0.0],
+        orientMesh: Optional[bool] = False,
     ):
         """
         Rotates the SfM data using `aliceVision_utils_sfmTransform`.
-        
+
         Parameters
         ----------
         inputSfm : Optional[Union[str, Path]]
@@ -749,12 +783,16 @@ class AliceVision:
         cmd = f"{node_path} -o {out_file} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "06_sfmTransform/sfmTrans.abc")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "06_sfmTransform/sfmTrans.abc"
+        )
 
         # Add method and transformation
         for r in rotation:
             if not (0 <= r <= 360):
-                raise ValueError(f"Rotation must be between 0 and 360 degrees, got {r}.")
+                raise ValueError(
+                    f"Rotation must be between 0 and 360 degrees, got {r}."
+                )
         rx, ry, rz = rotation
         transformation = f"0,0,0,{rx},{ry},{rz},1" if orientMesh else f"0,0,0,0,0,0,1"
         cmd += f" --method manual --manualTransform {transformation}"
@@ -764,12 +802,12 @@ class AliceVision:
             cmd,
             outputViewsAndPoses,
             alt=self.cache_dir / "05_structureFromMotion/cameras.sfm",
-            arg='--outputViewsAndPoses'
+            arg="--outputViewsAndPoses",
         )
 
         log_file = out_path / "sfmRotate.log"
         self._serialRunner(cmd, log_file)
-    
+
     def prepareDenseScene(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
@@ -777,13 +815,13 @@ class AliceVision:
     ):
         """
         Prepares a dense scene using `aliceVision_prepareDenseScene`.
-        
+
         Parameters
         ----------
         inputSfm : Optional[Union[str, Path]]
             Optional, Path to the input sfm file
             Default: `self.cache_dir/07_sfmRotate/sfmRota.abc`
-        
+
         """
         self._check_state()
 
@@ -795,14 +833,16 @@ class AliceVision:
         cmd = f"{node_path} -o {out_path} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc"
+        )
 
-        self._parallelRunner(cmd, out_path, 'prepareDenseScene')
+        self._parallelRunner(cmd, out_path, "prepareDenseScene")
 
     def depthMapEstimation(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
-        imagesFolders: Optional[Union[str, Path]] = None
+        imagesFolders: Optional[Union[str, Path]] = None,
     ):
         """
         Computes depth maps using `aliceVision_depthMapEstimation`.
@@ -827,25 +867,27 @@ class AliceVision:
         cmd = f"{node_path} -o {out_path} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc"
+        )
 
         # Check & add imagesFolders
         cmd, imagesFolders = self._check_input(
             cmd,
             imagesFolders,
             alt=self.cache_dir / "08_prepareDenseScene/",
-            arg='--imagesFolder'
+            arg="--imagesFolder",
         )
 
         # Add other arguments
-        cmd += f" --nbGPUs 0" # NOTE: `nbGPUs` = 0 means, use all available GPUs 
+        cmd += f" --nbGPUs 0"  # NOTE: `nbGPUs` = 0 means, use all available GPUs
 
-        self._parallelRunner(cmd, out_path, 'depthMapEstimation')
+        self._parallelRunner(cmd, out_path, "depthMapEstimation")
 
     def depthMapFiltering(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
-        depthMapsFolder: Optional[Union[str, Path]] = None
+        depthMapsFolder: Optional[Union[str, Path]] = None,
     ):
         """
         Filters depth maps using `aliceVision_depthMapFiltering`.
@@ -870,18 +912,20 @@ class AliceVision:
         cmd = f"{node_path} -o {out_path} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc"
+        )
 
         # Check & add depthMapsFolder
         cmd, depthMapsFolder = self._check_input(
             cmd,
             depthMapsFolder,
             alt=self.cache_dir / "09_depthMapEstimation/",
-            arg='--depthMapsFolder'
+            arg="--depthMapsFolder",
         )
 
-        self._parallelRunner(cmd, out_path, 'depthMapFiltering')
-        
+        self._parallelRunner(cmd, out_path, "depthMapFiltering")
+
     def meshing(
         self,
         inputSfm: Optional[Union[str, Path]] = None,
@@ -920,18 +964,25 @@ class AliceVision:
         cmd = f"{node_path} --output {out_dense_sfm} --outputMesh {out_mesh} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputSfm = self._check_input(cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc")
+        cmd, inputSfm = self._check_input(
+            cmd, inputSfm, self.cache_dir / "07_sfmRotate/sfmRota.abc"
+        )
 
         # Check & add depthMapsFolder
         cmd, depthMapsFolder = self._check_input(
             cmd,
             depthMapsFolder,
             alt=self.cache_dir / "10_depthMapFiltering/",
-            arg='--depthMapsFolder'
+            arg="--depthMapsFolder",
         )
 
         # Check & add estimateSpaceMinObservationAngle
-        cmd = self._check_value(cmd, "estimateSpaceMinObservationAngle", estimateSpaceMinObservationAngle, [0, 120])
+        cmd = self._check_value(
+            cmd,
+            "estimateSpaceMinObservationAngle",
+            estimateSpaceMinObservationAngle,
+            [0, 120],
+        )
 
         log_file = out_path / "meshing.log"
         self._serialRunner(cmd, log_file)
@@ -967,7 +1018,9 @@ class AliceVision:
         cmd = f"{node_path} -o {out_mesh} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputMesh = self._check_input(cmd, inputMesh, self.cache_dir / "11_meshing/rawMesh.obj")
+        cmd, inputMesh = self._check_input(
+            cmd, inputMesh, self.cache_dir / "11_meshing/rawMesh.obj"
+        )
 
         # Add other arguments
         cmd += f" --keepLargestMeshOnly {keepLargestMeshOnly}"
@@ -1007,10 +1060,14 @@ class AliceVision:
         cmd = f"{node_path} -o {out_mesh} --verboseLevel {self.verboseLevel}"
 
         # Check & add input file
-        cmd, inputMesh = self._check_input(cmd, inputMesh, self.cache_dir / "12_meshFiltering/filteredMesh.obj")
+        cmd, inputMesh = self._check_input(
+            cmd, inputMesh, self.cache_dir / "12_meshFiltering/filteredMesh.obj"
+        )
 
         # Check & add simplificationFactor
-        cmd = self._check_value(cmd, "simplificationFactor", simplificationFactor, [0, 1])
+        cmd = self._check_value(
+            cmd, "simplificationFactor", simplificationFactor, [0, 1]
+        )
 
         log_file = out_path / "meshDecimate.log"
         self._serialRunner(cmd, log_file)
@@ -1068,7 +1125,7 @@ class AliceVision:
     #     # Resample raw mesh
     #     out_mesh = out_path / "resampledRawMesh.obj"
     #     cmd += f" -o {out_mesh}"
-        
+
     #     # Check & add input file
     #     cmd, inputMesh = self._check_input(cmd, inputMesh, self.cache_dir / "12_meshFiltering/filteredMesh.obj")
 
@@ -1078,7 +1135,7 @@ class AliceVision:
         self,
         useDecimated: Optional[bool] = True,
         inputMesh: Optional[Union[str, Path]] = None,
-        lmd: Optional[float] = 2.,
+        lmd: Optional[float] = 2.0,
         eta: Optional[float] = 1.5,
     ):
         """
@@ -1119,16 +1176,25 @@ class AliceVision:
         if useDecimated:
             out_mesh = out_path / "denoisedDecimatedMesh.obj"
             local_cmd = cmd + f" -o {out_mesh}"
-            local_cmd, _ = self._check_input(local_cmd, inputMesh, self.cache_dir / "13_meshDecimate/decimatedMesh.obj")
+            local_cmd, _ = self._check_input(
+                local_cmd,
+                inputMesh,
+                self.cache_dir / "13_meshDecimate/decimatedMesh.obj",
+            )
             cmds.append(local_cmd)
 
         # Denoise raw mesh
         out_mesh = out_path / "denoisedRawMesh.obj"
         cmd += f" -o {out_mesh}"
-        cmd, _ = self._check_input(cmd, inputMesh, self.cache_dir / "12_meshFiltering/filteredMesh.obj")
+        cmd, _ = self._check_input(
+            cmd, inputMesh, self.cache_dir / "12_meshFiltering/filteredMesh.obj"
+        )
         cmds.append(cmd)
 
-        logs = [out_path / f"meshDenoising.deci.log", out_path / f"meshDenoising.raw.log"]
+        logs = [
+            out_path / f"meshDenoising.deci.log",
+            out_path / f"meshDenoising.raw.log",
+        ]
         cmds_and_logs = list(zip(cmds, logs))
         with Pool(2) as pool:
             pool.starmap(self._serialRunner, cmds_and_logs)
@@ -1140,7 +1206,7 @@ class AliceVision:
         inputDenseSfm: Optional[Union[str, Path]] = None,
         inputMesh: Optional[Union[str, Path]] = None,
         unwrapMethod: Optional[str] = "basic",
-        textureSide: Optional[int] = 2048, # NOTE: 2048 for decimated & * 2 for raw
+        textureSide: Optional[int] = 2048,  # NOTE: 2048 for decimated & * 2 for raw
         # Maybe in general API
         # imagesFolder: Optional[Union[str, Path]] = None, # NOTE: Replaces `inputDenseSfm` if used
         # downscale: Optional[int] = 1,
@@ -1181,46 +1247,42 @@ class AliceVision:
         # Assemble commands
         cmds = []
         cmd = f"{node_path} --verboseLevel {self.verboseLevel}"
-        
+
         # Add other arguments
         cmd += f" --unwrapMethod {unwrapMethod}"
 
         # Check & add input files
-        cmd, inputDenseSfm = self._check_input(cmd, inputDenseSfm, self.cache_dir / "11_meshing/densePointCloud.abc")       
+        cmd, inputDenseSfm = self._check_input(
+            cmd, inputDenseSfm, self.cache_dir / "11_meshing/densePointCloud.abc"
+        )
 
         # (Denoised) Decimated mesh
         if useDecimated:
             out_mesh_dir = out_path / "texturedDecimatedMesh/"
             out_mesh_dir.mkdir(parents=True, exist_ok=True)
-            local_cmd = cmd + f" -o {out_mesh_dir} --textureSide {textureSide}" # 2048 for decimated
+            local_cmd = (
+                cmd + f" -o {out_mesh_dir} --textureSide {textureSide}"
+            )  # 2048 for decimated
 
             alt = self.cache_dir / "13_meshDecimate/decimatedMesh.obj"
             if denoise:
                 alt = self.cache_dir / "14_meshDenoising/denoisedDecimatedMesh.obj"
 
             local_cmd, _ = self._check_input(
-                local_cmd,
-                inputMesh,
-                alt=alt,
-                arg="--inputMesh"
+                local_cmd, inputMesh, alt=alt, arg="--inputMesh"
             )
             cmds.append(local_cmd)
 
         # (Denoised) Raw mesh
         out_mesh_dir = out_path / "texturedRawMesh/"
         out_mesh_dir.mkdir(parents=True, exist_ok=True)
-        cmd += f" -o {out_mesh_dir} --textureSide {textureSide * 2}" # 4096 or twice decimated for raw
+        cmd += f" -o {out_mesh_dir} --textureSide {textureSide * 2}"  # 4096 or twice decimated for raw
 
         alt = self.cache_dir / "12_meshFiltering/filteredMesh.obj"
         if denoise:
             alt = self.cache_dir / "14_meshDenoising/denoisedRawMesh.obj"
 
-        cmd, _ = self._check_input(
-            cmd,
-            inputMesh,
-            alt=alt,
-            arg="--inputMesh"
-        )
+        cmd, _ = self._check_input(cmd, inputMesh, alt=alt, arg="--inputMesh")
         cmds.append(cmd)
 
         logs = [out_path / f"texturing.deci.log", out_path / f"texturing.raw.log"]
@@ -1232,9 +1294,9 @@ class AliceVision:
         self,
         denoise: Optional[bool] = False,
         center_image: Optional[str] = None,
-        rotation: Optional[Iterable[float]] = [0., 0., 0.],
+        rotation: Optional[Iterable[float]] = [0.0, 0.0, 0.0],
         orientMesh: Optional[bool] = False,
-        estimateSpaceMinObservationAngle: Optional[int] = 30
+        estimateSpaceMinObservationAngle: Optional[int] = 30,
     ):
         """
         Runs all the steps with default parameters.
@@ -1255,26 +1317,19 @@ class AliceVision:
             Optional, Whether to orient the mesh using sfmRotate or use <model-viewer>.
         estimateSpaceMinObservationAngle : Optional[int]
             Optional, Minimum angle between two observations to consider them as a valid pair.
-        
+
         """
         self.cameraInit()
         self.featureExtraction()
         self.imageMatching()
         self.featureMatching()
         self.structureFromMotion()
-        self.sfmTransform(
-            transformation=center_image
-        )
-        self.sfmRotate(
-            rotation=rotation,
-            orientMesh=orientMesh
-        )
+        self.sfmTransform(transformation=center_image)
+        self.sfmRotate(rotation=rotation, orientMesh=orientMesh)
         self.prepareDenseScene()
         self.depthMapEstimation()
         self.depthMapFiltering()
-        self.meshing(
-            estimateSpaceMinObservationAngle=estimateSpaceMinObservationAngle
-        )
+        self.meshing(estimateSpaceMinObservationAngle=estimateSpaceMinObservationAngle)
         self.meshFiltering()
         self.meshDecimate()
         # self.meshResampling()

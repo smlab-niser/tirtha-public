@@ -1,5 +1,6 @@
 # Folders - general
 .vscode/
+.tox/
 __pycache__/
 data/
 paper/
