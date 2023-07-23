@@ -1,0 +1,74 @@
+{% comment %} TODO: MARKED FOR REFACTOR along with views.py {% endcomment %}
+<details open id="mesh-details">
+    {% block info %}
+    {% if run %}
+    <summary id="mesh-name">About {{ run.mesh.name }}</summary>
+    <div class="details-inner">
+        <p id="mesh-info">
+            {{ run.mesh.description | safe }}
+        </p>
+        <hgroup>
+            <h4 id="info-h4">Model Statistics</h4>
+            {% comment %} NOTE: Descending order by run.ended_at {% endcomment %}
+            <select id="select-run" title="Select a run">
+                {% for ra in runs_arks %}
+                <option value="{{ ra }}" {% if ra == run.ark.ark %}selected{% endif %}>
+                    {{ ra }}
+                </option>
+                {% endfor %}
+            </select>
+            <ul>
+                <li id="latest-recons">
+                    Reconstructed on: {{ run.ended_at | date:"F j, Y" }}
+                </li>
+                <li id="contrib-count">
+                    Contributors: {{ run_contributor_count }}
+                </li>
+                <li id="images-count">
+                    Images: {{ run_images_count }}
+                </li>
+                <li id="run-ark" title="A persistent identifier for this run">
+                    ARK: <a id="run-ark-link" href="{{ run_ark_url }}">{{ run.ark }}</a>
+                </li>
+            </ul>
+        </hgroup>
+    </div>
+    {% elif mesh %}
+    <summary id="mesh-name">About {{ mesh.name }}</summary>
+    <div class="details-inner">
+        <p id="mesh-info">
+            {{ mesh.description | safe }}
+        </p>
+        <hgroup>
+            <h4 id="info-h4">Model Statistics</h4>
+            {% comment %} NOTE: Descending order by run.ended_at {% endcomment %}
+            <select id="select-run" title="Select a run">
+                <option value="N.A." selected>
+                    N.A.
+                </option>
+            </select>
+            <ul>
+                <li id="latest-recons">
+                    {% if mesh.reconstructed_at %}
+                        Reconstructed on: {{ mesh.reconstructed_at | date:"F j, Y" }}
+                    {% else %}
+                        Not reconstructed yet.
+                    {% endif %}
+                </li>
+                <li id="contrib-count">
+                    {% comment %} Since the reconstruction isn't done yet,
+                    only show number of contributions {% endcomment %}
+                    Contributions: {{ mesh_contribution_count }}
+                </li>
+                <li id="images-count">
+                    Images: {{ mesh_images_count }}
+                </li>
+                <li id="run-ark" title="A persistent identifier for this run">
+                    ARK: <a id="run-ark-link" href="javascript:;">N.A.</a>
+                </li>
+            </ul>
+        </hgroup>
+    </div>
+    {% endif %}
+    {% endblock %}
+</details>

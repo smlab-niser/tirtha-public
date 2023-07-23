@@ -1,0 +1,20 @@
+<div id="model">
+    {% block model %}
+    <script>
+        self.ModelViewerElement = self.ModelViewerElement || {};
+        self.ModelViewerElement.meshoptDecoderLocation = "https://unpkg.com/meshoptimizer/meshopt_decoder.js";
+    </script>
+    <model-viewer id="model-viewer-id"
+    src="{% if run %}{{ run.ark.url }}{% else %}{{ src }}{% endif %}"
+    orientation="{{ orientation }}"
+    camera-controls
+    poster="{% if run %}{{ run.mesh.preview.url }}{% elif mesh %}{{ mesh.preview.url }}{% endif %}"
+    ar ar-modes="scene-viewer quick-look webxr"
+    shadow-intensity="1">
+        {% comment %} FIXME: LATE_EXP: Disabled till KTX2 / Meshopt issues are figured out upstream. {% endcomment %}
+        {% comment %} <button id="ar-button" slot="ar-button">
+            AR
+        </button> {% endcomment %}
+    </model-viewer>
+    {% endblock %}
+</div>

@@ -1,0 +1,9 @@
+<details id="process">
+    <summary>How does it work?</summary>
+    <div class="details-inner">
+        <p>
+            This project utilizes open-source libraries and an automated photogrammetry pipeline, based on <a href="https://github.com/alicevision" target="_blank">AliceVision</a>, to create 3D models from crowdsourced images, broadly performing the steps described at <a href="https://alicevision.org/#photogrammetry/" target="_blank">AliceVision | Photogrammetry Pipeline</a>. The generated textured mesh is denoised, decimated, and converted to a <code>.glb</code> or
+            a <code>.glTF</code> file using <a href="https://github.com/CesiumGS/obj2gltf" target="_blank"><code>obj2gltf</code></a>. This file is optimized for web use with <a href="https://github.com/zeux/meshoptimizer" target="_blank"><code>meshoptimizer</code></a>. Finally, the 3D model is rendered in the browser using <a href="https://github.com/google/model-viewer" target="_blank"><code>&ltmodel-viewer&gt</code></a>. Please note that the model displayed here is a low-poly version due to web & mobile device constraints.
+        </p>
+    </div>
+</details>
