@@ -4,6 +4,7 @@
 - You can [submit issues](https://github.com/smlab-niser/tirtha-public/issues/new/choose).
 - You can [suggest improvements](https://github.com/smlab-niser/tirtha-public/issues/new/choose).
 - You can contribute code by [forking this repo](https://github.com/smlab-niser/tirtha-public/fork), making changes and opening [pull requests](https://github.com/smlab-niser/tirtha-public/pulls). Consult [README](./README.md) for more details on setting up the project.
+- See [`good-first-issues`](https://github.com/smlab-niser/tirtha-public/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) for some good starting points.
 
 ### Some notes on contributing code
 - Please follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide for Python code.
