@@ -1,0 +1,52 @@
+<form id="upload-form" class={{ signin_class }} enctype="multipart/form-data" method="post" action=""/>
+    {% csrf_token %}
+    <div id="select-mesh-wrapper">
+        <input id="select-mesh" placeholder="Model" list="meshes" name="mesh" required>
+        <datalist id="meshes">
+            {% if meshes %}
+                {% for mesh in meshes %}
+                <option value="{{ mesh.verbose_id }}">
+                {% endfor %}
+            {% else %}
+                <p>No models are available.</p>
+            {% endif %}
+        </datalist>
+    </div>
+    <div id="upload-gallery">
+        <!-- Dynamic image insertion here -->
+        <label id="upload-label" for="upload-input">
+            <span class="material-symbols-outlined">
+                place_item
+            </span>
+        </label>
+        <input id="upload-input" type="file" name="images" accept="image/*" multiple required>
+    </div>
+    <output id="file-count">No files selected.</output>
+    <progress min=0 max=100 value=0></progress>
+    <p id="agree-text">
+        <input id="agree-check" type="checkbox" name="agree" value="agree" required>
+        <label id="agree-label" for="agree-check">I agree to the <a href="/#terms">Terms of Use</a> and <a href="/#privacy">Privacy Policy</a>.</label>
+    </p>
+    <p id="content-license">
+        All contributions licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a>.<br>
+    </p>
+    <div id="submit-area">
+        <button id="clear-btn" class="buttons" type="button" value="clear">
+            <span class="material-symbols-outlined">
+                close
+            </span>
+            Clear
+        </button>
+        <button id="submit-btn" class="buttons" type="submit" value="Upload" name="submit">
+            <span class="material-symbols-outlined">
+                publish
+            </span>
+            Upload
+        </button>
+    </div>
+</form>
+{% if output %}
+    <output id="upload-result">{{ output }}</output>
+{% else %}
+    <output id="upload-result"></output>
+{% endif %}

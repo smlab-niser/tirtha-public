@@ -1,0 +1,44 @@
+# Place this file in /etc/nginx/sites-available/ and symlink to /etc/nginx/sites-enabled/ after editing
+server {
+    listen 80;
+    server_name <server_name>; # CHANGEME: e.g. tirtha.niser.ac.in
+
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl; # Google Sign-in requires HTTPS
+    server_name <server_name>; # CHANGEME: e.g. tirtha.niser.ac.in
+
+    ssl_certificate <path_to_cert>; # CHANGEME:
+    ssl_certificate_key <path_to_key>; # CHANGEME:
+
+    location /static {
+        alias <path_to_STATIC>; # CHANGEME:
+    }
+
+    location /media {
+        alias <path_to_MEDIA>; # CHANGEME:
+    }
+
+    location /403.html {
+	alias <path_to_403_template>; # CHANGEME:
+    }
+    error_page 403             /403.html;
+
+    location /404.html {
+        alias <path_to_404_template>; # CHANGEME:
+    }
+    error_page 404             /404.html;
+    
+    location /500.html {
+        alias <path_to_500_template>; # CHANGEME:
+    }
+    error_page 500             /500.html;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:<path_to_socket>; # CHANGEME: e.g., http://unix:/run/tirtha.sock;
+    }
+}
+

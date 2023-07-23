@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- HTML Meta Tags -->
+    <meta name="description" content="Crowdsourced image collection and 3D modeling of heritage sites">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-height, minimum-scale=1.0, user-scalable=0">
+
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://tirtha.niser.ac.in">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Project Tirtha">
+    <meta property="og:description" content="Crowdsourced image collection and 3D modeling of heritage sites">
+    <meta property="og:image" content="https://tirtha.niser.ac.in/static/media/tirtha-open-graph.png">
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="tirtha.niser.ac.in">
+    <meta property="twitter:url" content="https://tirtha.niser.ac.in">
+    <meta name="twitter:title" content="Project Tirtha">
+    <meta name="twitter:description" content="Crowdsourced image collection and 3D modeling of heritage sites">
+    <meta name="twitter:image" content="https://tirtha.niser.ac.in/static/media/tirtha-open-graph.png">
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    {% load static %}
+    <!-- Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+    <!-- Scripts -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="https://www.unpkg.com/@google/model-viewer@3.1.0/dist/model-viewer.min.js"></script>
+
+    <title>
+        {% block title %}
+        {% if run %}
+            Project Tirtha | {{ run.mesh.name }}
+        {% elif mesh %}
+            Project Tirtha | {{ mesh.name }}
+        {% endif %}
+        {% endblock %}
+    </title>
+</head>
+<body>    
+    <section id="side">
+        <h1>
+            <span class="material-symbols-outlined">
+                temple_buddhist
+            </span>
+            Project Tirtha
+            <sup id="beta-tag">
+                <a href="https://github.com/smlab-niser/tirtha-public/" target="_blank">
+                    BETA
+                </a>
+            </sup>
+        </h1>
+        {% include 'tirtha/side.html' %}
+        {% include 'tirtha/footer.html' %}
+    </section>
+    <section id="model-area">
+        <div id="floating-controls">
+            <div id="expand" class="material-symbols-outlined">
+                fullscreen
+            </div>
+            <div id="menu" class="material-symbols-outlined">
+                menu
+            </div>
+            {% comment %} LATE_EXP: High quality mesh export {% endcomment %}
+            {% comment %} <div id="hq" class="material-symbols-outlined"  >
+                high_quality
+            </div> {% endcomment %}
+        </div>
+        <a id="beta-banner" href="https://github.com/smlab-niser/tirtha-public/issues" target="_blank">
+            <span class="material-symbols-outlined">
+                bug_report
+            </span>
+            Report bugs / perf issues
+        </a>
+        {% include "tirtha/modelViewer.html" %}
+        <div class="controls">
+            <button id="info-btn" class="buttons">
+                <span class="material-symbols-outlined">
+                    info
+                </span>
+                <span>Hide information</span>
+            </button>
+            <button id="cont-btn" class="buttons">
+                <span class="material-symbols-outlined">
+                    upload
+                </span>
+                <span>Contribute</span>
+            </button>
+            <a id="request-btn" class="buttons" href="https://forms.gle/7fKeYvicZEre847z5" target="_blank">
+                <span class="material-symbols-outlined">
+                    add_business
+                </span>
+                <span>Request site</span>
+            </a>
+        </div>
+    </section>
+    <dialog id="cont-form">
+        <section id="cont-inner">
+            <button id="take-focus"></button>
+            <section id="upload-area">
+                <h2>Contribute to Tirtha</h2>
+                <div id="g_id_onload"
+                    data-client_id="{{ GOOGLE_CLIENT_ID }}}"
+                    data-context="use"
+                    data-ux_mode="popup"
+                    data-callback="onGoogleSignIn"
+                    data-auto_prompt="false">
+                </div>
+                <div class="upload-signin">
+                    <div class="g_id_signin"
+                        data-type="standard"
+                        data-shape="pill"
+                        data-theme="outline"
+                        data-text="signin_with"
+                        data-size="large"
+                        data-logo_alignment="left">
+                    </div>
+                </div>
+                <output id="signin-status">
+                    {{ signin_msg }}
+                </output>
+                {% include "tirtha/uploadForm.html" %}
+            </section>
+        </section>
+    </dialog>
+    <nav>
+        <div class="nav-top">
+            <a id="homelink" class="buttons" href="{% url 'index' %}">
+                <span class="material-symbols-outlined">
+                    home
+                </span>
+                Home
+            </a>
+            <div id="search-box">
+                <input id="search" type="text" placeholder="Search models">
+            </div>
+        </div>
+        {% include 'tirtha/modelList.html' %}
+    </nav>
+    <script src="https://unpkg.com/jquery@3.6.3/dist/jquery.js"></script>
+    <script type="text/javascript" src="{% static 'js/copyExifNoOrient.js' %}" ></script>
+    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

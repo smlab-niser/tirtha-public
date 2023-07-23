@@ -1,0 +1,19 @@
+{% comment %} TODO: MARKED FOR REFACTOR along with views.py {% endcomment %}
+<div class="models">
+    {% if meshes %}
+        {% for mesh in meshes %}
+            <a class="model-previews" href="/models/{{ mesh.verbose_id }}/">
+                {% if mesh.completed %}
+                    <div class="model-status" style="background-color: firebrick;">Closed</div>
+                {% else %}
+                    <div class="model-status" style="background-color: forestgreen;">Open</div>
+                {% endif %}
+                <div class="model-preview-inner" style="background-image: url({{ mesh.thumbnail.url }}); background-size: cover;">
+                    <div class="model-title">{{ mesh.name }}</div>
+                </div>
+            </a>
+        {% endfor %}
+    {% else %}
+        <p>No models are available.</p>
+    {% endif %}
+</div>

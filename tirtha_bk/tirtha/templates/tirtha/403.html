@@ -1,0 +1,15 @@
+{% load static %}
+<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+{% block banner %}
+<div id="banner">
+    <h2>403: Access forbidden. Redirecting to https://tirtha.niser.ac.in...</h2>
+    <script>
+        // Redirect to home after 3 seconds
+        setTimeout(function() {
+            window.location.href = "https://tirtha.niser.ac.in";
+        }, 3000);
+    </script>
+</div>
+{% endblock %}

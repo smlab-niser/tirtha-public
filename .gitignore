@@ -1,0 +1,31 @@
+# Folders - general
+.vscode/
+__pycache__/
+data/
+paper/
+
+# Folders - django
+migrations/
+media/
+models/
+
+# Folders - Meshroom
+bin/
+bin21/
+bin23/
+Meshroom-2021.1.0/
+Meshroom-2023.1.0/
+
+# Files
+db.sqlite3
+local_settings.py
+celerybeat-schedule
+
+# venv + local
+bk/
+local/
+todo.md
+*.log
+cert/
+gunicorn/
+nn_models/
