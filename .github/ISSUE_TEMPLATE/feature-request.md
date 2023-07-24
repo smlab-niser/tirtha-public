@@ -3,7 +3,6 @@ name: Feature Request
 about: Suggest an idea for this project
 title: "[EN] "
 labels: enhancement
-assignees: 'JeS24'
 
 ---
 
