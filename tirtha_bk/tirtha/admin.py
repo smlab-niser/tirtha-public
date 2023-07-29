@@ -176,6 +176,11 @@ class MeshAdmin(admin.ModelAdmin):
         "get_preview",
         "get_thumbnail",
     )
+    list_filter = (
+        "status",
+        "completed",
+        "hidden",
+    )
     list_display = (
         "ID",
         "mesh_id_verbose",
@@ -253,6 +258,7 @@ class ContributorAdmin(admin.ModelAdmin):
         ),
     )
     inlines = [ContributionInlineContributor]
+    list_filter = ("banned",)
     list_display = (
         "ID",
         "name",
@@ -278,11 +284,18 @@ class ImageInlineContribution(admin.TabularInline):
 
     get_image.short_description = "Preview"
 
+    def image_link(self, obj):
+        url = reverse("admin:tirtha_image_change", args=[obj.ID])
+        return mark_safe(f'<a href="{url}">{obj.ID}</a>')
+
+    image_link.short_description = "Link to Image"
+
     model = Image
-    readonly_fields = ("get_image",)
+    readonly_fields = ("get_image", "image_link")
     fields = (
         "ID",
         "get_image",
+        "image_link",
     )
     extra = 0
     max_num = 0
@@ -301,6 +314,11 @@ class ContributionAdmin(admin.ModelAdmin):
 
     image_count.short_description = "Image Count"
 
+    def images_good_count(self, obj):
+        return obj.images.filter(label="good").count()
+
+    images_good_count.short_description = "Good Image Count"
+
     readonly_fields = (
         "ID",
         "mesh",
@@ -308,6 +326,8 @@ class ContributionAdmin(admin.ModelAdmin):
         "contributed_at",
         "processed",
         "processed_at",
+        "image_count",
+        "images_good_count",
     )
     fields = (
         "ID",
@@ -316,6 +336,12 @@ class ContributionAdmin(admin.ModelAdmin):
         "contributor",
         "processed",
         "processed_at",
+        "image_count",
+        "images_good_count",
+    )
+    list_filter = (
+        "processed",
+        "mesh",
     )
     list_display = (
         "ID",
@@ -323,6 +349,7 @@ class ContributionAdmin(admin.ModelAdmin):
         "mesh_id_verbose",
         "contributor",
         "image_count",
+        "images_good_count",
         "processed",
     )
     list_per_page = 50
@@ -334,7 +361,10 @@ class ContributionAdmin(admin.ModelAdmin):
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
     def note(self, obj):
-        return "PLEASE USE THE WEB INTERFACE TO ADD IMAGES. ALSO, USE `label` FOR MANUAL MODERATION."
+        return (
+            "PLEASE USE THE WEB INTERFACE TO ADD IMAGES.\nALSO, USE `Label` FOR MANUAL MODERATION.\n"
+            + "ADD A REMARK IN `Remark` IF YOU ARE MANUALLY CHANGING THE LABEL."
+        )
 
     def get_thumbnail(self, obj):
         return mark_safe(
@@ -343,7 +373,72 @@ class ImageAdmin(admin.ModelAdmin):
 
     get_thumbnail.short_description = "Preview"
 
-    readonly_fields = ("ID", "created_at", "image", "note", "get_thumbnail")
+    def get_mesh_id_verbose(self, obj):
+        return obj.contribution.mesh.verbose_id
+
+    get_mesh_id_verbose.short_description = "Mesh ID (Verbose)"
+
+    def get_contributor_link(self, obj):
+        url = reverse(
+            "admin:tirtha_contributor_change", args=[obj.contribution.contributor.ID]
+        )
+        return mark_safe(f'<a href="{url}">{obj.contribution.contributor.name}</a>')
+
+    get_contributor_link.short_description = "Link to Contributor"
+
+    @admin.action(description="Mark selected images as Good")
+    def mark_good(self, request, queryset):
+        updated = queryset.update(label="good")
+        self.message_user(
+            request,
+            ngettext(
+                "%d image was successfully marked as Good.",
+                "%d images were successfully marked as Good.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark selected images as Bad")
+    def mark_bad(self, request, queryset):
+        updated = queryset.update(label="bad")
+        self.message_user(
+            request,
+            ngettext(
+                "%d image was successfully marked as Bad.",
+                "%d images were successfully marked as Bad.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark selected images as NSFW")
+    def mark_nsfw(self, request, queryset):
+        updated = queryset.update(label="nsfw")
+        self.message_user(
+            request,
+            ngettext(
+                "%d image was successfully marked as NSFW.",
+                "%d images were successfully marked as NSFW.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    actions = [mark_good, mark_bad, mark_nsfw]
+    readonly_fields = (
+        "ID",
+        "contribution",
+        "created_at",
+        "image",
+        "note",
+        "get_thumbnail",
+        "get_mesh_id_verbose",
+        "get_contributor_link",
+    )
     fieldsets = (
         (
             "Image Details",
@@ -351,6 +446,8 @@ class ImageAdmin(admin.ModelAdmin):
                 "fields": (
                     ("note"),
                     ("ID"),
+                    ("get_mesh_id_verbose"),
+                    ("get_contributor_link"),
                     ("contribution"),
                     ("created_at"),
                     ("image", "get_thumbnail"),
@@ -360,6 +457,7 @@ class ImageAdmin(admin.ModelAdmin):
             },
         ),
     )
+    list_filter = ("label",)
     list_display = ("ID", "created_at", "contribution", "label", "get_thumbnail")
     list_per_page = 100
 
@@ -427,6 +525,7 @@ class RunAdmin(admin.ModelAdmin):
             },
         ),
     )
+    list_filter = ("status",)
     list_display = (
         "ID",
         "mesh_id_verbose",
