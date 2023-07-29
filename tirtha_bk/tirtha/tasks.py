@@ -16,6 +16,8 @@ DBCLEANUP_INTERVAL = crontab(
     minute=0, hour=0, day_of_week=0
 )  # Every 1 week at 00:00 on Sunday
 
+from .local_tasks import leaderboard_task, LEADERBOARD_INTERVAL
+
 
 @app.task
 def post_save_contrib_imageops(contrib_id):
@@ -101,6 +103,13 @@ def db_cleanup_task():
     cln_logger.info("db_cleanup_task: Cleaned up database.")
 
 
+# TODO: Remove later
+@app.task
+def create_move_leaderboard_task():
+    leaderboard_task()
+    return
+
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Calls backup_task() every BACKUP_INTERVAL.
@@ -109,4 +118,12 @@ def setup_periodic_tasks(sender, **kwargs):
     # Calls db_cleanup_task() every DBCLEANUP_INTERVAL.
     sender.add_periodic_task(
         DBCLEANUP_INTERVAL, db_cleanup_task.s(), name="db_cleanup_task"
+    )
+
+    # TODO: Remove later
+    # Calls create_move_leaderboard_task() every LEADERBOARD_INTERVAL.
+    sender.add_periodic_task(
+        LEADERBOARD_INTERVAL,
+        create_move_leaderboard_task.s(),
+        name="create_move_leaderboard_task",
     )

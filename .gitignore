@@ -19,7 +19,9 @@ Meshroom-2023.1.0/
 # Files
 db.sqlite3
 local_settings.py
+local_tasks.py
 celerybeat-schedule
+leaderboard.*
 
 # venv + local
 bk/
