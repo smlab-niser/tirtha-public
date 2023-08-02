@@ -16,6 +16,8 @@ This project is now open-source under the [GNU Affero General Public License v3.
 and is under active development. All contributions are welcome. Please read
 [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
+See [Citation](#citation) for information on how to cite this project.
+
 ## Requirements
 ### Hardware
 * OS: Linux; Developed on Ubuntu 22.04 LTS
@@ -110,6 +112,18 @@ and is under active development. All contributions are welcome. Please read
     ```
 - Here, `--max-tasks-per-child=1` is used to avoid high memory consumption; `--beat` is used to start the beat scheduler; and `-P threads` is used to use threads instead of processes, in order to avoid conflicts with `multiprocessing`. You can also use the `-D` flag to run the worker in the background. For logging, you can use the `-f` flag to specify a log file. See `celery worker --help` for more details.
 
+## Citation
+Please cite the following paper if you use this software in your work (arXiv / ACM link coming soon):
+```bibtex
+@inproceedings{tirtha,
+    title={Tirtha - An Automated Platform to Crowdsource Images and Create 3D Models of Heritage Sites},
+    author={Shivottam, Jyotirmaya and Mishra, Subhankar}
+    booktitle={Proceedings of the 28th International Conference on 3D Web Technology (Web3D)},
+    year={2023},
+    organization={SIGGRAPH}
+}
+```
+
 ## Acknowledgment
 We thank the following individuals for their contributions to the project's development:
 - [JeS24](https://github.com/JeS24)
@@ -136,6 +150,7 @@ We are grateful to the developers of the following open-source libraries, which 
 We also thank Odisha State Archaeology for their support.
 
 ---
+
 &copy; 2023 Project Tirtha,
 [Subhankar Mishra's Lab](https://www.niser.ac.in/~smishra/),
 [School of Computer Sciences](https://www.niser.ac.in/scps/), NISER.
