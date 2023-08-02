@@ -319,6 +319,15 @@ details[open] #privacy {
     border-bottom: 1px dashed rgba(220, 20, 60, 0.6);
 }
 
+#citation {
+    margin: 0.625rem 0;
+    padding: 0.625rem;
+
+    font-size: 0.8rem;
+    background-color: #fffade;
+    overflow-x: scroll;
+}
+
 #info-h4 {
     font-weight: 400;
     border-top: 1px dashed rgba(220, 20, 60, 0.6);
