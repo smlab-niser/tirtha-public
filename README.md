@@ -124,8 +124,8 @@ Please cite the following paper if you use this software in your work (arXiv / A
 }
 ```
 
-## Acknowledgment
-We thank the following individuals for their contributions to the project's development:
+## Funding & Acknowledgment
+This project is funded by [La Fondation Dassault Systèmes](https://www.lafondation3ds.org/). We also thank the following individuals for their contributions to the project's development:
 - [JeS24](https://github.com/JeS24)
 - [annadapb](https://github.com/annadapb)
 
