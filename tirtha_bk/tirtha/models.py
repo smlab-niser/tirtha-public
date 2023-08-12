@@ -184,6 +184,8 @@ class Contributor(models.Model):
     name = models.CharField(max_length=200)
     email = models.EmailField()
 
+    active = models.BooleanField(default=True, verbose_name="Active?")
+
     # Set automatically
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)

@@ -209,6 +209,34 @@ class ContributorAdmin(admin.ModelAdmin):
 
     image_count.short_description = "Total Image Count"
 
+    @admin.action(description="Activate selected contributors")
+    def activate_contributors(self, request, queryset):
+        updated = queryset.update(active=True)
+        self.message_user(
+            request,
+            ngettext(
+                "%d contributor was successfully activated.",
+                "%d contributors were successfully activated.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Deactivate selected contributors")
+    def deactivate_contributors(self, request, queryset):
+        updated = queryset.update(active=False)
+        self.message_user(
+            request,
+            ngettext(
+                "%d contributor was successfully deactivated.",
+                "%d contributors were successfully deactivated.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
     @admin.action(description="Ban selected contributors")
     def ban_contributors(self, request, queryset):
         updated = queryset.update(banned=True)
@@ -237,7 +265,12 @@ class ContributorAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-    actions = [ban_contributors, unban_contributors]
+    actions = [
+        activate_contributors,
+        deactivate_contributors,
+        ban_contributors,
+        unban_contributors,
+    ]
     readonly_fields = (
         "ID",
         "created_at",
@@ -251,6 +284,7 @@ class ContributorAdmin(admin.ModelAdmin):
                     "ID",
                     ("created_at", "updated_at"),
                     ("name", "email"),
+                    "active",
                     "banned",
                     "ban_reason",
                 )
@@ -258,7 +292,10 @@ class ContributorAdmin(admin.ModelAdmin):
         ),
     )
     inlines = [ContributionInlineContributor]
-    list_filter = ("banned",)
+    list_filter = (
+        "active",
+        "banned",
+    )
     list_display = (
         "ID",
         "name",
@@ -266,6 +303,7 @@ class ContributorAdmin(admin.ModelAdmin):
         "updated_at",
         "contrib_count",
         "image_count",
+        "active",
         "banned",
     )
     list_per_page = 50

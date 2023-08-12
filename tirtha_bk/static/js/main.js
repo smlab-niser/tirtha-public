@@ -680,7 +680,7 @@ function onGoogleSignIn(creds) {
         data: { "token" : creds.credential },
         success: function (resp) {
             signInStatus.html(resp.output);
-            if (resp.banned == false) {
+            if (resp.blur == false) {
                 uploadForm.removeClass("blur-form");
                 uploadFormElems.removeAttr('inert');
             }
