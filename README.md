@@ -113,7 +113,7 @@ See [Citation](#citation) for information on how to cite this project.
 - Here, `--max-tasks-per-child=1` is used to avoid high memory consumption; `--beat` is used to start the beat scheduler; and `-P threads` is used to use threads instead of processes, in order to avoid conflicts with `multiprocessing`. You can also use the `-D` flag to run the worker in the background. For logging, you can use the `-f` flag to specify a log file. See `celery worker --help` for more details.
 
 ## Citation
-Please cite the following paper if you use this software in your work (arXiv / ACM link coming soon):
+Please cite the following paper if you use this software in your work ([arXiv](https://arxiv.org/abs/2308.01246) | [Papers with Code](https://paperswithcode.com/paper/tirtha-an-automated-platform-to-crowdsource) | ACM link coming soon):
 ```bibtex
 @inproceedings{tirtha,
     title={Tirtha - An Automated Platform to Crowdsource Images and Create 3D Models of Heritage Sites},
