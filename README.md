@@ -1,6 +1,7 @@
 <h1 align="center">
     <img src="https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/static/media/tirtha_logo.png" width=27 height=27>
-    $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$
+<!--     $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$ -->
+    Project Tirtha [Beta]
 </h1>
 
 [Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
