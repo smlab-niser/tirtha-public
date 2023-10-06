@@ -7,20 +7,20 @@
 <div align="center">
     <a href="https://www.niser.ac.in" target="_blank">
         <picture>
-            <source srcset="./media/images/niser-logo.png" media="(prefers-color-scheme: dark)">
-            <img src="./media/images/niser-logo.png" width=150 height=150 style="filter: invert()">
+            <source srcset="./media/images/niser-logo-dark.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/niser-logo-light.png" width=150 height=150">
         </picture>
     </a>
     <a href="https://www.lafondation3ds.org/" target="_blank">
         <picture>
-            <source srcset="./media/images/lfds-logo.png" media="(prefers-color-scheme: dark)">
-            <img src="./media/images/lfds-logo.png" width=200 height=150 style="filter: invert()">
+            <source srcset="./media/images/lfds-logo-light.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/lfds-logo-light.png" width=200 height=150">
         </picture>
     </a>
     <a href="https://odisha.gov.in/explore-odisha/state-archaeology" target="_blank">
         <picture>
-            <source srcset="./media/images/odisha-logo.png" media="(prefers-color-scheme: dark)">
-            <img src="./media/images/odisha-logo.png" width=130 height=150 style="filter: invert()">
+            <source srcset="./media/images/odisha-logo-light.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/odisha-logo-light.png" width=130 height=150">
         </picture>
     </a>
 </div>
