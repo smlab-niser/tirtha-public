@@ -4,7 +4,7 @@
     Project Tirtha [Beta]
 </h1>
 
-<div style="display: flex; justify-content: space-around;">
+<div align="center">
     <a href="https://www.niser.ac.in" target="_blank">
         <picture>
             <source srcset="./media/images/niser-logo.png" media="(prefers-color-scheme: dark)">
