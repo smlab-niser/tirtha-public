@@ -1,9 +1,31 @@
 <h1 align="center">
-    <img src="https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/static/media/tirtha_logo.png" width=27 height=27>
-<!--     $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$ -->
+    <img src="./media/images/tirtha-logo.png" width=27 height=27>
+    <!-- $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$ -->
     Project Tirtha [Beta]
 </h1>
 
+<div style="display: flex; justify-content: space-around;">
+    <a href="https://www.niser.ac.in" target="_blank">
+        <picture>
+            <source srcset="./media/images/niser-logo.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/niser-logo.png" width=150 height=150 style="filter: invert()">
+        </picture>
+    </a>
+    <a href="https://www.lafondation3ds.org/" target="_blank">
+        <picture>
+            <source srcset="./media/images/lfds-logo.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/lfds-logo.png" width=200 height=150 style="filter: invert()">
+        </picture>
+    </a>
+    <a href="https://odisha.gov.in/explore-odisha/state-archaeology" target="_blank">
+        <picture>
+            <source srcset="./media/images/odisha-logo.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/odisha-logo.png" width=130 height=150 style="filter: invert()">
+        </picture>
+    </a>
+</div>
+
+---
 [Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
 3D models of heritage sites using crowdsourced images. The word *Tirtha* is Sanskrit
 for "a place of pilgrimage", and is commonly used to refer to the sacred sites of
@@ -18,6 +40,15 @@ and is under active development. All contributions are welcome. Please read
 [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 See [Citation](#citation) for information on how to cite this project.
+
+## System Architecture
+
+<picture>
+    <source srcset="./media/images/architecture-dark.png" media="(prefers-color-scheme: dark)">
+    <img src="./media/images/architecture-light.png" alt="Tirtha Broad Architecture">
+</picture>
+
+See the paper for more details.
 
 ## Requirements
 ### Hardware
