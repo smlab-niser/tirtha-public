@@ -1,5 +1,8 @@
 <h1 align="center">
-    <img src="./media/images/tirtha-logo.png" width=27 height=27>
+    <picture>
+        <source srcset="./media/images/tirtha-logo-light.png" media="(prefers-color-scheme: dark)">
+        <img src="./media/images/tirtha-logo-dark.png" width=27 height=27">
+        </picture>
     <!-- $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$ -->
     Project Tirtha [Beta]
 </h1>
@@ -7,20 +10,20 @@
 <div align="center">
     <a href="https://www.niser.ac.in" target="_blank">
         <picture>
-            <source srcset="./media/images/niser-logo-dark.png" media="(prefers-color-scheme: dark)">
-            <img src="./media/images/niser-logo-light.png" width=150 height=150">
+            <source srcset="./media/images/niser-logo-light.png" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/niser-logo-dark.png" width=150 height=150">
         </picture>
     </a>
     <a href="https://www.lafondation3ds.org/" target="_blank">
         <picture>
             <source srcset="./media/images/lfds-logo-light.png" media="(prefers-color-scheme: dark)">
-            <img src="./media/images/lfds-logo-light.png" width=200 height=150">
+            <img src="./media/images/lfds-logo-dark.png" width=200 height=150">
         </picture>
     </a>
     <a href="https://odisha.gov.in/explore-odisha/state-archaeology" target="_blank">
         <picture>
             <source srcset="./media/images/odisha-logo-light.png" media="(prefers-color-scheme: dark)">
-            <img src="./media/images/odisha-logo-light.png" width=130 height=150">
+            <img src="./media/images/odisha-logo-dark.png" width=130 height=150">
         </picture>
     </a>
 </div>
