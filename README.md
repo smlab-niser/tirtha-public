@@ -51,7 +51,7 @@ See [Citation](#citation) for information on how to cite this project.
     <img src="./media/images/architecture-light.webp" alt="Tirtha Broad Architecture">
 </picture>
 
-[See the paper](https://github.com/smlab-niser/tirtha-public#citation) for more details.
+[See the paper](#citation) for more details.
 
 ## Requirements
 ### Hardware
