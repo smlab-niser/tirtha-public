@@ -31,9 +31,9 @@ See [Citation](#citation) for information on how to cite this project.
         tar -xvf Meshroom-2021.1.0-linux-cuda10.tar.gz
         ```
     * `cd` to the extracted directory - `cd ./Meshroom-2021.1.0-av2.4.0-centos7-cuda10.2/aliceVision/`.
-    * Copy the compiled binaries and libraries from `./bin/aliceVision/bin/` & `./bin/aliceVision/lib/` and place them in the `bin21/` directory. Also, copy `cameraSensors.db` & `vlfeat_K80L3.SIFT.tree` from `./share/aliceVision/` to `bin21/`. See [below](#python) for the directory structure.
+    * Copy the compiled binaries and libraries from `./bin/` & `./lib/` and place them in the `bin21/` directory. Also, copy `cameraSensors.db` & `vlfeat_K80L3.SIFT.tree` from `./share/aliceVision/` to `bin21/`. See [below](#python) for the directory structure.
     * NOTE: We will upgrade to Meshroom 2023.x.x soon.
-* [PostgreSQL](https://www.postgresql.org/download/)
+* [PostgreSQL](https://www.postgresql.org/download/linux/ubuntu/) - `sudo apt install postgresql`
 * [Nginx](https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-22-04)
 * [RabbitMQ](https://www.rabbitmq.com/download.html) (for Celery)
 * [`obj2gltf`](https://github.com/CesiumGS/obj2gltf)

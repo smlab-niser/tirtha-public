@@ -99,15 +99,13 @@ def db_cleanup_task():
     """
     cln_logger = Logger(name="db_cleanup", log_path=LOG_DIR)
     cln_logger.info("db_cleanup_task: Cleaning up database...")
-    Contributor.objects.filter(contributions__isnull=True).delete()
-    cln_logger.info("db_cleanup_task: Cleaned up database.")
 
 
 # TODO: Remove later
-@app.task
-def create_move_leaderboard_task():
-    leaderboard_task()
-    return
+# @app.task
+# def create_move_leaderboard_task():
+#     leaderboard_task()
+#     return
 
 
 @app.on_after_finalize.connect
@@ -122,8 +120,8 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # TODO: Remove later
     # Calls create_move_leaderboard_task() every LEADERBOARD_INTERVAL.
-    sender.add_periodic_task(
-        LEADERBOARD_INTERVAL,
-        create_move_leaderboard_task.s(),
-        name="create_move_leaderboard_task",
-    )
+    # sender.add_periodic_task(
+    #     LEADERBOARD_INTERVAL,
+    #     create_move_leaderboard_task.s(),
+    #     name="create_move_leaderboard_task",
+    # )

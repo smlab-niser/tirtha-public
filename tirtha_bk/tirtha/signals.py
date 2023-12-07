@@ -131,9 +131,10 @@ def pre_save_image(sender, instance, **kwargs):
             image_root = f"models/{instance.contribution.mesh.ID}/images/"
             src = MEDIA / instance.image.name
             fname = instance.image.name.split("/")[-1]
-            dest = MEDIA / image_root / f"{instance.label}/{fname}"
             if not instance.label:
                 dest = MEDIA / image_root / f"{fname}"
+            else:
+                dest = MEDIA / image_root / f"{instance.label}/{fname}"
             if src != dest:
                 shutil.move(src, dest)  # Move image
                 instance.image.name = (

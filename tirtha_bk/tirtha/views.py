@@ -25,6 +25,17 @@ BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
 
 
+def competition(request):
+    """
+    Renders a static page with details about the Tirtha competition.
+
+    """
+    if request.method == "GET":
+        template = "tirtha/competition.html"
+        return render(request, template)
+    return handler403(request)  # FIXME: Change to 405
+
+
 def howto(request):
     """
     Renders a static page with instructions on how to use Tirtha.

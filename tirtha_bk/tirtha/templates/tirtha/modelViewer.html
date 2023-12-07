@@ -8,6 +8,7 @@
     src="{% if run %}{{ run.ark.url }}{% else %}{{ src }}{% endif %}"
     orientation="{{ orientation }}"
     camera-controls
+    interaction-prompt-style="basic"
     poster="{% if run %}{{ run.mesh.preview.url }}{% elif mesh %}{{ mesh.preview.url }}{% endif %}"
     ar ar-modes="scene-viewer quick-look webxr"
     shadow-intensity="1">
