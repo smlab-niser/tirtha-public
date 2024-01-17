@@ -1,4 +1,4 @@
-# Place this file in tirtha_bk/gunicorn/ and rename it to gunicorn.conf.py after editing
+# NOTE: Place this file in tirtha_bk/gunicorn/ and rename it to gunicorn.conf.py after editing
 workers = 8  # CHANGEME: if needed
 syslog = True
 bind = ["<your_domain:your_port>"]  # e.g., tirtha.niser.ac.in:80 # CHANGEME:

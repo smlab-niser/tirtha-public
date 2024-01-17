@@ -1,0 +1,43 @@
+# Linting and testing
+black
+flake8
+isort
+tox
+rich
+
+# Django + Celery + Gunicorn
+amqp
+celery
+Django
+django-cleanup
+django-dbbackup
+django-extensions
+gunicorn
+kombu
+psycopg2
+psycopg2-binary
+pytz
+pytzdata
+shortuuid
+
+# For Google Auth
+google-auth
+google-cloud-vision
+
+# For the NN models
+jax
+keras
+# -e git+https://github.com/GantMan/nsfw_model.git@699b6796a55604341fbfdffe2b27ced1d868c591#egg=nsfw_detector
+# protobuf==3.20.3
+silence-tensorflow
+tensorflow
+torch
+timm
+
+# Basic requirements
+numpy
+opencv-python
+pandas
+scipy
+Pillow
+pillow-heif

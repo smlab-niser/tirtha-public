@@ -1,5 +1,5 @@
 <h1 align="center">
-    <img src="https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/static/media/tirtha_logo.png" width=27 height=27>
+    <img src="https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/static/media/logos/tirtha_logo.png" width=27 height=27>
     $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$
 </h1>
 

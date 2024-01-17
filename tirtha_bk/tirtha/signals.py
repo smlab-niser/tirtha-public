@@ -31,12 +31,19 @@ def post_migrate_create_defaults(sender, **kwargs):
 
         default_desc = "This is the meditation center, atop a small hill, inside the NISER campus at Khordha, Odisha."
 
-        # Copy default mesh file to STATIC / models / mesh_ID
-        source = STATIC / f"{mesh_ID}_bak"
+        static_paths = [
+            STATIC / f"models/{mesh_ID}/cache",
+            STATIC / f"models/{mesh_ID}/published",
+        ]
+        for static_path in static_paths:
+            if not static_path.exists():
+                static_path.mkdir(parents=True)
+
+        # Copy default mesh file to STATIC / models / mesh_ID / published
+        source = STATIC / f"{mesh_ID}"
         fname = f"{mesh_ID}__default.glb"
         src = source / f"{fname}"
-        dest = STATIC / f"models/{mesh_ID}/{fname}"
-        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest = STATIC / f"models/{mesh_ID}/published/{fname}"
         shutil.copy2(src, dest)
 
         # Copy default mesh thumbnail and preview images from STATIC to MEDIA
