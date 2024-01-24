@@ -190,7 +190,7 @@ We also thank Odisha State Archaeology for their support.
 
 ---
 
-&copy; 2023 Project Tirtha,
+&copy; 2023-24 Project Tirtha,
 [Subhankar Mishra's Lab](https://www.niser.ac.in/~smishra/),
 [School of Computer Sciences](https://www.niser.ac.in/scps/), NISER.
 All rights reserved.
