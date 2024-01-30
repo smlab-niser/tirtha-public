@@ -108,6 +108,7 @@ ALICEVISION_DIRPATH = BASE_DIR / "bin21"
 NSFW_MODEL_DIRPATH = (
     BASE_DIR / "nn_models/nsfw_model/mobilenet_v2_140_224/"
 )  # NOTE: See `Requirements` section in README.md
+MANIQA_MODEL_FILEPATH = BASE_DIR / "<PATH/TO/ckpt_kadid10k.pt" # CHANGEME:
 OBJ2GLTF_PATH = "obj2gltf"  # NOTE: Ensure the binary is in system PATH
 GLTFPACK_PATH = "gltfpack"  # NOTE: Ensure the binary is in system PATH
 MESHOPS_MIN_IMAGES = 20  # Minimum number of images required to run meshops

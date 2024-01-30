@@ -37,6 +37,7 @@ ARCHIVE_ROOT = Path(settings.ARCHIVE_ROOT)
 MESHOPS_MIN_IMAGES = settings.MESHOPS_MIN_IMAGES
 ALICEVISION_DIRPATH = settings.ALICEVISION_DIRPATH
 NSFW_MODEL_DIRPATH = settings.NSFW_MODEL_DIRPATH
+MANIQA_MODEL_FILEPATH = settings.MANIQA_MODEL_FILEPATH
 OBJ2GLTF_PATH = settings.OBJ2GLTF_PATH
 GLTFPACK_PATH = settings.GLTFPACK_PATH
 BASE_URL = settings.BASE_URL
@@ -678,7 +679,8 @@ class ImageOps:
             img.save()  # `pre_save`` signal handles moving file to the correct folder
             lg.info(f"Updated image {img.ID} with label {label} and remark {remark}.")
 
-        # manr = MANIQAScore(cpu_num=16, num_crops=20) # FIXME: TODO: Uncomment once fixed.
+        # manr = MANIQAScore(ckpt_pth=MANIQA_MODEL_FILEPATH, cpu_num=32, num_crops=20)
+        # FIXME: TODO: Uncomment once fixed.
         for idx, img in enumerate(self.images):
             lg.info(f"Checking image {img.ID} | [{idx}/{self.size}]...")
             # img_path = str((MEDIA / img.image.name).resolve()) # FIXME: TODO: Uncomment once fixed.
