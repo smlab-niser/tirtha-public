@@ -1,25 +1,30 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-title: "Tirtha - An Automated Platform to Crowdsource Images and Create 3D Models of Heritage Sites"
-doi: 10.1145/3611314.3615904
+title: >-
+  Tirtha - An Automated Platform to Crowdsource Images and
+  Create 3D Models of Heritage Sites
+message: 'If you use this software, please cite it as below.'
+type: software
 authors:
-  - family: "Shivottam"
-    given: "Jyotirmaya"
-    orcid: "https://orcid.org/0000-0002-2688-9421"
-  - family: "Mishra"
-    given: "Subhankar"
-    orcid: "https://orcid.org/0000-0002-9910-7291"
-year: 2023
-publisher: "Association for Computing Machinery"
-license: "GNU Affero General Public License v3.0"
-url: "https://github.com/smlab-niser/tirtha-public"
-repository-code: "https://github.com/smlab-niser/tirtha-public"
-version: 0.0.1
+  - family-names: Shivottam
+    given-names: Jyotirmaya
+    orcid: 'https://orcid.org/0000-0002-2688-9421'
+  - family-names: Mishra
+    given-names: Subhankar
+    orcid: 'https://orcid.org/0000-0002-9910-7291'
+identifiers:
+  - type: doi
+    value: 10.1145/3611314.3615904
+    description: Conference Paper
+repository-code: 'https://github.com/smlab-niser/tirtha-public'
+url: 'https://tirtha.niser.ac.in'
 keywords:
-  - "open source"
-  - "digital heritage"
-  - "crowdsourcing"
-  - "3D dataset"
-  - "photogrammetry"
-citation: |
-  "Jyotirmaya Shivottam, Subhankar Mishra. (2023). Tirtha - An Automated Platform to Crowdsource Images and Create 3D Models of Heritage Sites. In Proceedings of the 28th International ACM Conference on 3D Web Technology (Web3D '23), Article 11, 15 pages. https://doi.org/10.1145/3611314.3615904"
+  - open source
+  - digital heritage
+  - crowdsourcing
+  - 3D dataset
+  - photogrammetry
+license: AGPL-3.0
+version: 0.0.1
