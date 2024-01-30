@@ -1,14 +1,14 @@
 # NOTE: Place this file in /etc/nginx/sites-available/ and symlink to /etc/nginx/sites-enabled/ after editing
 server {
     listen 80;
-    server_name <server_name>; # CHANGEME: e.g. tirtha.niser.ac.in
+    server_name localhost; # CHANGEME:
 
     return 301 https://$server_name$request_uri;
 }
 
 server {
-    listen 443 ssl; # Google Sign-in requires HTTPS
-    server_name <server_name>; # CHANGEME: e.g. tirtha.niser.ac.in
+    listen 443 ssl; # NOTE: Google Sign-in requires HTTPS. If you are not using Google Sign-in, you can remove the ssl directive.
+    server_name localhost; # CHANGEME:
 
     ssl_certificate <path_to_cert>; # CHANGEME:
     ssl_certificate_key <path_to_key>; # CHANGEME:

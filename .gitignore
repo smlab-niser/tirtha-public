@@ -21,15 +21,16 @@ Meshroom-2023.1.0/
 # Files
 db.sqlite3
 local_settings.py
+gunicorn.conf.py
 local_tasks.py
 celerybeat-schedule
 leaderboard.*
 
 # venv + local
+venv/
 bk/
 local/
 todo.md
 *.log
 cert/
-gunicorn/
-ckpts/
+artifacts/
