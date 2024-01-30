@@ -30,7 +30,7 @@
 
 ---
 
-[![Signal Group](https://img.shields.io/badge/Signal-%23039BE5.svg?&style=for-the-badge&logo=Signal&logoColor=white)](https://signal.group/#CjQKIN_Ry9rBYUZJn8pLEkfWMAkZvO2FGopPalXsWPMZauXyEhBT1GdJYb5C_PJV0qE5VTLj) ![Element Chat Room](https://img.shields.io/matrix/tirtha%3Amatrix.org?style=for-the-badge&logo=element) ![GitHub Discussions](https://img.shields.io/github/discussions/smlab-niser/tirtha-public?style=for-the-badge&logo=github)
+[![Signal Group](https://img.shields.io/badge/Signal-%23039BE5.svg?&style=for-the-badge&logo=Signal&logoColor=white)](https://signal.group/#CjQKIN_Ry9rBYUZJn8pLEkfWMAkZvO2FGopPalXsWPMZauXyEhBT1GdJYb5C_PJV0qE5VTLj) [![Element Chat Room](https://img.shields.io/matrix/tirtha%3Amatrix.org?style=for-the-badge&logo=element)](https://matrix.to/#/#tirtha:matrix.org) [![GitHub Discussions](https://img.shields.io/github/discussions/smlab-niser/tirtha-public?style=for-the-badge&logo=github)](https://github.com/smlab-niser/tirtha-public/discussions)
 
 ---
 [Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
