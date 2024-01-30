@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang=en>
+
+<head>
+	<meta charset=utf-8>
+	<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
+	<meta name=description content="">
+	<title>Project Tirtha | Heritage Site Imaging Competition</title>
+    {% load static %}
+    <link rel="shortcut icon" type="image/png" href="{% static 'media/logos/tirtha-logo-light.webp' %}"/>
+	<meta name=msapplication-TileColor content=#da532c>
+	<meta name=theme-color content=#ffffff>
+	<link href=https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css rel=stylesheet>
+</head>
+
+<body style="background-color: #fffaf0;">
+	<div class="col-lg-8 mx-auto p-3 py-md-3">
+		<header class="d-flex flex-column align-items-center border-bottom mb-5 py-2" id=header><img class=mx-3
+				src="{% static 'media/logos/cc_logo.png' %}" style=width:30px><span>NISER Coding Club</span>
+                <span class="text-center text-muted">Powered by School of Computer Sciences</span>
+        </header>
+		<main>
+            <div id="intro" class="border-bottom">
+                <h1>
+                    <img src="{% static 'media/logos/tirtha-logo-light.webp' %}" width=40 height=40 style="margin-top: -12px;">
+                    Project Tirtha - Heritage Site Imaging Competition
+                </h1>
+                <div class="p-2">
+                    <p class=col-md-12 style=font-size:1.1rem>
+                        Project Tirtha is an academic initiative to create 3D models of heritage sites using crowdsourced images. The word <em>Tirtha</em> is Sanskrit for "a place of pilgrimage", and is commonly used to refer to sacred sites. Our goal is to preserve and showcase the beauty and cultural significance of heritage sites. We believe that by allowing the general public to contribute to the creation of these models, and by providing open access to these models, we can increase awareness and appreciation of these important cultural landmarks and inspire future generations to maintain them for years to come. To know more about this project, please visit the <a href="https://tirtha.niser.ac.in">Project Tirtha website</a>.
+                    </p>
+                    <p class=col-md-12 style=font-size:1.1rem>
+                        In this site imaging competition, the goal is to collect images of heritage sites via the <a href="https://tirtha.niser.ac.in">Project Tirtha website</a>, which will then be used to automatically create 3D models. This provides a chance for you to contribute to the preservation of heritage sites in your area, which are unfortunately overlooked by heritage conservation efforts, primarily due to lack of resources. Note that, metadata is maintained for all contributions to Tirtha. So, all 3D models, generated using your contributions, will credit you as a contributor. This competition additionally provides a chance to win exciting prizes for your contributions. Your contributions will be judged based on various criteria, listed under <a href="#rubric"><em>Scoring rubric</a></em> below. Further details can also be found below.
+                    </p>
+                    <p class=col-md-12 style=font-size:1.1rem>
+                        <b>Note</b>: In case you want to propose the addition of a heritage site to the Tirtha database before contributing, please either use the <a href="https://forms.gle/7fKeYvicZEre847z5" target="_blank">form</a> provided on the Tirtha homepage, or mail us with some details about the site (Name, location and if possible, a link to the site's Wikipedia page or another source) at <a href="mailto:project.tirtha@niser.ac.in">project.tirtha@niser.ac.in</a>.
+                    </p>
+                </div>
+                <div class="text-center">
+                    <a class="btn btn-primary btn-lg px-3 my-2" href="https://tirtha.niser.ac.in" target=__blank>Contribute to Tirtha</a>
+                </div>
+            <br>
+            </div>
+
+            <div class="border-bottom p-2">
+            <!-- <hr class="col-* col-md-2 mb-5"> -->
+                <div class="row g-5 mb-5">
+                    <div class=col-md-6>
+					<h2 id=Prizes>Exciting prizes</h2>
+					<p>
+                        Top 5 contributors on the final leaderboard will be awarded 1 custom 3D printed model each. The winners are
+                        free to submit their own models for printing (related or unrelated to Tirtha). Otherwise, the models will be
+                        of the heritage sites they contributed to. The 3D prints will be of FDM type, with max dimensions 12cm x 12cm x 12cm,
+                        in 'White' using PLA or ABS material. The winners will be contacted via email for further details.
+                    </p>
+                    <p>
+                        <em>Please note that while the competition is open to everyone, including older batches (2017, 2018), due to logistical limitations, the prizes can only be awarded to current students of NISER.</em>
+                    </p>
+                </div>
+                <div class=col-md-6>
+					<h2 id=Instructions>Instructions for contributing</h2>
+					<p>A few guidelines are given below, but please go through the full instructions on the <a
+							href="https://tirtha.niser.ac.in/#instructions">
+							Tirtha website</a>. A short video tutorial is also available <a href="https://tirtha.niser.ac.in/howto/#4">here</a>. <em>You can propose new sites using this <a href="https://forms.gle/7fKeYvicZEre847z5" target="_blank">form</a> or by mailing us at <a href="mailto:project.tirtha@niser.ac.in">project.tirtha@niser.ac.in</a>.</em>
+                    </p>
+					<ol>
+						<li>The object of interest, i.e., a building situated at a heritage site, should be clearly visible, without obstructions, and be in focus.</li>
+						<li>The images should be taken from multiple angles with <b>30-40% overlap</b>.</li>
+						<li>The images must be above 1080p in resolution and should contain <b>EXIF data</b>, mainly the camera
+							parameters.</li>
+						<li><b>Try to be as safe as possible while taking the images. Do not trespass or put yourself in danger.</b>
+						</li>
+						<li>Confirm that none of the photos violate our <a href="https://tirtha.niser.ac.in/#terms">Terms of Use</a>
+							or <a href="https://tirtha.niser.ac.in/#privacy">Privacy Policy</a></li>
+					</ol>
+                </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="border-bottom p-2">
+                <h2 id=Page-Details>Leaderboard</h2>
+                <p>Last updated at <strong id="updateAt"></strong></p>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Criteria 1</th>
+                            <th>Criteria 2</th>
+                            <th>Criteria 3</th>
+                            <th>Preliminary Score</th>
+                            <th>Number of Images</th>
+                            <th>Number of Images Used</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
+                <br>
+            </div>
+
+            <div class="col-md-12 border-bottom p-2">
+                <h2 id=Schedule>Schedule</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Time & Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Competition begins</td>
+                            <td>1500hrs; September 29, 2023</td>
+                        </tr>
+                        <tr>
+                            <td>Competition ends</td>
+                            <td>2359hrs; December 31, 2023</td>
+                        </tr>
+                        <tr>
+                            <td>Final scores announced</td>
+                            <td>January, 2024</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+			<div class="row g-5 mb-5 p-2">
+				<div class=col-md-12>
+					<h2 id="rubric">Scoring rubric</h2>
+                    <div>
+                        <p>The <strong>preliminary score</strong>, as seen on the leaderboard website, is calculated as follows (\(C_i\) refers to Criteria):</p>
+
+                        <p><span class="math display">\[
+                        S_{\text{Prelim}} = 0.35 * C_1 + 0.2 * C_2 + 0.3 * C_3,
+                        \]</span></p>
+
+                        <p>where,</p>
+
+                        <ul>
+                        <li><span class="math inline">\(C_1\)</span> is the ratio of the number of images validated &amp; used by the SfM node, to the number of images contributed by a contributor.</li>
+                        </ul>
+
+                        <p><span class="math display">\[
+                        C_1 = \frac{n({\text{Images validated}})}{n({\text{Images contributed}})}
+                        \]</span></p>
+
+                        <ul>
+                        <li><span class="math inline">\(C_2\)</span> is the number of sites / latest runs contributed to, by a contributor. <em>Note that we only consider the latest run for each site / monument for each leaderboard update</em>.</li>
+                        </ul>
+
+                        <p><span class="math display">\[
+                        C_2 = n({\text{Sites contributed to}}) = n({\text{Latest runs contributed to}})
+                        \]</span></p>
+
+                        <ul>
+                        <li>For <span class="math inline">\(C_3\)</span>, we first take the weighted sum of the normalized count of extracted features &amp; the normalized inverse median reprojection error, for each image used in the latest reconstruction run for a site. This gives us:</li>
+                        </ul>
+
+                        <p><span class="math display">\[
+                        \sigma = \sum_{i \in \text{Images used}}(0.65\times ||\text{Extracted features for }i|| + 0.35\times ||\text{1 / Median Error for }i||)
+                        \]</span></p>
+
+                        <p>Then, we sum this per-run score over all the latest runs (i.e., all sites). We use min-max normalization here (per run).</p>
+
+                        <p><span class="math display">\[
+                        C_3 = \sum_{r \in \text{Latest runs}}\sigma_r
+                        \]</span></p>
+
+                        <ul>
+                        <li><span class="math inline">\(C_1\)</span> is scaled and rounded up, while <span class="math inline">\(C_3\)</span> is rounded up. Then, <span class="math inline">\(S_{\text{Prelim}}\)</span> is calculated as above.</li>
+                        </ul>
+
+                        <p>The <strong>final scores</strong> at the end of the competition will include another term, <span class="math inline">\(0.15 * C_4\)</span>, which will be calculated after the competition ends. <span class="math inline">\(C_4\)</span> is a subjective score, based on the completeness of the final reconstruction &amp; the details captured, as judged by the organizers, given as:</p>
+
+                        <p><span class="math display">\[
+                        C_4 = \sum_{s \in \text{Sites contributed to}} Q_s\text{, where }Q_s\text{ denotes a quality score, such that }Q_s \in [1, 2, 3]
+                        \]</span></p>
+
+                        <p><span class="math inline">\(C_4\)</span> is shared by all contributors to a reconstruction run, i.e., if a run has <span class="math inline">\(C_4 = 2\)</span>, all contributors will get <span class="math inline">\(2 (\times 0.15)\)</span> for this criterion. It follows a 3-point scale, with 1 being the lowest &amp; 3 being the highest, as detailed below:</p>
+
+                        <ul>
+                        <li>1: Reconstruction is <em>mostly</em> incomplete, with <em>many</em> large holes &amp; missing details.</li>
+                        <li>2: Reconstruction is <em>mostly</em> complete, with <em>some</em> holes &amp; missing details, or, reconstruction is <em>mostly</em> incomplete, but with <em>a lot of</em> details captured.</li>
+                        <li>3: Reconstruction is <em>mostly</em> complete, with <em>almost</em> no holes &amp; <em>most</em> details captured.</li>
+                        </ul>
+
+                        <p>The overall score of a contributor will be calculated as follows:</p>
+
+                        <p><span class="math display">\[
+                        S_{\text{Final}} = S_{\text{Prelim}} + 0.15 * C_4
+                        \]</span></p>
+                    </div>
+				</div>
+			</div>
+		</main>
+		<footer class="border-top my-3 pt-2 text-muted" id=footer><span>&copy; 2023</span><img class=mx-3
+				src="{% static 'media/logos/cc_logo.png' %}" style=width:30px><span>Coding Club | National Institute of Science Education and
+				Research</span>
+        </footer>
+	</div>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+		crossorigin="anonymous">
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+	<script type="text/javascript">
+        fetch("{% static 'leaderboard2.json' %}")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('updateAt').innerHTML = data.last_updated.slice(0, 23) + ' (' + data.last_updated.slice(29, 40) + ')';
+            const leaderboard = data.leaderboard;
+
+            // Convert the leaderboard object into an array of objects
+            const leaderboardArray = Object.keys(leaderboard).map(name => ({
+                name,
+                c1_score: leaderboard[name].c1_score,
+                c2_score: leaderboard[name].c2_score,
+                c3_score: leaderboard[name].c3_score,
+                prelim_score: leaderboard[name].prelim_score,
+                num_images: leaderboard[name].num_images,
+                num_images_used: leaderboard[name].num_images_used
+            }));
+
+            // Sort the leaderboard by preliminary score in descending order
+            leaderboardArray.sort((a, b) => b.prelim_score - a.prelim_score);
+
+            const tableBody = document.getElementById('leaderboardBody');
+            leaderboardArray.forEach(participant => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${participant.name}</td>
+                    <td>${participant.c1_score}</td>
+                    <td>${participant.c2_score}</td>
+                    <td>${participant.c3_score}</td>
+                    <td>${participant.prelim_score}</td>
+                    <td>${participant.num_images}</td>
+                    <td>${participant.num_images_used}</td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        });
+    </script>
+</body>
+
+</html>

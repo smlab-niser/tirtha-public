@@ -39,6 +39,7 @@
         <p id="mesh-info">
             {{ mesh.description | safe }}
         </p>
+        {% comment %} NOTE: Following is needed for XHR {% endcomment %}
         <hgroup>
             <h4 id="info-h4">Model Statistics</h4>
             {% comment %} NOTE: Descending order by run.ended_at {% endcomment %}
@@ -52,16 +53,18 @@
                     {% if mesh.reconstructed_at %}
                         Reconstructed on: {{ mesh.reconstructed_at | date:"F j, Y" }}
                     {% else %}
-                        Not reconstructed yet.
+                        Reconstructed on: N.A.
                     {% endif %}
                 </li>
                 <li id="contrib-count">
                     {% comment %} Since the reconstruction isn't done yet,
                     only show number of contributions {% endcomment %}
-                    Contributions: {{ mesh_contribution_count }}
+                    Contributions: N.A.
+                    {% comment %} {{ mesh_contribution_count }} {% endcomment %}
                 </li>
                 <li id="images-count">
-                    Images: {{ mesh_images_count }}
+                    Images: N.A.
+                    {% comment %} {{ mesh_images_count }} {% endcomment %}
                 </li>
                 <li id="run-ark" title="A persistent identifier for this run">
                     ARK: <a id="run-ark-link" href="javascript:;">N.A.</a>

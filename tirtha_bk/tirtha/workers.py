@@ -12,15 +12,16 @@ import pytz
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils import timezone
-from nn_models.MANIQA.batch_predict import MANIQAScore  # Local import
-from nsfw_detector import predict  # Local package installation
+# from nn_models.MANIQA.batch_predict import MANIQAScore  # Local import # FIXME: TODO: Uncomment once fixed.
+# from nsfw_detector import predict  # Local package installation # FIXME: TODO: Uncomment once fixed.
 from rich.console import Console
 from silence_tensorflow import silence_tensorflow  # To suppress TF warnings
 
-os.environ[
-    "TF_FORCE_GPU_ALLOW_GROWTH"
-] = "true"  # To force nsfw_detector model to occupy only necessary GPU memory
-silence_tensorflow()  # To suppress TF warnings
+# FIXME: TODO: Uncomment once fixed.
+# os.environ[
+#     "TF_FORCE_GPU_ALLOW_GROWTH"
+# ] = "true"  # To force nsfw_detector model to occupy only necessary GPU memory
+# silence_tensorflow()  # To suppress TF warnings
 
 # Local imports
 from tirtha.models import ARK, Contribution, Image, Mesh, Run
@@ -665,6 +666,10 @@ class ImageOps:
 
         """
         lg = self.logger
+        
+        # FIXME: TODO: Till the VRAM + concurrency issue is fixed, skip image checks.
+        # FIXME: TODO: Remove once fixed.
+        lg.info(f"NOTE: Skipping image checks for contribution {self.contribution.ID} due to VRAM + concurrency issues. FIXME:")
 
         def _update_image(img, label, remark):
             lg.info(f"Updating image {img.ID} with label {label} and remark {remark}.")
@@ -673,10 +678,19 @@ class ImageOps:
             img.save()  # `pre_save`` signal handles moving file to the correct folder
             lg.info(f"Updated image {img.ID} with label {label} and remark {remark}.")
 
-        manr = MANIQAScore(cpu_num=16, num_crops=20)
+        # manr = MANIQAScore(cpu_num=16, num_crops=20) # FIXME: TODO: Uncomment once fixed.
         for idx, img in enumerate(self.images):
             lg.info(f"Checking image {img.ID} | [{idx}/{self.size}]...")
-            img_path = str((MEDIA / img.image.name).resolve())
+            # img_path = str((MEDIA / img.image.name).resolve()) # FIXME: TODO: Uncomment once fixed.
+
+            # FIXME: TODO: Remove (till `continue`) once fixed
+            # Skip & move image to good folder
+            _update_image(
+                img,
+                "good",
+                f"PASS -- SKIPPED"
+            )
+            continue
 
             # Content safety check
             if not self.check_content_safety(img_path):
@@ -739,8 +753,6 @@ class ImageOps:
 Tasks
 
 """
-
-
 def prerun_check(contrib_id):
     contrib = Contribution.objects.get(ID=contrib_id)
     mesh = contrib.mesh

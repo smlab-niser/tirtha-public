@@ -25,6 +25,17 @@ BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
 
 
+def competition(request):
+    """
+    Renders a static page with details about the Tirtha competition.
+
+    """
+    if request.method == "GET":
+        template = "tirtha/competition.html"
+        return render(request, template)
+    return handler403(request)  # FIXME: Change to 405
+
+
 def howto(request):
     """
     Renders a static page with instructions on how to use Tirtha.
@@ -140,7 +151,7 @@ def index(request, vid=None, runid=None):
             request.session.set_expiry(0)  # Session expires when browser closes
             context.update({"signin_msg": output})
 
-            if not contrib.banned:
+            if not contrib.banned and contrib.active:
                 context.update({"signin_class": ""})
 
     return render(request, template, context)
@@ -152,7 +163,7 @@ def _signin(token, create=False):
     * Verifies `token`
     * Check if contributor exists in DB using details from `token`
     * If not, create new contributor if `create` is True, else return None
-    * If yes, check if contributor is banned
+    * If yes, check if contributor is inactive or banned
         * If yes, return error
         * If no, return success
 
@@ -169,13 +180,17 @@ def _signin(token, create=False):
         email = idinfo["email"]
 
         # Get or create contributor
-        if create:
-            # NOTE: Treating email as unique ID, both for our DB and Google's
-            contrib, _ = Contributor.objects.get_or_create(email=email)
-        else:
-            try:
-                contrib = Contributor.objects.get(email=email)
-            except Contributor.DoesNotExist:
+        try:
+            contrib = Contributor.objects.get(email=email)
+        except Contributor.DoesNotExist:
+            if create:
+                # NOTE: Treating email as unique ID, both for our DB and Google's
+                # NOTE: Contributor is created as inactive | Manual activation required
+                # CHECK: TODO: Allow auto-activation after testing
+                contrib = Contributor.objects.create(
+                    name=name, email=email, active=False
+                )
+            else:
                 output = "Contributor not found. Please sign in first."
                 return output, contrib
 
@@ -184,8 +199,12 @@ def _signin(token, create=False):
             contrib.name = name
             contrib.save()
 
-        # Check if banned
+        # Check if active
         output = f"Signed-in as {email}."
+        if not contrib.active:
+            output = f"{email} is not active. Please contact the admin."
+
+        # Check if banned
         if contrib.banned:
             output = f"{email} has been banned. Please contact the admin."
 
@@ -204,15 +223,15 @@ def googleAuth(request):
     token = request.GET["token"]
     output, contrib = _signin(token, create=True)
 
-    context = {"output": output, "banned": False}
+    context = {"output": output, "banned": False, "blur": False}
 
     # Store JWT in session
     if contrib is not None:
         request.session["auth_token"] = token
         request.session.set_expiry(0)  # Session expires when browser closes
 
-        if contrib.banned:
-            context.update({"banned": True})
+        if contrib.banned or not contrib.active:
+            context.update({"blur": True})
 
     return JsonResponse(context)
 
@@ -339,6 +358,10 @@ def pre_upload_check(request):
 
     if contrib.banned:
         output = f"{contrib.email} has been banned. Please contact the admin."
+        return JsonResponse({"allowupload": False, "blur": True, "output": output})
+
+    if not contrib.active:
+        output = f"{contrib.email} has not been activated. Please contact the admin."
         return JsonResponse({"allowupload": False, "blur": True, "output": output})
 
     # Check if mesh exists

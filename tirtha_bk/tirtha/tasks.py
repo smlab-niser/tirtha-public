@@ -16,8 +16,6 @@ DBCLEANUP_INTERVAL = crontab(
     minute=0, hour=0, day_of_week=0
 )  # Every 1 week at 00:00 on Sunday
 
-from .local_tasks import leaderboard_task, LEADERBOARD_INTERVAL
-
 
 @app.task
 def post_save_contrib_imageops(contrib_id):
@@ -35,11 +33,16 @@ def post_save_contrib_imageops(contrib_id):
         f"post_save_contrib_imageops: Checking images for contrib_id: {contrib_id}..."
     )
     iops = ImageOps(contrib_id=contrib_id)
+    # FIXME: TODO: Till the VRAM + concurrency issue is fixed, skipping image checks.
     iops.check_images()
+    # cel_logger.info(
+    #     f"post_save_contrib_imageops: Finished checking images for contrib_id: {contrib_id}."
+    # )
     cel_logger.info(
-        f"post_save_contrib_imageops: Finished checking images for contrib_id: {contrib_id}."
+        f"Skipping image checks for contrib_id: {contrib_id} due to VRAM + concurrency issues. FIXME:"
     )
 
+    # FIXME: TODO: MESHOPS_CONTRIB_DELAY = 0.1 (6 minutes), till the image checks are fixed.
     # Create mesh after MESHOPS_CONTRIB_DELAY hours
     cel_logger.info(
         f"post_save_contrib_imageops: Will trigger MeshOps for {contrib_id} after {MESHOPS_CONTRIB_DELAY} hours..."
@@ -99,15 +102,6 @@ def db_cleanup_task():
     """
     cln_logger = Logger(name="db_cleanup", log_path=LOG_DIR)
     cln_logger.info("db_cleanup_task: Cleaning up database...")
-    Contributor.objects.filter(contributions__isnull=True).delete()
-    cln_logger.info("db_cleanup_task: Cleaned up database.")
-
-
-# TODO: Remove later
-@app.task
-def create_move_leaderboard_task():
-    leaderboard_task()
-    return
 
 
 @app.on_after_finalize.connect
@@ -122,8 +116,8 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # TODO: Remove later
     # Calls create_move_leaderboard_task() every LEADERBOARD_INTERVAL.
-    sender.add_periodic_task(
-        LEADERBOARD_INTERVAL,
-        create_move_leaderboard_task.s(),
-        name="create_move_leaderboard_task",
-    )
+    # sender.add_periodic_task(
+    #     LEADERBOARD_INTERVAL,
+    #     create_move_leaderboard_task.s(),
+    #     name="create_move_leaderboard_task",
+    # )

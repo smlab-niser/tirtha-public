@@ -16,10 +16,13 @@ class ContributionsInline(admin.TabularInline):
         url = reverse("admin:tirtha_contribution_change", args=[obj.ID])
         return mark_safe(f'<a href="{url}">{obj.ID}</a>')
 
-    contribution_link.short_description = "Link to Contribution"
+    contribution_link.short_description = "Contribution Link"
 
     model = Contribution
-    readonly_fields = ("contribution_ts", "contribution_link", "processed")
+    readonly_fields = (
+        "contribution_ts",
+        "contribution_link",
+    )  # FIXME: Add "processed"
     fields = ("ID", "contribution_ts", "contribution_link", "processed")
     extra = 0
     max_num = 0
@@ -209,6 +212,34 @@ class ContributorAdmin(admin.ModelAdmin):
 
     image_count.short_description = "Total Image Count"
 
+    @admin.action(description="Activate selected contributors")
+    def activate_contributors(self, request, queryset):
+        updated = queryset.update(active=True)
+        self.message_user(
+            request,
+            ngettext(
+                "%d contributor was successfully activated.",
+                "%d contributors were successfully activated.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Deactivate selected contributors")
+    def deactivate_contributors(self, request, queryset):
+        updated = queryset.update(active=False)
+        self.message_user(
+            request,
+            ngettext(
+                "%d contributor was successfully deactivated.",
+                "%d contributors were successfully deactivated.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
     @admin.action(description="Ban selected contributors")
     def ban_contributors(self, request, queryset):
         updated = queryset.update(banned=True)
@@ -237,7 +268,12 @@ class ContributorAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-    actions = [ban_contributors, unban_contributors]
+    actions = [
+        activate_contributors,
+        deactivate_contributors,
+        ban_contributors,
+        unban_contributors,
+    ]
     readonly_fields = (
         "ID",
         "created_at",
@@ -251,6 +287,7 @@ class ContributorAdmin(admin.ModelAdmin):
                     "ID",
                     ("created_at", "updated_at"),
                     ("name", "email"),
+                    "active",
                     "banned",
                     "ban_reason",
                 )
@@ -258,7 +295,10 @@ class ContributorAdmin(admin.ModelAdmin):
         ),
     )
     inlines = [ContributionInlineContributor]
-    list_filter = ("banned",)
+    list_filter = (
+        "active",
+        "banned",
+    )
     list_display = (
         "ID",
         "name",
@@ -266,6 +306,7 @@ class ContributorAdmin(admin.ModelAdmin):
         "updated_at",
         "contrib_count",
         "image_count",
+        "active",
         "banned",
     )
     list_per_page = 50
@@ -288,14 +329,19 @@ class ImageInlineContribution(admin.TabularInline):
         url = reverse("admin:tirtha_image_change", args=[obj.ID])
         return mark_safe(f'<a href="{url}">{obj.ID}</a>')
 
-    image_link.short_description = "Link to Image"
+    image_link.short_description = "Image Link"
+
+    def image_label(self, obj):
+        return obj.label.upper()
+
+    image_label.short_description = "Label"
 
     model = Image
-    readonly_fields = ("get_image", "image_link")
+    readonly_fields = ("get_image", "image_link", "image_label")
     fields = (
-        "ID",
-        "get_image",
         "image_link",
+        "get_image",
+        "image_label",
     )
     extra = 0
     max_num = 0
@@ -319,12 +365,27 @@ class ContributionAdmin(admin.ModelAdmin):
 
     images_good_count.short_description = "Good Image Count"
 
+    @admin.action(description="Mark selected contributions as processed")
+    def mark_processed(self, request, queryset):
+        updated = queryset.update(processed=True)
+        self.message_user(
+            request,
+            ngettext(
+                "%d contribution was successfully marked as processed.",
+                "%d contributions were successfully marked as processed.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    actions = [mark_processed]
     readonly_fields = (
         "ID",
         "mesh",
         "contributor",
         "contributed_at",
-        "processed",
+        # "processed",
         "processed_at",
         "image_count",
         "images_good_count",
@@ -353,9 +414,9 @@ class ContributionAdmin(admin.ModelAdmin):
         "processed",
     )
     list_per_page = 50
-    inlines = [
-        ImageInlineContribution,
-    ]
+    # inlines = [
+    #     ImageInlineContribution,
+    # ]
 
 
 @admin.register(Image)
@@ -384,11 +445,14 @@ class ImageAdmin(admin.ModelAdmin):
         )
         return mark_safe(f'<a href="{url}">{obj.contribution.contributor.name}</a>')
 
-    get_contributor_link.short_description = "Link to Contributor"
+    get_contributor_link.short_description = "Contributor Link"
 
     @admin.action(description="Mark selected images as Good")
     def mark_good(self, request, queryset):
-        updated = queryset.update(label="good")
+        updated = queryset.update(
+            label="good"
+        )  # FIXME: Not working because queryset.update does not trigger pre_save/post_save signals
+        # https://stackoverflow.com/questions/1693145/django-signal-on-queryset-update/ FIXME:
         self.message_user(
             request,
             ngettext(
@@ -459,7 +523,7 @@ class ImageAdmin(admin.ModelAdmin):
     )
     list_filter = ("label",)
     list_display = ("ID", "created_at", "contribution", "label", "get_thumbnail")
-    list_per_page = 100
+    list_per_page = 200
 
 
 class ImageInlineRun(admin.TabularInline):
@@ -468,8 +532,24 @@ class ImageInlineRun(admin.TabularInline):
 
     """
 
+    # def get_image(self, obj): # FIXME:
+    #     return mark_safe(
+    #         f'<img src="{obj.url}" style="width: 400px; height: 400px">'
+    #     )
+
+    # get_image.short_description = "Preview"
+
+    def image_link(self, obj):
+        url = reverse("admin:tirtha_image_change", args=[obj.image.ID])
+        return mark_safe(f'<a href="{url}">{obj.image.ID}</a>')
+
+    image_link.short_description = "Image Link"
+
     model = Run.images.through
+    readonly_fields = ("image_link",)
+    fields = ("image_link",)
     extra = 0
+    can_delete = False
 
 
 class ContributorInlineRun(admin.TabularInline):
@@ -535,7 +615,9 @@ class RunAdmin(admin.ModelAdmin):
         "ark",
     )
     list_per_page = 50
-    inlines = [ImageInlineRun, ContributorInlineRun]
+    inlines = [
+        ContributorInlineRun
+    ]  # ImageInlineRun, FIXME: Too many images lead to 400 (Bad Request)
 
 
 @admin.register(ARK)

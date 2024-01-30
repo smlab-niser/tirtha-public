@@ -1,11 +1,22 @@
 <footer>
+    {% load static %}
     <p id="footer-links">
-        <a href="https://github.com/smlab-niser/tirtha-public" target="_blank">
+        <a href="https://arxiv.org/abs/2308.01246" target="_blank" title="Read the paper">
+            <span class="material-symbols-outlined footer-icons">
+                article
+            </span>
+        </a>
+        <a href="https://github.com/smlab-niser/tirtha-public" target="_blank" title="View the source code">
             <span class="material-symbols-outlined footer-icons">
                 code_blocks
             </span>
         </a>
-        <a href="mailto:project.tirtha@niser.ac.in">
+        <a href="https://matrix.to/#/#tirtha:matrix.org" target="_blank" title="Join our Matrix room">
+            <span class="material-symbols-outlined footer-icons">
+                forum
+            </span>
+        </a>
+        <a href="mailto:project.tirtha@niser.ac.in" title="Contact us">
             <span class="material-symbols-outlined footer-icons">
                 mail
             </span>
@@ -13,18 +24,15 @@
     </p>
     <p id="footer-lic-icons">
         <a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">
-            {% load static %}
-            <img alt="Creative Commons License" src="{% static 'media/by-nc-sa.svg' %}" alt="CC BY-NC-SA 4.0">
+            <img alt="Creative Commons License CC BY-NC-SA 4.0" src="{% static 'media/by-nc-sa.svg' %}">
         </a>
         <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">
-            {% load static %}
-            <img alt="Creative Commons License" src="{% static 'media/by-nc-nd.svg' %}" alt="CC BY-NC-ND 4.0">
+            <img alt="Creative Commons License CC BY-NC-ND 4.0" src="{% static 'media/by-nc-nd.svg' %}">
         </a>
     </p>
-    <p>
-        This project is funded by
-        <a href="https://www.lafondation3ds.org/" target="_blank">La Fondation Dassault Systèmes</a>.
-    </p>
+    <a href="https://www.lafondation3ds.org/" target="_blank">
+        <img id="footer-dassault-logo" alt="This project is funded by La Fondation Dassault Systèmes" src="{% static 'media/logos/lfds-logo-light.webp' %}">
+    </a>
     <address>
         &copy; 2023 Project Tirtha,
         <a href="https://www.niser.ac.in/~smishra/" target="_blank">Subhankar Mishra's Lab</a>,<br>

@@ -1,4 +1,4 @@
-# Place this file in /etc/nginx/sites-available/ and symlink to /etc/nginx/sites-enabled/ after editing
+# NOTE: Place this file in /etc/nginx/sites-available/ and symlink to /etc/nginx/sites-enabled/ after editing
 server {
     listen 80;
     server_name <server_name>; # CHANGEME: e.g. tirtha.niser.ac.in

@@ -71,6 +71,9 @@
             <div id="expand" class="material-symbols-outlined">
                 fullscreen
             </div>
+            {% comment %} <span id="contract" class="material-symbols-outlined">
+                fullscreen_exit
+            </span> {% endcomment %}
             <div id="menu" class="material-symbols-outlined">
                 menu
             </div>
@@ -79,12 +82,16 @@
                 high_quality
             </div> {% endcomment %}
         </div>
-        <a id="beta-banner" href="https://github.com/smlab-niser/tirtha-public/issues" target="_blank">
-            <span class="material-symbols-outlined">
-                bug_report
+        {% comment %} <a id="top-banner" href="javascript:;"> {% endcomment %}
+            {% comment %} target="_blank"> {% endcomment %}
+            {% comment %} <span class="material-symbols-outlined">
+                trophy
+            </span> {% endcomment %}
+            {% comment %} <span class="material-symbols-outlined" style="margin-right: 0.2rem;">
+                move_up
             </span>
-            Report bugs / perf issues
-        </a>
+            Site Migration in Progress {% endcomment %}
+        {% comment %} </a> {% endcomment %}
         {% include "tirtha/modelViewer.html" %}
         <div class="controls">
             <button id="info-btn" class="buttons">
