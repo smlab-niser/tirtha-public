@@ -1,8 +1,38 @@
 <h1 align="center">
-    <img src="https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/static/media/logos/tirtha_logo.png" width=27 height=27>
-    $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$
+    <picture>
+        <source srcset="./media/images/tirtha-logo-dark.webp" media="(prefers-color-scheme: dark)">
+        <img src="./media/images/tirtha-logo-light.webp" width=27 height=27>
+        </picture>
+    <!-- $\color{#ff4c40}{\textrm{Project Tirtha [Beta]}}$ -->
+    Project Tirtha [Beta]
 </h1>
 
+<div align="center">
+    <a href="https://www.niser.ac.in" target="_blank">
+        <picture>
+            <source srcset="./media/images/niser-logo-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/niser-logo-light.webp" width=150 height=150>
+        </picture>
+    </a>
+    <a href="https://www.lafondation3ds.org/" target="_blank">
+        <picture>
+            <source srcset="./media/images/lfds-logo-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/lfds-logo-light.webp" width=200 height=150>
+        </picture>
+    </a>
+    <a href="https://odisha.gov.in/explore-odisha/state-archaeology" target="_blank">
+        <picture>
+            <source srcset="./media/images/odisha-logo-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="./media/images/odisha-logo-light.webp" width=130 height=150>
+        </picture>
+    </a>
+</div>
+
+---
+
+[![Signal Group](https://img.shields.io/badge/Signal-%23039BE5.svg?&style=for-the-badge&logo=Signal&logoColor=white)](https://signal.group/#CjQKIN_Ry9rBYUZJn8pLEkfWMAkZvO2FGopPalXsWPMZauXyEhBT1GdJYb5C_PJV0qE5VTLj) ![Element Chat Room](https://img.shields.io/matrix/tirtha%3Amatrix.org?style=for-the-badge&logo=element) ![GitHub Discussions](https://img.shields.io/github/discussions/smlab-niser/tirtha-public?style=for-the-badge&logo=github)
+
+---
 [Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
 3D models of heritage sites using crowdsourced images. The word *Tirtha* is Sanskrit
 for "a place of pilgrimage", and is commonly used to refer to the sacred sites of
@@ -17,6 +47,15 @@ and is under active development. All contributions are welcome. Please read
 [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 See [Citation](#citation) for information on how to cite this project.
+
+## System Architecture
+
+<picture>
+    <source srcset="./media/images/architecture-dark.webp" media="(prefers-color-scheme: dark)">
+    <img src="./media/images/architecture-light.webp" alt="Tirtha Broad Architecture">
+</picture>
+
+[See the paper](#citation) for more details.
 
 ## Requirements
 ### Hardware
@@ -74,8 +113,8 @@ See [Citation](#citation) for information on how to cite this project.
 * For other Python requirements, see [`requirements.txt`](./requirements.txt).
 
 ## Deployment / Development Setup
-
-### Basic Setup
+* ***Dockerfile to be updated***.
+### Manual Setup
 - Clone the repository and `cd` to it.
 - Create a virtual environment and activate it.
 - Install the system packages as listed under [`Requirements` > `System Packages`](#system-packages).
@@ -113,7 +152,7 @@ See [Citation](#citation) for information on how to cite this project.
 - Here, `--max-tasks-per-child=1` is used to avoid high memory consumption; `--beat` is used to start the beat scheduler; and `-P threads` is used to use threads instead of processes, in order to avoid conflicts with `multiprocessing`. You can also use the `-D` flag to run the worker in the background. For logging, you can use the `-f` flag to specify a log file. See `celery worker --help` for more details.
 
 ## Citation
-Please cite the following paper if you use this software in your work (arXiv / ACM link coming soon):
+Please cite the following paper if you use this software in your work ([arXiv](https://arxiv.org/abs/2308.01246) | [Papers with Code](https://paperswithcode.com/paper/tirtha-an-automated-platform-to-crowdsource) | [ACM Digital Library](https://dl.acm.org/doi/10.1145/3611314.3615904)):
 ```bibtex
 @inproceedings{tirtha,
     title={Tirtha - An Automated Platform to Crowdsource Images and Create 3D Models of Heritage Sites},
@@ -151,7 +190,7 @@ We also thank Odisha State Archaeology for their support.
 
 ---
 
-&copy; 2023 Project Tirtha,
+&copy; 2023-24 Project Tirtha,
 [Subhankar Mishra's Lab](https://www.niser.ac.in/~smishra/),
 [School of Computer Sciences](https://www.niser.ac.in/scps/), NISER.
 All rights reserved.
