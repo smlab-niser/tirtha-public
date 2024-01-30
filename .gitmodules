@@ -1,3 +1,6 @@
 [submodule "tirtha_bk/nn_models/nsfw_model"]
 	path = tirtha_bk/nn_models/nsfw_model
 	url = https://github.com/GantMan/nsfw_model.git
+[submodule "tirtha_bk/nn_models/MANIQA"]
+	path = tirtha_bk/nn_models/MANIQA
+	url = https://github.com/IIGROUP/MANIQA.git
