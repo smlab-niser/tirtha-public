@@ -4,6 +4,7 @@
 __pycache__/
 data/
 paper/
+3dgs/
 
 # Folders - django
 migrations/
