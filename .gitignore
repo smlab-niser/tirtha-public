@@ -32,4 +32,4 @@ todo.md
 *.log
 cert/
 gunicorn/
-nn_models/
+# nn_models/
