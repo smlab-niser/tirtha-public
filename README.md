@@ -33,6 +33,11 @@
 [![Signal Group](https://img.shields.io/badge/Signal-%23039BE5.svg?&style=for-the-badge&logo=Signal&logoColor=white)](https://signal.group/#CjQKIN_Ry9rBYUZJn8pLEkfWMAkZvO2FGopPalXsWPMZauXyEhBT1GdJYb5C_PJV0qE5VTLj) [![Element Chat Room](https://img.shields.io/matrix/tirtha%3Amatrix.org?style=for-the-badge&logo=element)](https://matrix.to/#/#tirtha:matrix.org) [![GitHub Discussions](https://img.shields.io/github/discussions/smlab-niser/tirtha-public?style=for-the-badge&logo=github)](https://github.com/smlab-niser/tirtha-public/discussions)
 
 ---
+
+> [!important]
+> **Winter of Code 2024 / Google Summer of Code aspirants**, please go here for the project topics: https://docs.google.com/document/d/1p5UxgoKBhy5pQh3fXX00BftcmJxzxdFLOkrB3Hibfm4.
+
+---
 [Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
 3D models of heritage sites using crowdsourced images. The word *Tirtha* is Sanskrit
 for "a place of pilgrimage", and is commonly used to refer to the sacred sites of
