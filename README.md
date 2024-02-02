@@ -196,24 +196,30 @@ See [Citation](#citation) for information on how to cite this project. A [CITATI
     ├── venv
     ├── <other_files_&_dirs>
     └── tirtha_bk
-        ├── config
         ├── static
+        ├── tirtha_bk
+        ├── config  # <-- Nginx, Gunicorn & systemd configuration files (including for Docker)
+        │   ├── tirthad.docker.service
+        │   ├── tirthad.docker.socket
+        │   ├── tirtha.docker.nginx
+        │   └── tirtha.nginx
         ├── tirtha
-        └── tirtha_bk
-            ├── gunicorn
-            ├── gunicorn.conf.py  # <-- Edited & renamed config file
-            └── gunicorn.env
-        └── gunicorn
-            ├── local_settings.py  # <-- Edited & renamed config file
-        └── bin21  # <-- Meshroom binaries & libraries
-            ├── <aliceVision_* binaries>
-            ├── <lib*.so* libraries>
-            ├── cameraSensors.db
-            └── vlfeat_K80L3.SIFT.tree
+        │   └── templates  # <-- Templates for the website including error pages
+        │       ├── 403.html 
+        │       └── 404.html
+        │       └── 500.html
+        │       └── 503.html
+        ├── gunicorn
+        │   └── gunicorn.conf.py  # <-- Edited & renamed config file
+        ├── bin21  # <-- Meshroom binaries & libraries
+        │   ├── <aliceVision_* binaries>
+        │   ├── <lib*.so* libraries>
+        │   ├── cameraSensors.db
+        │   └── vlfeat_K80L3.SIFT.tree
         └── nn_models  # <-- Submodules / NN models
             ├── __init__.py
-            └── MANIQA
-                └── ckpt_kadid10k.pt  # <-- Weights for MANIQA placed here
+            ├── MANIQA
+            │   └── ckpt_kadid10k.pt  # <-- Weights for MANIQA placed here
             └── nsfw_model
     ```
 11. Install [`obj2gltf`](https://github.com/CesiumGS/obj2gltf) & [`gltfpack`](https://github.com/zeux/meshoptimizer/):
@@ -240,6 +246,13 @@ See [Citation](#citation) for information on how to cite this project. A [CITATI
         sudo mkdir /var/www/tirtha/archive
         sudo mkdir /var/www/tirtha/archive/archives
         sudo mkdir /var/www/tirtha/archive/db_backups
+        sudo mkdir /var/www/tirtha/errors
+
+        # Copy 403.html, 404.html, 500.html, 503.html to /var/www/tirtha/errors/
+        sudo cp ./tirtha/templates/tirtha/config/403.html /var/www/tirtha/errors/
+        sudo cp ./tirtha/templates/tirtha/config/404.html /var/www/tirtha/errors/
+        sudo cp ./tirtha/templates/tirtha/config/500.html /var/www/tirtha/errors/
+        sudo cp ./tirtha/templates/tirtha/config/503.html /var/www/tirtha/errors/
 
         # Change permission & ownership of the directories to the system user
         sudo chmod -R 755 /var/www/tirtha/
@@ -253,10 +266,15 @@ See [Citation](#citation) for information on how to cite this project. A [CITATI
         ├── archive
         │   ├── archives
         │   └── db_backups
-        └── prod
-            ├── logs
-            ├── media
-            └── static
+        ├── prod
+        │    ├── logs
+        │    ├── media
+        │    └── static
+        └── errors
+            ├── 403.html
+            ├── 404.html
+            ├── 500.html
+            └── 503.html
         ```
     - Besides the file and folder paths, you will need to add the database credentials, RabbitMQ credentials, etc. in `local_settings.py`. Use the values from the previous steps.
     - To set up "Sign in with Google", you will need a `GOOGLE_CLIENT_ID`. See [here](https://developers.google.com/identity/gsi/web/guides/overview) for more details. Or, comment out the associated code to disable this feature.
@@ -304,8 +322,7 @@ See [Citation](#citation) for information on how to cite this project. A [CITATI
     celery -A tirtha worker -l INFO --max-tasks-per-child=1 -P threads --beat
     ```
     Here, `--max-tasks-per-child=1` helps avoid high memory consumption; `--beat` is used to start the beat scheduler; and `-P threads` forces celery to use threads instead of processes, in order to avoid conflicts with `multiprocessing`. You can also use the `-D` flag to run the worker in the background. For logging, you can use the `-f` flag to specify a log file. See `celery worker --help` for more details.
-18. To set up systemd socket and service for Tirtha, follow the instructions [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-22-04#creating-systemd-socket-and-service-files-for-gunicorn).
-
+18. To set up systemd socket and service for Tirtha, follow the instructions [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-22-04#creating-systemd-socket-and-service-files-for-gunicorn). The `config` folder (see above) contains examples of the required files.
 
 ## Citation
 Please cite the following paper if you use this software in your work ([arXiv](https://arxiv.org/abs/2308.01246) | [Papers with Code](https://paperswithcode.com/paper/tirtha-an-automated-platform-to-crowdsource) | [ACM Digital Library](https://dl.acm.org/doi/10.1145/3611314.3615904)):

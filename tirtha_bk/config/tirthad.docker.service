@@ -1,0 +1,19 @@
+[Unit]
+Description=Project Tirtha on Docker
+Requires=tirthad.socket
+After=syslog.target network.target
+
+[Service]
+Type=simple
+PIDFile=/tirtha-public/tirtha_bk/gunicorn/gunicorn.pid
+User=tirthadocker
+Group=tirthadocker
+EnvironmentFile=/tirtha-public/tirtha_bk/gunicorn/gunicorn.env
+WorkingDirectory=/tirtha-public/tirtha_bk/
+ExecStart=/venv/bin/gunicorn --config /tirtha-public/tirtha_bk/gunicorn/gunicorn.conf.py --bind unix:/run/tirthad.sock tirtha_bk.wsgi:application
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

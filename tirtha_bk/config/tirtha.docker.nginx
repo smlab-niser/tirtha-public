@@ -1,0 +1,37 @@
+# NOTE: Place this file in /etc/nginx/sites-available/ and symlink to /etc/nginx/sites-enabled/ after editing
+server {
+    listen 80;
+    server_name localhost; # CHANGEME:
+
+    location /static {
+        alias /var/www/tirtha/prod/static; # CHANGEME:
+        autoindex off;
+    }
+
+    location /media {
+        alias /var/www/tirtha/prod/media; # CHANGEME:
+        autoindex off;
+    }
+
+    location /403.html {
+	alias /var/www/tirtha/errors/403.html; # CHANGEME:
+    }
+    error_page 403             /403.html;
+
+    location /404.html {
+        alias /var/www/tirtha/errors/404.html; # CHANGEME:
+    }
+    error_page 404             /404.html;
+
+    location /500.html {
+        alias /var/www/tirtha/errors/500.html; # CHANGEME:
+    }
+    error_page 500             /500.html;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/tirthad.sock; # CHANGEME: 
+    }
+
+    return 301 https://$server_name$request_uri;
+}
