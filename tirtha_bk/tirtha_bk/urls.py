@@ -19,10 +19,13 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+
+PRE_URL = "project/tirtha/"
+
 urlpatterns = [
     path("", include("tirtha.urls")),
-    path("admin/", admin.site.urls),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    path(PRE_URL + "admin/", admin.site.urls),
+] + static(PRE_URL + settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Only serve in testing. Otherwise use gunicorn or nginx
 if settings.DEBUG:

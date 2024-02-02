@@ -177,7 +177,7 @@ $("#search").on('input', function (e) {
 
     $.ajax({
         type: "GET",
-        url: "/search/",
+        url: "/project/tirtha/search/",
         data: {"query": $(this).val()},
         dataType: "json",
         success: function (resp) {
@@ -185,7 +185,7 @@ $("#search").on('input', function (e) {
                 $(".models").empty(); // Clear list
                 $.each(resp.meshes_json, function(mesh) {
                     $(".models").append(
-                        "<a class='model-previews' href='/models/"
+                        "<a class='model-previews' href='/project/tirtha/models/"
                         + resp.meshes_json[mesh].verbose_id +
                         "/'><div class='model-status' style='background-color: "
                         + resp.meshes_json[mesh].completed_col +
@@ -214,11 +214,11 @@ $("#search").on('input', function (e) {
 $("#select-run").on("change", function (e) {
     e.preventDefault();
     var runark = $(this).val();
-    var page_vid = window.location.pathname.split("/")[2];
+    var page_vid = window.location.pathname.split("/")[4];
 
     $.ajax({
         type: "GET",
-        url: "/loadRun/",
+        url: "/project/tirtha/loadRun/",
         data: { "runark" : runark },
         success: function (resp) {
             if (resp.run != null) {
@@ -235,10 +235,11 @@ $("#select-run").on("change", function (e) {
                 $("#images-count").html("Images: " + resp.run.images_count);
                 $("#run-ark-link").html(resp.run.run_ark);
                 $("#run-ark-link").attr("href", resp.run.run_ark_url);
+
                 // Change page title
                 $(doc).attr("title", "Project Tirtha | " + resp.run.mesh_name);
                 // Change page url
-                window.history.pushState("", "", window.location.origin + "/models/" + page_vid + "/" + resp.run.runid + "/");
+                window.history.pushState("", "", window.location.origin + "/project/tirtha/models/" + page_vid + "/" + resp.run.runid + "/");
             }
             else {
                 console.log("No matching runs were found.");
@@ -255,13 +256,14 @@ $("#select-run").on("change", function (e) {
 // ❗Handle mesh load❗
 $(".model-previews").on('click', function(e) {
     e.preventDefault();
-    var vid = $(this).attr("href").split("/")[2];
-    var page_vid = window.location.pathname.split("/")[2];
+    var vid = $(this).attr("href").split("/")[4];
+    var page_vid = window.location.pathname.split("/")[3];
+
     var modStat = $(this).find(".model-status");
 
     $.ajax({
         type: "GET",
-        url: "/loadMesh/",
+        url: "/project/tirtha/loadMesh/",
         data: { "vid" : vid },
         success: function (resp) {
             if (resp.mesh != null) {
@@ -312,7 +314,7 @@ $(".model-previews").on('click', function(e) {
                     // Change page title & url
                     $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
                     if (vid != page_vid) {
-                        window.history.pushState("", "", window.location.origin + "/models/" + vid);
+                        window.history.pushState("", "", window.location.origin + "/project/tirtha/models/" + vid);
                     }
                 }
             }
@@ -676,7 +678,7 @@ var signInStatus = $('#signin-status');
 function onGoogleSignIn(creds) {
     $.ajax({
         type: "GET",
-        url: "/googleAuth/",
+        url: "/project/tirtha/googleAuth/",
         data: { "token" : creds.credential },
         success: function (resp) {
             signInStatus.html(resp.output);
@@ -733,7 +735,7 @@ uploadForm.on('submit', function(e) {
     $("#upload-result").html("Please wait! Checking...");
     $.ajax({
         type: "GET",
-        url: "/preUpload/",
+        url: "/project/tirtha/preUpload/",
         data: { "mesh_vid" : mesh_vid },
         success: function (resp) {
             $('#upload-result').html(resp.output);
@@ -761,7 +763,7 @@ uploadForm.on('submit', function(e) {
         $("#upload-result").html("Please wait! Uploading...");
         $.ajax({
             type: "POST",
-            url: "/upload/",
+            url: "/project/tirtha/upload/",
             data: formData,
             dataType: "json",
             processData: false,

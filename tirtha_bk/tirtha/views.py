@@ -20,6 +20,8 @@ from .models import ARK, Contribution, Contributor, Image, Mesh, Run
 from .tasks import post_save_contrib_imageops
 from .utilsark import parse_ark
 
+
+PRE_URL = settings.PRE_URL
 GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
@@ -106,7 +108,7 @@ def index(request, vid=None, runid=None):
                     contribution__mesh=mesh
                 ).count(),
                 "orientation": f"{mesh.rotaZ}deg {mesh.rotaX}deg {mesh.rotaY}deg",
-                "src": f"/static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
+                "src": f"static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
             }
         )
 
@@ -266,7 +268,7 @@ def loadMesh(request):
                 "has_run": True if run else False,
                 "src": run.ark.url
                 if run
-                else f"/static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
+                else PRE_URL + f"static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
                 "prev_url": mesh.preview.url,
                 "name": mesh.name,
                 "desc": mesh.description,

@@ -35,10 +35,15 @@
 ---
 
 > [!important]
+> Please go here for the new Tirtha site: https://smlab.niser.ac.in/project/tirtha/.
+
+---
+
+> [!important]
 > **Winter of Code 2024 / Google Summer of Code aspirants**, please go here for the project topics: https://docs.google.com/document/d/1p5UxgoKBhy5pQh3fXX00BftcmJxzxdFLOkrB3Hibfm4.
 
 ---
-[Project Tirtha](https://tirtha.niser.ac.in) is an *academic initiative* to create
+[Project Tirtha](https://smlab.niser.ac.in/project/tirtha/) is an *academic initiative* to create
 3D models of heritage sites using crowdsourced images. The word *Tirtha* is Sanskrit
 for "a place of pilgrimage", and is commonly used to refer to the sacred sites of
 Hinduism. Our goal is to preserve and showcase the beauty and cultural significance
@@ -165,10 +170,10 @@ See [Citation](#citation) for information on how to cite this project. A [CITATI
     pip install -e ./nn_models/nsfw_model
     pip install protobuf==3.20.3  # NOTE: Required by nsfw_model
     ```
-8. Install the [Meshroom 2021.1.0](https://github.com/alicevision/Meshroom/releases/tag/v2021.1.0) binaries & libraries, after downloading it from [here](https://tirtha.niser.ac.in/static/artifacts/MR2021.1.0.zip) (**hosted by us**).
+8. Install the [Meshroom 2021.1.0](https://github.com/alicevision/Meshroom/releases/tag/v2021.1.0) binaries & libraries, after downloading it from [here](https://smlab.niser.ac.in/project/tirtha/static/artifacts/MR2021.1.0.zip) (**hosted by us**).
     ```sh
     # MR2021.1.0.zip contains the required Meshroom 2021.1.0 binaries & libraries in one zipped archive.
-    wget https://tirtha.niser.ac.in/static/artifacts/MR2021.1.0.zip
+    wget https://smlab.niser.ac.in/project/tirtha/static/artifacts/MR2021.1.0.zip
 
     # Extract the binaries & libraries and place them in the `bin21` directory.
     unzip MR2021.1.0.zip
@@ -177,10 +182,10 @@ See [Citation](#citation) for information on how to cite this project. A [CITATI
 
     # NOTE: We will upgrade to Meshroom 2023.x.x soon.
     ```
-9. Download the checkpoint for MANIQA from [here](https://tirtha.niser.ac.in/static/artifacts/ckpt_kadid10k.pt) (**hosted by us**) and place it in `./nn_models/MANIQA/`.
+9. Download the checkpoint for MANIQA from [here](https://smlab.niser.ac.in/project/tirtha/static/artifacts/ckpt_kadid10k.pt) (**hosted by us**) and place it in `./nn_models/MANIQA/`.
     ```sh
     # Checkpoint hosted by us
-    wget https://tirtha.niser.ac.in/static/artifacts/ckpt_kadid10k.pt
+    wget https://smlab.niser.ac.in/project/tirtha/static/artifacts/ckpt_kadid10k.pt
 
     # Place the checkpoint in the MANIQA submodule
     mv ckpt_kadid10k.pt ./nn_models/MANIQA/
@@ -314,7 +319,7 @@ Please cite the following paper if you use this software in your work ([arXiv](h
     address = {New York, NY, USA},
     url = {https://doi.org/10.1145/3611314.3615904},
     doi = {10.1145/3611314.3615904},
-    abstract = {Digital preservation of Cultural Heritage (CH) sites is crucial to protect them against damage from natural disasters or human activities. Creating 3D models of CH sites has become a popular method of digital preservation thanks to advancements in computer vision and photogrammetry. However, the process is time-consuming, expensive, and typically requires specialized equipment and expertise, posing challenges in resource-limited developing countries. Additionally, the lack of an open repository for 3D models hinders research and public engagement with their heritage. To address these issues, we propose Tirtha, a web platform for crowdsourcing images of CH sites and creating their 3D models. Tirtha utilizes state-of-the-art Structure from Motion (SfM) and Multi-View Stereo (MVS) techniques. It is modular, extensible and cost-effective, allowing for the incorporation of new techniques as photogrammetry advances. Tirtha is accessible through a web interface at https://tirtha.niser.ac.in and can be deployed on-premise or in a cloud environment. In our case studies, we demonstrate the pipeline’s effectiveness by creating 3D models of temples in Odisha, India, using crowdsourced images. These models are available for viewing, interaction, and download on the Tirtha website. Our work aims to provide a dataset of crowdsourced images and 3D reconstructions for research in computer vision, heritage conservation, and related domains. Overall, Tirtha is a step towards democratizing digital preservation, primarily in resource-limited developing countries.},
+    abstract = {Digital preservation of Cultural Heritage (CH) sites is crucial to protect them against damage from natural disasters or human activities. Creating 3D models of CH sites has become a popular method of digital preservation thanks to advancements in computer vision and photogrammetry. However, the process is time-consuming, expensive, and typically requires specialized equipment and expertise, posing challenges in resource-limited developing countries. Additionally, the lack of an open repository for 3D models hinders research and public engagement with their heritage. To address these issues, we propose Tirtha, a web platform for crowdsourcing images of CH sites and creating their 3D models. Tirtha utilizes state-of-the-art Structure from Motion (SfM) and Multi-View Stereo (MVS) techniques. It is modular, extensible and cost-effective, allowing for the incorporation of new techniques as photogrammetry advances. Tirtha is accessible through a web interface at https://smlab.niser.ac.in/project/tirtha/ and can be deployed on-premise or in a cloud environment. In our case studies, we demonstrate the pipeline’s effectiveness by creating 3D models of temples in Odisha, India, using crowdsourced images. These models are available for viewing, interaction, and download on the Tirtha website. Our work aims to provide a dataset of crowdsourced images and 3D reconstructions for research in computer vision, heritage conservation, and related domains. Overall, Tirtha is a step towards democratizing digital preservation, primarily in resource-limited developing countries.},
     booktitle = {Proceedings of the 28th International ACM Conference on 3D Web Technology},
     articleno = {11},
     numpages = {15},

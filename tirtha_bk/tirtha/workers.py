@@ -501,9 +501,9 @@ class MeshOps:
             f"Creating metadata for ARK for run {run.ID} for mesh {meshStr}..."
         )
         def_commit = (
-            "This ARK was generated & is managed by Project Tirtha (https://tirtha.niser.ac.in). "
-            + "We are committed to maintaining this ARK as per our Terms of Use (https://tirtha.niser.ac.in/#terms) "
-            + "and Privacy Policy (https://tirtha.niser.ac.in/#privacy)."
+            "This ARK was generated & is managed by Project Tirtha (https://smlab.niser.ac.in/project/tirtha/). "
+            + "We are committed to maintaining this ARK as per our Terms of Use (https://smlab.niser.ac.in/project/tirtha/#terms) "
+            + "and Privacy Policy (https://smlab.niser.ac.in/project/tirtha/#privacy)."
         )
 
         metadata = {

@@ -19,7 +19,7 @@ identifiers:
     value: 10.1145/3611314.3615904
     description: Conference Paper
 repository-code: 'https://github.com/smlab-niser/tirtha-public'
-url: 'https://tirtha.niser.ac.in'
+url: 'https://smlab.niser.ac.in/project/tirtha/'
 keywords:
   - open source
   - digital heritage
