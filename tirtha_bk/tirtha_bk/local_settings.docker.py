@@ -35,6 +35,7 @@ INSTALLED_APPS = [
 
 # Tirtha specific settings
 BASE_DIR = Path(__file__).resolve().parent.parent
+PRE_URL = "/"  # CHANGEME: e.g., "/tirtha/"
 
 PROD_DIR = "/var/www/tirtha/prod/"  # Short term storage for current runs # CHANGEME:
 LOG_DIR = f"{PROD_DIR}logs"
@@ -45,11 +46,11 @@ ARCHIVE_ROOT = f"{NFS_DIR}archives"
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]  # JS, CSS, images, favicon
-STATIC_URL = "/static/"
+STATIC_URL = "/" + PRE_URL + "/static/"
 STATIC_ROOT = os.path.join(PROD_DIR, "static")
 
 # Media files
-MEDIA_URL = "/media/"
+MEDIA_URL = PRE_URL + "media/"
 MEDIA_ROOT = f"{PROD_DIR}media"
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -72,7 +73,7 @@ SESSION_COOKIE_SECURE = True
 DB_NAME = "dbtirtha"  # CHANGEME:
 DB_USER = "dbtirthauser"  # CHANGEME:
 DB_PWD = "dbtirthapwd"  # CHANGEME:
-DB_HOST = "localhost"
+DB_HOST = "localhost" # CHANGEME: Try 0.0.0.0 if localhost does not work
 DB_PORT = ""
 
 DATABASES = {
@@ -113,7 +114,7 @@ OBJ2GLTF_PATH = "obj2gltf"  # NOTE: Ensure the binary is on system PATH
 GLTFPACK_PATH = "gltfpack"  # NOTE: Ensure the binary is on system PATH
 MESHOPS_MIN_IMAGES = 25  # Minimum number of images required to run meshops
 MESHOPS_CONTRIB_DELAY = (
-    1  # hour(s) - time to wait before running meshops after a new contribution
+    1  # hour(s) - CHANGEME: time to wait before running meshops after a new contribution
 )
 FILE_UPLOAD_MAX_MEMORY_SIZE = (
     10485760  # 10 MiB (each file max size - post compression)
