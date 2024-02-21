@@ -7,6 +7,7 @@ const modelArea = doc.getElementById('model-area');
 const model = doc.getElementById('model');
 const fControls = doc.getElementById('floating-controls');
 const infoBtn = doc.getElementById('info-btn');
+const PRE_URL = "" // TODO: Use env
 
 // ========================== FS START ==========================
 // ❗ Handle fullscreen❗
@@ -177,7 +178,7 @@ $("#search").on('input', function (e) {
 
     $.ajax({
         type: "GET",
-        url: "/project/tirtha/search/",
+        url: PRE_URL + "/search/",
         data: {"query": $(this).val()},
         dataType: "json",
         success: function (resp) {
@@ -185,7 +186,7 @@ $("#search").on('input', function (e) {
                 $(".models").empty(); // Clear list
                 $.each(resp.meshes_json, function(mesh) {
                     $(".models").append(
-                        "<a class='model-previews' href='/project/tirtha/models/"
+                        "<a class='model-previews' href='" + PRE_URL + "/models/"
                         + resp.meshes_json[mesh].verbose_id +
                         "/'><div class='model-status' style='background-color: "
                         + resp.meshes_json[mesh].completed_col +
@@ -218,7 +219,7 @@ $("#select-run").on("change", function (e) {
 
     $.ajax({
         type: "GET",
-        url: "/project/tirtha/loadRun/",
+        url: PRE_URL + "/loadRun/",
         data: { "runark" : runark },
         success: function (resp) {
             if (resp.run != null) {
@@ -239,7 +240,7 @@ $("#select-run").on("change", function (e) {
                 // Change page title
                 $(doc).attr("title", "Project Tirtha | " + resp.run.mesh_name);
                 // Change page url
-                window.history.pushState("", "", window.location.origin + "/project/tirtha/models/" + page_vid + "/" + resp.run.runid + "/");
+                window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + page_vid + "/" + resp.run.runid + "/");
             }
             else {
                 console.log("No matching runs were found.");
@@ -263,7 +264,7 @@ $(".model-previews").on('click', function(e) {
 
     $.ajax({
         type: "GET",
-        url: "/project/tirtha/loadMesh/",
+        url: PRE_URL + "/loadMesh/",
         data: { "vid" : vid },
         success: function (resp) {
             if (resp.mesh != null) {
@@ -314,7 +315,7 @@ $(".model-previews").on('click', function(e) {
                     // Change page title & url
                     $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
                     if (vid != page_vid) {
-                        window.history.pushState("", "", window.location.origin + "/project/tirtha/models/" + vid);
+                        window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + vid);
                     }
                 }
             }
@@ -678,7 +679,7 @@ var signInStatus = $('#signin-status');
 function onGoogleSignIn(creds) {
     $.ajax({
         type: "GET",
-        url: "/project/tirtha/googleAuth/",
+        url: PRE_URL + "/googleAuth/",
         data: { "token" : creds.credential },
         success: function (resp) {
             signInStatus.html(resp.output);
@@ -735,7 +736,7 @@ uploadForm.on('submit', function(e) {
     $("#upload-result").html("Please wait! Checking...");
     $.ajax({
         type: "GET",
-        url: "/project/tirtha/preUpload/",
+        url: PRE_URL + "/preUpload/",
         data: { "mesh_vid" : mesh_vid },
         success: function (resp) {
             $('#upload-result').html(resp.output);
@@ -763,7 +764,7 @@ uploadForm.on('submit', function(e) {
         $("#upload-result").html("Please wait! Uploading...");
         $.ajax({
             type: "POST",
-            url: "/project/tirtha/upload/",
+            url: PRE_URL + "/upload/",
             data: formData,
             dataType: "json",
             processData: false,

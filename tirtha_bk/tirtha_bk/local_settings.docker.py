@@ -35,7 +35,7 @@ INSTALLED_APPS = [
 
 # Tirtha specific settings
 BASE_DIR = Path(__file__).resolve().parent.parent
-PRE_URL = "/"  # CHANGEME: e.g., "/tirtha/"
+PRE_URL = ""  # CHANGEME: e.g., "/tirtha/"
 
 PROD_DIR = "/var/www/tirtha/prod/"  # Short term storage for current runs # CHANGEME:
 LOG_DIR = f"{PROD_DIR}logs"
@@ -46,7 +46,7 @@ ARCHIVE_ROOT = f"{NFS_DIR}archives"
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]  # JS, CSS, images, favicon
-STATIC_URL = "/" + PRE_URL + "/static/"
+STATIC_URL = PRE_URL + "static/"
 STATIC_ROOT = os.path.join(PROD_DIR, "static")
 
 # Media files
