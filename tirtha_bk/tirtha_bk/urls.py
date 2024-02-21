@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 
-PRE_URL = "project/tirtha/"
+PRE_URL = settings.PRE_URL
 
 urlpatterns = [
     path("", include("tirtha.urls")),

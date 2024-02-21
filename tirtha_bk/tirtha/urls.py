@@ -1,9 +1,10 @@
 from django.urls import path, re_path
+from django.conf import settings
 
 from . import views
 
 
-pre = "project/tirtha/"
+pre = settings.PRE_URL
 
 urlpatterns = [
     path(pre + "competition/", views.competition, name="competition"),  # NOTE: Order matters

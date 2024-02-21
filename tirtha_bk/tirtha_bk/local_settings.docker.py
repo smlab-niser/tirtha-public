@@ -17,7 +17,7 @@ TIME_ZONE = "Asia/Kolkata"  # CHANGEME:
 DEBUG = True  # NOTE: Set to False in production  # CHANGEME:
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1",]  # CHANGEME:
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]  # CHANGEME:
 
 # Application definition
 INSTALLED_APPS = [
@@ -62,19 +62,20 @@ ADMIN_NAME = "Tirtha Admin"  # CHANGEME:
 ADMIN_MAIL = "tadmin@example.com"  # CHANGEME:
 
 # Sign in with Google
+GOOGLE_LOGIN = False
 GOOGLE_CLIENT_ID = "<your_google_client_id>"  # CHANGEME: NOTE: TODO: Make optional
 COOKIE_EXPIRE_TIME = 3600  # 1 hour
 SESSION_COOKIE_SAMESITE = "Strict"
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True if GOOGLE_LOGIN else False
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 # NOTE: For help, see https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-22-04
 DB_NAME = "dbtirtha"  # CHANGEME:
 DB_USER = "dbtirthauser"  # CHANGEME:
-DB_PWD = "dbtirthapwd"  # CHANGEME:
-DB_HOST = "localhost" # CHANGEME: Try 0.0.0.0 if localhost does not work
-DB_PORT = ""
+DB_PWD = "docker"  # CHANGEME:
+DB_HOST = "db" # CHANGEME:
+DB_PORT = "5432"
 
 DATABASES = {
     "default": {
@@ -114,7 +115,7 @@ OBJ2GLTF_PATH = "obj2gltf"  # NOTE: Ensure the binary is on system PATH
 GLTFPACK_PATH = "gltfpack"  # NOTE: Ensure the binary is on system PATH
 MESHOPS_MIN_IMAGES = 25  # Minimum number of images required to run meshops
 MESHOPS_CONTRIB_DELAY = (
-    1  # hour(s) - CHANGEME: time to wait before running meshops after a new contribution
+    0.005  # 18 seconds for testing | Keep >= 1 hour(s) - CHANGEME: time to wait before running meshops after a new contribution
 )
 FILE_UPLOAD_MAX_MEMORY_SIZE = (
     10485760  # 10 MiB (each file max size - post compression)

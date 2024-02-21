@@ -22,6 +22,8 @@ from .utilsark import parse_ark
 
 
 PRE_URL = settings.PRE_URL
+GOOGLE_LOGIN = settings.GOOGLE_LOGIN
+ADMIN_MAIL = settings.ADMIN_MAIL
 GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
@@ -143,6 +145,11 @@ def index(request, vid=None, runid=None):
             )
 
     # Check if contributor is signed in
+    # For development only
+    if not GOOGLE_LOGIN:
+        token = "INSECURE-DEFAULT-TOKEN"
+        request.session["auth_token"] = token
+
     token = request.session.get("auth_token", None)
     if token:
         output, contrib = _signin(token)
@@ -170,6 +177,13 @@ def _signin(token, create=False):
         * If no, return success
 
     """
+    # For development only
+    if not GOOGLE_LOGIN:
+        # Return default contributor
+        contrib = Contributor.objects.get(email=ADMIN_MAIL)
+        output = f"Signed-in as {ADMIN_MAIL}."
+        return output, contrib
+
     contrib = None
     try:
         # Verify token
