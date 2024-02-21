@@ -123,8 +123,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = (
 DATA_UPLOAD_MAX_NUMBER_FILES = 1_000  # CHANGEME: Max number of files per upload
 
 ## ARK settings
-BASE_URL = "http://127.0.0.1"  # CHANGEME: NOTE: No trailing "/" | e.g., http://127.0.0.1
-ARK_NAAN = int("99999")  # CHANGEME: Integer | CHECK: https://arks.org/about/testing-arks/
-ARK_SHOULDER = "<your_ark_shoulder>"  # CHANGEME: | CHECK: https://arks.org/about/testing-arks/ # TODO: Make optional
+BASE_URL = "http://0.0.0.0:8000"  # CHANGEME: NOTE: No trailing "/" | e.g., http://127.0.0.1
+ARK_NAAN = int("999999")  # CHANGEME: Integer | NOTE: NAAN - 999999 does not exist; CHECK: https://arks.org/about/testing-arks/
+ARK_SHOULDER = "/a"  # CHANGEME: | CHECK: https://arks.org/about/testing-arks/ # TODO: Make optional
 FALLBACK_ARK_RESOLVER = "https://n2t.net"
-
