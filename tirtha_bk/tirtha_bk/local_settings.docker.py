@@ -113,7 +113,7 @@ NSFW_MODEL_DIRPATH = (
 MANIQA_MODEL_FILEPATH = BASE_DIR / "nn_models/MANIQA/ckpt_kadid10k.pt"
 OBJ2GLTF_PATH = "obj2gltf"  # NOTE: Ensure the binary is on system PATH
 GLTFPACK_PATH = "gltfpack"  # NOTE: Ensure the binary is on system PATH
-MESHOPS_MIN_IMAGES = 25  # Minimum number of images required to run meshops
+MESHOPS_MIN_IMAGES = 10  # CHANGEME: Minimum number of images required to run meshops
 MESHOPS_CONTRIB_DELAY = (
     0.005  # 18 seconds for testing | Keep >= 1 hour(s) - CHANGEME: time to wait before running meshops after a new contribution
 )
