@@ -9,15 +9,15 @@ from django.core.management.utils import get_random_secret_key
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_random_secret_key()  # CHANGEME: NOTE: Keep this secret
+SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())  # CHANGEME: NOTE: Keep this secret
 
-TIME_ZONE = "Asia/Kolkata"  # CHANGEME:
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Kolkata")  # CHANGEME:
 
 # SECURITY WARNING: do not run with debug turned on in production!
 DEBUG = True  # NOTE: Set to False in production  # CHANGEME:
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]  # CHANGEME:
+ALLOWED_HOSTS = ["localhost", "0.0.0.0", os.getenv("HOST_IP", "127.0.0.1")]  # CHANGEME:
 
 # Application definition
 INSTALLED_APPS = [
@@ -35,7 +35,7 @@ INSTALLED_APPS = [
 
 # Tirtha specific settings
 BASE_DIR = Path(__file__).resolve().parent.parent
-PRE_URL = ""  # CHANGEME: e.g., "/tirtha/"
+PRE_URL = os.getenv("PRE_URL", "")  # CHANGEME: e.g., "/tirtha/"
 
 PROD_DIR = "/var/www/tirtha/prod/"  # Short term storage for current runs # CHANGEME:
 LOG_DIR = f"{PROD_DIR}logs"
@@ -58,12 +58,12 @@ MEDIA_ROOT = f"{PROD_DIR}media"
 # NOTE: You will need to create the default contributor manually before running the server for the first time -> Needed in `post_migrate_create_defaults()` in `tirtha_bk/tirtha/signals.py.
 DEFAULT_MESH_NAME = "NISER Meditation Center"  # Default mesh name to use while setting up | Will be shown on homepage
 DEFAULT_MESH_ID = "9zpT9kVZwP9XxAbG"
-ADMIN_NAME = "Tirtha Admin"  # CHANGEME:
-ADMIN_MAIL = "tadmin@example.com"  # CHANGEME:
+ADMIN_NAME = os.getenv("DEFAULT_USER_NAME", "Tirtha Admin")  # CHANGEME:
+ADMIN_MAIL = os.getenv("DEFAULT_USER_MAIL", "tadmin@example.com")  # CHANGEME:
 
 # Sign in with Google
-GOOGLE_LOGIN = False
-GOOGLE_CLIENT_ID = "<your_google_client_id>"  # CHANGEME: NOTE: TODO: Make optional
+GOOGLE_LOGIN = os.getenv("GOOGLE_LOGIN", "False").lower() == "true"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")  # CHANGEME: https://developers.google.com/identity/gsi/web/guides/overview
 COOKIE_EXPIRE_TIME = 3600  # 1 hour
 SESSION_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SECURE = True if GOOGLE_LOGIN else False
@@ -71,11 +71,11 @@ SESSION_COOKIE_SECURE = True if GOOGLE_LOGIN else False
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 # NOTE: For help, see https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-22-04
-DB_NAME = "dbtirtha"  # CHANGEME:
-DB_USER = "dbtirthauser"  # CHANGEME:
-DB_PWD = "docker"  # CHANGEME:
-DB_HOST = "db" # CHANGEME:
-DB_PORT = "5432"
+DB_NAME = os.getenv("DB_NAME", "dbtirtha")  # CHANGEME:
+DB_USER = os.getenv("DB_USER", "dbtirthauser")  # CHANGEME:
+DB_PWD = os.getenv("DB_PWD", "docker")  # CHANGEME:
+DB_HOST = os.getenv("DB_HOST", "db")  # CHANGEME:
+DB_PORT = os.getenv("DB_PORT", "5432")
 
 DATABASES = {
     "default": {
@@ -93,9 +93,9 @@ DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
 DBBACKUP_STORAGE_OPTIONS = {"location": f"{NFS_DIR}/db_backups/"}  # CHANGEME: To store backups
 
 ## RabbitMQ + Celery
-RMQ_USER = "rmqtirthauser"  # CHANGEME:
-RMQ_PWD = "rmqtirthapwd"  # CHANGEME:
-RMQ_VHOST = "rmqtirtha"  # CHANGEME: NOTE: You can also use the default vhost ("/").
+RMQ_USER = os.getenv("RMQ_USER", "rmqtirthauser")  # CHANGEME:
+RMQ_PWD = os.getenv("RMQ_PWD", "rmqtirthapwd")  # CHANGEME:
+RMQ_VHOST = os.getenv("RMQ_VHOST", "rmqtirtha")  # CHANGEME: NOTE: You can also use the default vhost ("/").
 CELERY_BROKER_URL = f"pyamqp://{RMQ_USER}:{RMQ_PWD}@localhost/{RMQ_VHOST}"
 CELERY_TASK_ACKS_LATE = True  # To prevent tasks from being lost
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Disable prefetching
@@ -123,7 +123,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = (
 DATA_UPLOAD_MAX_NUMBER_FILES = 1_000  # CHANGEME: Max number of files per upload
 
 ## ARK settings
-BASE_URL = "http://0.0.0.0:8000"  # CHANGEME: NOTE: No trailing "/" | e.g., http://127.0.0.1
-ARK_NAAN = int("999999")  # CHANGEME: Integer | NOTE: NAAN - 999999 does not exist; CHECK: https://arks.org/about/testing-arks/
-ARK_SHOULDER = "/a"  # CHANGEME: | CHECK: https://arks.org/about/testing-arks/ # TODO: Make optional
+BASE_URL = os.getenv("BASE_URL", f"http://{os.getenv('HOST_IP', '0.0.0.0')}:{os.getenv('GUNICORN_PORT', '8000')}")  # CHANGEME: NOTE: No trailing "/" | e.g., http://127.0.0.1
+ARK_NAAN = int(os.getenv("ARK_NAAN", "999999"))  # CHANGEME: Integer | NOTE: NAAN - 999999 does not exist; CHECK: https://arks.org/about/testing-arks/
+ARK_SHOULDER = os.getenv("ARK_SHOULDER", "/a")  # CHANGEME: | CHECK: https://arks.org/about/testing-arks/
 FALLBACK_ARK_RESOLVER = "https://n2t.net"
