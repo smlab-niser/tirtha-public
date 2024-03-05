@@ -3,15 +3,11 @@
 
 # Some checks
 # ==================================================================================================
-# cd to project root, i.e., tirtha-public/
-cd ../
-
+# Exit on error
+set -e
 
 # Source the environment variables
 source tirtha.env  # CHANGEME: NOTE: Edit the tirtha.env file to set the environment variables.
-
-# Exit on error
-set -e
 
 # Checking if the script is being run as root
 if [ "$EUID" -ne 0 ]
@@ -26,13 +22,20 @@ if [ ! -f "build.sh" ]; then
 fi
 
 # Checking if the required files exist
-required_files=("tirtha.env" "requirements.txt")  # TODO: Add a frontend-only requirements file
-for file in "${required_files[@]}"; do
-  if [ ! -f "$file" ]; then
-    echo "Please make sure $file exists in the ./tirtha-public/build/ directory."
-    exit
-  fi
-done
+# Checking if the tirtha.env file exists
+if [ ! -f "tirtha.env" ]; then
+  echo "Please make sure tirtha.env exists in ./tirtha-public/build/."
+  exit
+fi
+
+# cd to project root, i.e., tirtha-public/
+cd ../
+
+# Checking if the requirements.txt file exists  # TODO: Add a frontend-only requirements file check here
+if [ ! -f "./requirements.txt" ]; then
+  echo "Please make sure requirements.txt exists in ./tirtha-public/."
+  exit
+fi
 
 # Checking if the tirtha.env file has the required environment variables
 if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PWD" ] || [ -z "$RMQ_USER" ] || [ -z "$RMQ_PWD" ] || [ -z "$RMQ_VHOST" ] || [ -z "$DJANGO_SUPERUSER_NAME" ] || [ -z "$DJANGO_SUPERUSER_EMAIL" ] || [ -z "$DJANGO_SUPERUSER_PASSWORD" ] || [ -z "$GUNICORN_PORT" ]
