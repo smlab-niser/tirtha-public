@@ -1,0 +1,29 @@
+# Linting and testing
+black
+flake8
+isort
+tox
+rich
+
+# Basic requirements
+numpy
+opencv-python
+pandas
+scipy
+Pillow
+pillow-heif
+
+# Django + Celery + Gunicorn
+Django
+django-cleanup
+django-dbbackup
+django-extensions
+gunicorn
+psycopg2
+psycopg2-binary
+pytz
+pytzdata
+shortuuid
+
+# For Google Auth
+google-auth
