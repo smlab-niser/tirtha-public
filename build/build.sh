@@ -67,9 +67,10 @@ apt-get update \
     python3-pip
 
 # Getting submodules for ImageOps models - Must be run as the user (not root)
+# CHANGEME: NOTE: Comment out to skip ImageOps models
 sudo -u $SUDO_USER bash - <<EOF
-  git config --global http.postBuffer 524288000 \
-  git submodule update --init --recursive \ # CHANGEME: NOTE: Comment out to skip ImageOps models
+  git config --global http.postBuffer 524288000
+  git submodule update --init --recursive
 EOF
 
 # Creating a Python virtual environment and installing dependencies
