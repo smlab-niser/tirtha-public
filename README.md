@@ -111,7 +111,7 @@ See [Citation](#citation) for information on how to cite this project. A
 
 > [!important]
 > 1. Currently, the production directory is hard-coded to `/var/www/tirtha`.
-> Changing this will require changes to the [`nginx` configuration](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/config/tirtha.docker.nginx) and the [`gunicorn.conf.py`](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/gunicorn/gunicorn.conf.manual.py) file, along with `build.sh`.
+> Changing this will require changes to the [`nginx` configuration](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/config/tirtha.docker.nginx) and the [`gunicorn.conf.manual.py`](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/gunicorn/gunicorn.conf.manual.py) file, along with `build.sh`.
 > 2. You may also have to configure your firewall to allow traffic on the ports used by Tirtha. Check the `tirtha.env` file and the nginx configuration for the ports used.
 
 ## Citation
