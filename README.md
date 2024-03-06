@@ -97,6 +97,7 @@ See [Citation](#citation) for information on how to cite this project. A
 * The default build uses ports 8000 (for gunicorn), 8001 (for Postgres), and 15672 (for RabbitMQ) on the host system. Ensure these ports are free. If you want to use different ports, you will have to edit `tirtha.env`, `gunicorn.conf.docker.py`, and `tirtha.docker.nginx` before running `build.sh`.
 * `cd` to `tirtha-public/build` and run the following command to set up Tirtha. This will install the required packages and set up Postgres, RabbitMQ, Nginx, Gunicorn and Tirtha:
     ```bash
+    cd tirtha-public/build
     sudo bash build.sh
     ```
 * To run Tirtha, use the following command:

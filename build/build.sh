@@ -30,9 +30,14 @@ source tirtha.env  # CHANGEME: NOTE: Edit the tirtha.env file to set the environ
 # cd to project root, i.e., tirtha-public/
 cd ../
 
-# Checking if the requirements.txt file exists  # TODO: Add a frontend-only requirements file check here
+# Checking if the requirements.txt file exists
 if [ ! -f "./requirements.txt" ]; then
   echo "Please make sure requirements.txt exists in ./tirtha-public/."
+  exit
+fi
+
+if [ ! -f "./requirements.frontend.txt" ]; then
+  echo "Please make sure requirements.frontend.txt exists in ./tirtha-public/."
   exit
 fi
 
@@ -74,11 +79,12 @@ sudo -u $SUDO_USER bash - <<EOF
 EOF
 
 # Creating a Python virtual environment and installing dependencies
+# CHANGEME: NOTE: Use `requirements.frontend.txt` if developing only for the frontend
 python3.11 -m venv venv \
   && chown -R $SUDO_USER:$SUDO_USER ./venv/ \
   && source ./venv/bin/activate \
   && pip install --upgrade pip setuptools wheel \
-  && pip install -r ./requirements.txt --default-timeout=2000 \  # TODO: Add a frontend-only requirements file
+  && pip install -r ./requirements.txt --default-timeout=2000 \
   && pip install -e ./tirtha_bk/nn_models/nsfw_model/ \  # CHANGEME: NOTE: Comment out to skip one of ImageOps model
   && pip install protobuf==3.20.3  # CHANGEME: NOTE: Comment out to skip one of ImageOps model
 
