@@ -94,7 +94,7 @@ See [Citation](#citation) for information on how to cite this project. A
     ```
 * Edit `tirtha-public/build/tirtha.env` to set the environment variables.
 * **Carefully go through** `build.sh` and edit to ensure that the paths and settings are correct for your system. For instance, you can choose to not install some of the dependencies for the backend, which saves a considerable amount of time.
-* The default build uses ports 8000 (for gunicorn), 8001 (for Postgres), and 15672 (for RabbitMQ) on the host system. Ensure these ports are free. If you want to use different ports, you will have to edit `tirtha.env`, `gunicorn.conf.docker.py`, and `tirtha.docker.nginx` before running `build.sh`.
+* The default build uses ports 8000 (for gunicorn), 8001 (for Postgres), and 15672 (for RabbitMQ) on the host system. Ensure these ports are free. If you want to use different ports, you will have to edit `tirtha.env`, `gunicorn.conf.manual.py`, and `tirtha.docker.nginx` before running `build.sh`.
 * `cd` to `tirtha-public/build` and run the following command to set up Tirtha. This will install the required packages and set up Postgres, RabbitMQ, Nginx, Gunicorn and Tirtha:
     ```bash
     cd tirtha-public/build
@@ -111,7 +111,7 @@ See [Citation](#citation) for information on how to cite this project. A
 
 > [!important]
 > 1. Currently, the production directory is hard-coded to `/var/www/tirtha`.
-> Changing this will require changes to the [`nginx` configuration](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/config/tirtha.docker.nginx) and the [`gunicorn.conf.py`](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/gunicorn/gunicorn.conf.docker.py) file, along with `build.sh`.
+> Changing this will require changes to the [`nginx` configuration](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/config/tirtha.docker.nginx) and the [`gunicorn.conf.py`](https://github.com/smlab-niser/tirtha-public/blob/main/tirtha_bk/gunicorn/gunicorn.conf.manual.py) file, along with `build.sh`.
 > 2. You may also have to configure your firewall to allow traffic on the ports used by Tirtha. Check the `tirtha.env` file and the nginx configuration for the ports used.
 
 ## Citation
