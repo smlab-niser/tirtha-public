@@ -3,21 +3,20 @@
 
 # Some checks
 # ==================================================================================================
-# cd to project root, i.e., tirtha-public/
-cd ../
-
-
-# Source the environment variables
-source tirtha.env  # CHANGEME: NOTE: Edit the tirtha.env file to set the environment variables.
-
 # Exit on error
 set -e
 
 # Checking if the script is being run from the correct directory
-if [ ! -f "start.sh" ]; then
-  echo "Please run the start.sh script from the correct directory (i.e., ./tirtha-public/build/)."
+if [ "$(basename "$(pwd)")" != "build" ]; then
+  echo "Please run the build.sh script from the correct directory (i.e., ./tirtha-public/build/)."
   exit
 fi
+
+# Source the environment variables
+source tirtha.env  # CHANGEME: NOTE: Edit the tirtha.env file to set the environment variables.
+
+# cd to project root, i.e., tirtha-public/
+cd ../
 # ==================================================================================================
 
 # Triggering the services

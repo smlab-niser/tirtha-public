@@ -8,16 +8,19 @@ rich
 # Basic requirements
 numpy
 opencv-python
-pandas
+pandaswhoa
 scipy
 Pillow
 pillow-heif
+requests
 
 # Django + Celery + Gunicorn
 Django
 django-cleanup
 django-dbbackup
 django-extensions
+# amqp CHECK:
+celery
 gunicorn
 psycopg2
 psycopg2-binary
