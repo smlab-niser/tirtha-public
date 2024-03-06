@@ -68,7 +68,7 @@ apt-get update \
 
 # Getting submodules for ImageOps models
 git config --global http.postBuffer 524288000 \
-&& git submodule update --init --recursive  # CHANGEME: NOTE: Comment out to skip ImageOps models
+&& git submodule update --init --recursive \ # CHANGEME: NOTE: Comment out to skip ImageOps models
 && chown -R $SUDO_USER:$SUDO_USER ./tirtha_bk/nn_models/  # CHANGEME: NOTE: Comment out to skip ImageOps models
 
 # Creating a Python virtual environment and installing dependencies
