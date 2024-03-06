@@ -37,10 +37,10 @@ if [ ! -f "./requirements.txt" ]; then
 fi
 
 # Checking if the tirtha.env file has the required environment variables
-if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PWD" ] || [ -z "$RMQ_USER" ] || [ -z "$RMQ_PWD" ] || [ -z "$RMQ_VHOST" ] || [ -z "$DJANGO_SUPERUSER_NAME" ] || [ -z "$DJANGO_SUPERUSER_EMAIL" ] || [ -z "$DJANGO_SUPERUSER_PASSWORD" ] || [ -z "$GUNICORN_PORT" ]
-  then echo "Please set the required environment variables in the tirtha.env file."
-  exit
-fi
+# if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PWD" ] || [ -z "$RMQ_USER" ] || [ -z "$RMQ_PWD" ] || [ -z "$RMQ_VHOST" ] || [ -z "$DJANGO_SUPERUSER_NAME" ] || [ -z "$DJANGO_SUPERUSER_EMAIL" ] || [ -z "$DJANGO_SUPERUSER_PASSWORD" ] || [ -z "$GUNICORN_PORT" ]
+#   then echo "Please set the required environment variables in the tirtha.env file."
+#   exit
+# fi
 # ==================================================================================================
 
 # Main build process
