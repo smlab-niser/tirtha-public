@@ -4,7 +4,6 @@
 __pycache__/
 data/
 paper/
-3dgs/
 
 # Folders - django
 migrations/
@@ -27,6 +26,8 @@ celerybeat-schedule
 leaderboard.*
 
 # venv + local
+db*
+tdenv/
 venv/
 bk/
 local/

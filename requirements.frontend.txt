@@ -8,7 +8,7 @@ rich
 # Basic requirements
 numpy
 opencv-python
-pandaswhoa
+pandas
 scipy
 Pillow
 pillow-heif
