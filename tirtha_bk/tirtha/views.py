@@ -84,6 +84,7 @@ def index(request, vid=None, runid=None):
                     "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg",
                     "run": run,
                     "run_contributor_count": int(run.contributors.count()),
+                    #"run_contributor_name": run.contributors.first(),
                     "run_images_count": int(run.images.count()),
                     "run_ark_url": f"{BASE_URL}/{run.ark}",
                     "runs_arks": runs_arks,
