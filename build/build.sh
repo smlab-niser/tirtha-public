@@ -84,18 +84,18 @@ python3.11 -m venv venv \
   && chown -R $SUDO_USER:$SUDO_USER ./venv/ \
   && source ./venv/bin/activate \
   && pip install --upgrade pip setuptools wheel \
-  && pip install -r ./requirements.txt --default-timeout=2000 \
+  && pip install -r ./requirements.frontend.txt --default-timeout=2000 \
   && pip install -e ./tirtha_bk/nn_models/nsfw_model/ \  # CHANGEME: NOTE: Comment out to skip one of ImageOps model
   && pip install protobuf==3.20.3  # CHANGEME: NOTE: Comment out to skip one of ImageOps model
 
 # Getting the pre-trained checkpoints for ImageOps models
 # CHANGEME: NOTE: Comment these out to skip the ImageOps models
-wget https://smlab.niser.ac.in/project/tirtha/static/artifacts/MR2021.1.0.zip \
-  && unzip MR2021.1.0.zip \
-  && mv ./bin21/ ./tirtha_bk/bin21/ \
-  && rm ./MR2021.1.0.zip
-wget https://smlab.niser.ac.in/project/tirtha/static/artifacts/ckpt_kadid10k.pt \
-  && mv ./ckpt_kadid10k.pt ./tirtha_bk/nn_models/MANIQA/
+#wget https://smlab.niser.ac.in/project/tirtha/static/artifacts/MR2021.1.0.zip \
+ # && unzip MR2021.1.0.zip \
+ # && mv ./bin21/ ./tirtha_bk/bin21/ \
+ # && rm ./MR2021.1.0.zip
+#wget https://smlab.niser.ac.in/project/tirtha/static/artifacts/ckpt_kadid10k.pt \
+#  && mv ./ckpt_kadid10k.pt ./tirtha_bk/nn_models/MANIQA/
 
 # Setting up npm to install obj2gltf and gltfpack
 # CHANGEME: NOTE: Comment these out if developing only for the frontend
