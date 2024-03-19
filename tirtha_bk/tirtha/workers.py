@@ -30,7 +30,7 @@ from .alicevision import AliceVision
 from .utils import Logger
 from .utilsark import generate_noid, noid_check_digit
 
-STATIC = Path(settings.STATIC_ROOT)
+STATIC = Path(settings.STATIC_ROOT2)
 MEDIA = Path(settings.MEDIA_ROOT)
 LOG_DIR = Path(settings.LOG_DIR)
 ARCHIVE_ROOT = Path(settings.ARCHIVE_ROOT)
