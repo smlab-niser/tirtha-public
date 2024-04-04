@@ -3,9 +3,9 @@
     "",
     "\\tirtha_bk",
     "\\tirtha_bk\\static",
-    "\\tirtha_bk\\tirtha",
+    "\\tirtha_bk\\static\\js",
     "\\tirtha_bk\\tirtha_bk"
   ],
-  "SelectedNode": "\\tirtha_bk\\tirtha_bk\\local_settings.manual.py",
+  "SelectedNode": "\\tirtha_bk\\static\\js\\main.js",
   "PreviewInSolutionExplorer": false
 }
