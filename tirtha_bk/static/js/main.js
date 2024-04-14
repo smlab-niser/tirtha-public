@@ -9,100 +9,190 @@ const model = doc.getElementById('model');
 const fControls = doc.getElementById('floating-controls');
 const infoBtn = doc.getElementById('info-btn');
 const PRE_URL = "" // TODO: Use env
-console.log("Hi")
+console.log("Hello")
 // ========================== FS START ==========================
-// ❗ Handle fullscreen❗
-const expandBtn = doc.getElementById('expand');
-const expParent = expandBtn.parentElement;
-
-function isInFullScreen() {
-    return (doc.fullScreenElement && doc.fullScreenElement !== null) || (doc.mozFullScreen || doc.webkitIsFullScreen);
-}
-
-function requestFullScreen() {
-    el = modelArea
-    var requestMethod = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullScreen;
-    requestMethod.call(el);
-
-    setTimeout(() => {
-        model.classList.add("model-fs");
-        doc.querySelector(".controls").style.display = "none";
-    }, 100);
-}
-
-function exitFullScreen() {
-    el = doc;
-    var requestMethod = el.cancelFullScreen || el.webkitCancelFullScreen || el.mozCancelFullScreen || el.exitFullscreen || el.webkitExitFullscreen;
-    requestMethod.call(el);
-
-    setTimeout(() => {
-        model.classList.remove("model-fs");
-        doc.querySelector(".controls").style.display = "flex";
-    }, 100);
-}
-
-expandBtn.addEventListener("click", () => {
-    if (!isInFullScreen()) {
-        setTimeout(() => {
-            expParent.style.top = "0.5rem";
-        }, 100);
-        requestFullScreen();
-    } else {
-        setTimeout(() => {
-            expParent.style.top = "0";
-        }, 100);
-        exitFullScreen();
-    }
-});
-
-// Exit when fullscreen is exited via Esc keypress
-function exitIfFS() {
-    if (!isInFullScreen()) {
-        setTimeout(() => {
-            expParent.style.top = "0";
-            model.classList.remove("model-fs");
-            doc.querySelector(".controls").style.display = "flex";
-        }, 100);
-    }
-}
-
-doc.addEventListener('fullscreenchange', exitIfFS);
-doc.addEventListener('webkitfullscreenchange', exitIfFS);
-doc.addEventListener('mozfullscreenchange', exitIfFS);
-doc.addEventListener('MSFullscreenChange', exitIfFS);
-// ========================== FS END ==========================
-
-// ========================== SCROLL DOWN START ==========================
-let timeoutId;
-function debounce(func, delay) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(func, delay);
-}
-
-// This fixes the show / hide info getting stuck prob
-// And the nav bar getting stuck if opened and window resized
-if(window.innerWidth>400){
-window.addEventListener("resize", () => {
-    if (screen.width > 768) {
-        body.style.setProperty("--side-current-width", side.clientWidth + 15 + "px");
-        debounce(contDialog.close(), 100); // Close modal
-        debounce(setTimeout(() => { // Close nav
-            if (window.innerWidth < 768) {
-                side.classList.remove("hide-side");
-                modelArea.classList.remove("hide-side-model-area");
-                doc.querySelectorAll("#info-btn > span")[1].textContent = "Show information";
-            }
-            nav.classList.remove("translate-nav");
-            fControls.classList.remove("translate-floating-controls");
-            body.classList.remove("blur");
-            body.classList.remove("overflow-toggle");
-        }, 100),
-        100);
-    }
-});
-}
+//// ❗ Handle fullscreen❗
+//const expandBtn = doc.getElementById('expand');
+//const expParent = expandBtn.parentElement;
+//
+//function isInFullScreen() {
+//    return (doc.fullScreenElement && doc.fullScreenElement !== null) || (doc.mozFullScreen || doc.webkitIsFullScreen);
+//}
+//
+//function requestFullScreen() {
+//    el = modelArea
+//    var requestMethod = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullScreen;
+//    requestMethod.call(el);
+//
+//    setTimeout(() => {
+//        model.classList.add("model-fs");
+//        doc.querySelector(".controls").style.display = "none";
+//    }, 100);
+//}
+//
+//function exitFullScreen() {
+//    el = doc;
+//    var requestMethod = el.cancelFullScreen || el.webkitCancelFullScreen || el.mozCancelFullScreen || el.exitFullscreen || el.webkitExitFullscreen;
+//    requestMethod.call(el);
+//
+//    setTimeout(() => {
+//        model.classList.remove("model-fs");
+//        doc.querySelector(".controls").style.display = "flex";
+//    }, 100);
+//}
+//
+//expandBtn.addEventListener("click", () => {
+//    if (!isInFullScreen()) {
+//        setTimeout(() => {
+//            expParent.style.top = "0.5rem";
+//        }, 100);
+//        requestFullScreen();
+//    } else {
+//        setTimeout(() => {
+//            expParent.style.top = "0";
+//        }, 100);
+//        exitFullScreen();
+//    }
+//});
+//
+//// Exit when fullscreen is exited via Esc keypress
+//function exitIfFS() {
+//    if (!isInFullScreen()) {
+//        setTimeout(() => {
+//            expParent.style.top = "0";
+//            model.classList.remove("model-fs");
+//            doc.querySelector(".controls").style.display = "flex";
+//        }, 100);
+//    }
+//}
+//
+//doc.addEventListener('fullscreenchange', exitIfFS);
+//doc.addEventListener('webkitfullscreenchange', exitIfFS);
+//doc.addEventListener('mozfullscreenchange', exitIfFS);
+//doc.addEventListener('MSFullscreenChange', exitIfFS);
+//// ========================== FS END ==========================
+//
+//// ========================== SCROLL DOWN START ==========================
+//let timeoutId;
+//function debounce(func, delay) {
+//    clearTimeout(timeoutId);
+//    timeoutId = setTimeout(func, delay);
+//}
+//
+//// This fixes the show / hide info getting stuck prob
+//// And the nav bar getting stuck if opened and window resized
+//if(window.innerWidth>400){
+//window.addEventListener("resize", () => {
+//    if (screen.width > 768) {
+//        body.style.setProperty("--side-current-width", side.clientWidth + 15 + "px");
+//        debounce(contDialog.close(), 100); // Close modal
+//        debounce(setTimeout(() => { // Close nav
+//            if (window.innerWidth < 768) {
+//                side.classList.remove("hide-side");
+//                modelArea.classList.remove("hide-side-model-area");
+//                doc.querySelectorAll("#info-btn > span")[1].textContent = "Show information";
+//            }
+//            nav.classList.remove("translate-nav");
+//            fControls.classList.remove("translate-floating-controls");
+//            body.classList.remove("blur");
+//            body.classList.remove("overflow-toggle");
+//        }, 100),
+//        100);
+//    }
+//});
+//}
 
 // }
+
+    // Handle fullscreen
+    const expandBtn = $('#expand');
+    const expParent = expandBtn.parent();
+
+    function isInFullScreen() {
+        return (document.fullScreenElement && document.fullScreenElement !== null) || (document.mozFullScreen || document.webkitIsFullScreen);
+    }
+
+    function requestFullScreen() {
+        el = modelArea;
+        var requestMethod = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullScreen;
+        requestMethod.call(el);
+
+        setTimeout(() => {
+            model.classList.add("model-fs");
+            $('.controls').hide();
+        }, 100);
+    }
+
+    function exitFullScreen() {
+        el = document;
+        var requestMethod = el.cancelFullScreen || el.webkitCancelFullScreen || el.mozCancelFullScreen || el.exitFullscreen || el.webkitExitFullscreen;
+        requestMethod.call(el);
+
+        setTimeout(() => {
+            model.classList.remove("model-fs");
+            $('.controls').show();
+        }, 100);
+    }
+
+    expandBtn.click(function() {
+        if (!isInFullScreen()) {
+            setTimeout(() => {
+                expParent.css("top", "0.5rem");
+            }, 100);
+            requestFullScreen();
+        } else {
+            setTimeout(() => {
+                expParent.css("top", "0");
+            }, 100);
+            exitFullScreen();
+        }
+    });
+
+    // Exit when fullscreen is exited via Esc keypress
+    function exitIfFS() {
+        if (!isInFullScreen()) {
+            setTimeout(() => {
+                expParent.css("top", "0");
+                model.classList.remove("model-fs");
+                $('.controls').show();
+            }, 100);
+        }
+    }
+
+    $(document).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', exitIfFS);
+
+    // Scroll Down
+    let timeoutId;
+
+    function debounce(func, delay) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(func, delay);
+    }
+
+    // This fixes the show / hide info getting stuck prob
+    // And the nav bar getting stuck if opened and window resized
+    if ($(window).innerWidth() > 400) {
+        console.log("condition is working")
+        $(window).off("resize");
+        $(window).resize(function() {
+            if ($(screen).width() > 768) {
+                $('body').css("--side-current-width", $('#side').width() + 15 + "px");
+                debounce(contDialog.close(), 100); // Close modal
+                debounce(setTimeout(() => { // Close nav
+                    if ($(window).innerWidth() < 768) {
+                        $('#side').removeClass("hide-side");
+                        $('#modelArea').removeClass("hide-side-model-area");
+                        $('#info-btn > span:eq(1)').text("Show information");
+                    }
+                    $('#nav').removeClass("translate-nav");
+                    $('#fControls').removeClass("translate-floating-controls");
+                    $('body').removeClass("blur");
+                    $('body').removeClass("overflow-toggle");
+                }, 100), 100);
+            }
+        });
+    }
+});
 // ========================== SCROLL DOWN END ==========================
 
 // ========================== NAV START ==========================
