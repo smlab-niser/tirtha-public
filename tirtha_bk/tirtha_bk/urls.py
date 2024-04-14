@@ -25,7 +25,7 @@ PRE_URL = settings.PRE_URL
 urlpatterns = [
     path("", include("tirtha.urls")),
     path(PRE_URL + "admin/", admin.site.urls),
-] + static(PRE_URL + settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+] + static(PRE_URL + settings.STATIC_URL, document_root=settings.STATIC_ROOT2)
 
 # Only serve in testing. Otherwise use gunicorn or nginx
 if settings.DEBUG:

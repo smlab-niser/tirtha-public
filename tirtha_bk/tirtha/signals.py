@@ -8,7 +8,7 @@ from django.dispatch import receiver
 # Local imports
 from .models import Contribution, Contributor, Image, Mesh, Run
 
-STATIC = Path(settings.STATIC_ROOT)
+STATIC = Path(settings.STATIC_ROOT2)
 MEDIA = Path(settings.MEDIA_ROOT)
 DEFAULT_MESH_NAME = settings.DEFAULT_MESH_NAME
 DEFAULT_MESH_ID = settings.DEFAULT_MESH_ID

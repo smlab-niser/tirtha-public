@@ -182,8 +182,8 @@ ol {
 
     border-radius: 5rem;
     background-color: rgba(154, 245, 222, 0.5);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+    /*-webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);*/
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
     z-index: 100;
 
