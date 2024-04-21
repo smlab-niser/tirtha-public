@@ -119,22 +119,18 @@
             <button id="take-focus"></button>
             <section id="upload-area">
                 <h2>Contribute to Tirtha</h2>
-                <div id="g_id_onload"
-                    data-client_id="{{ GOOGLE_CLIENT_ID }}"
-                    data-context="use"
-                    data-ux_mode="popup"
-                    data-callback="onGoogleSignIn"
-                    data-auto_prompt="false">
-                </div>
-                <div class="upload-signin">
-                    <div class="g_id_signin"
-                        data-type="standard"
-                        data-shape="pill"
-                        data-theme="outline"
-                        data-text="signin_with"
-                        data-size="large"
-                        data-logo_alignment="left">
-                    </div>
+                <div class="button-container">
+                    {% if signin_msg == "Please sign in to upload images." %}
+                        <a id="signinButton" class="upload-signin" href="{% url 'signinGoogle' %}">
+                            <span>Sign in with Google</span>
+                        </a>
+                    {% else %}
+                        <a id="signinButton" class="upload-signin" href="{% url 'signinGoogle' %}">
+                            <img class="profile-image" src="{{ profile_image_url }}" alt="Profile Image">
+                            <span>Sign in with another account</span>
+                        </a>
+                    {% endif %}
+
                 </div>
                 <output id="signin-status">
                     {{ signin_msg }}
