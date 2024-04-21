@@ -29,4 +29,5 @@ pytzdata
 shortuuid
 
 # For Google Auth
-google-auth
+authlib
+uuid
