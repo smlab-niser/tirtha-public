@@ -3,11 +3,12 @@
 # * Too many different contexts for signin() and googleAuth().
 # * search()'s code is inconvenient (main.js).
 # * See FIXME:s and LATE_EXP:s below.
+
 from urllib.parse import unquote
 
 import pytz
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 from google.auth.transport import requests
@@ -20,13 +21,32 @@ from .models import ARK, Contribution, Contributor, Image, Mesh, Run
 from .tasks import post_save_contrib_imageops
 from .utilsark import parse_ark
 
+#imports for user auth (eliminating signin with google)
+from authlib.jose import jwt
+from authlib.integrations.django_client import OAuth
+import uuid
+
+oauth = OAuth()
+#-----------setup for the new signin using Authlib method----------------
 
 PRE_URL = settings.PRE_URL
 GOOGLE_LOGIN = settings.GOOGLE_LOGIN
 ADMIN_MAIL = settings.ADMIN_MAIL
-GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+appConf = settings.APP_CONF #
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
+
+
+#oauth app setup
+oauth.register(
+    "google",
+    client_id=appConf.get("OAUTH2_CLIENT_ID"),
+    client_secret=appConf.get("OAUTH2_CLIENT_SECRET"),
+    client_kwargs={
+        "scope": "openid profile email",
+    },
+    server_metadata_url=f'{appConf.get("OAUTH2_META_URL")}',
+)
 
 
 def competition(request):
@@ -60,7 +80,7 @@ def index(request, vid=None, runid=None):
         "meshes": meshes,
         "signin_msg": "Please sign in to upload images.",
         "signin_class": "blur-form",
-        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
+        "GOOGLE_CLIENT_ID": appConf.get("GOOGLE_CLIENT_ID"),
     }
 
     """
@@ -149,8 +169,11 @@ def index(request, vid=None, runid=None):
     if not GOOGLE_LOGIN:
         token = "INSECURE-DEFAULT-TOKEN"
         request.session["auth_token"] = token
+        
+        
 
     token = request.session.get("auth_token", None)
+
     if token:
         output, contrib = _signin(token)
         # Store JWT in session
@@ -163,39 +186,42 @@ def index(request, vid=None, runid=None):
             if not contrib.banned and contrib.active:
                 context.update({"signin_class": ""})
 
+    #block for profile image url
+    try:
+        context["profile_image_url"] = token.get('userinfo').get('picture') #adding the currently signed in profile image to the context
+    except Exception as e:
+        pass
+
     return render(request, template, context)
 
+#-----------------updated code using signin with google
 
 def _signin(token, create=False):
     """
-    Handles `Sign in with Google`. Does the following:
-    * Verifies `token`
-    * Check if contributor exists in DB using details from `token`
-    * If not, create new contributor if `create` is True, else return None
-    * If yes, check if contributor is inactive or banned
-        * If yes, return error
-        * If no, return success
-
+    Handles token-based authentication.
+    Verifies the token and retrieves or creates the contributor.
     """
-    # For development only
+
+    
+
     if not GOOGLE_LOGIN:
         # Return default contributor
         contrib = Contributor.objects.get(email=ADMIN_MAIL)
         output = f"Signed-in as {ADMIN_MAIL}."
         return output, contrib
 
-    contrib = None
     try:
-        # Verify token
-        idinfo = id_token.verify_oauth2_token(
-            token, requests.Request(), GOOGLE_CLIENT_ID
-        )
+        contrib = None
 
         # Get contributor info
-        name = idinfo["name"]
-        email = idinfo["email"]
+        payload = token.get('userinfo')
+        email = payload.get('email')
+        name = payload.get('name')
+  
 
         # Get or create contributor
+        contributor, created = Contributor.objects.get_or_create(email=email, defaults={'active': False})
+
         try:
             contrib = Contributor.objects.get(email=email)
         except Contributor.DoesNotExist:
@@ -231,25 +257,56 @@ def _signin(token, create=False):
 
 
 @require_GET
-def googleAuth(request):
+def google_login(request):
+
+    # build a full authorize callback uri
+
+    new_state = str(uuid.uuid4())  # Generate a new UUID
+    redirect_uri = request.build_absolute_uri('/signin-google') #TODO: build the redirect uri as per configugered in the GOOGLE BACKEND
+    request.session['auth_state'] = new_state
+
+    return oauth.google.authorize_redirect(request, redirect_uri, state = new_state)
+
+@require_GET
+def logout(request):
+    #user can signout after signing in if the user wants to
+    # build a logout button
     """
-    Sets auth token cookie post Google Auth.
-
+    Pops the user from the session post logout.
+    The user is redirected to the index page.
     """
-    token = request.GET["token"]
-    output, contrib = _signin(token, create=True)
+    request.session.pop('auth_token', None)
+    return redirect('index')
 
-    context = {"output": output, "banned": False, "blur": False}
 
-    # Store JWT in session
-    if contrib is not None:
+@require_GET
+def tokenAuth(request):
+    """
+    Sets auth token cookie post token-based authentication.
+    """                                
+    # stored_state = request.session.get('auth_state')
+    # received_state = request.GET.get('state')
+
+    try:
+        # Get token from OAuth provider
+        token = oauth.google.authorize_access_token(request)
+        token = dict(token)
         request.session["auth_token"] = token
-        request.session.set_expiry(0)  # Session expires when browser closes
 
-        if contrib.banned or not contrib.active:
-            context.update({"blur": True})
+        # Call _signin function to handle token-based authentication
+        output, contributor = _signin(token)
+         
+        # Create response data
+        context = {"output": output, "banned": contributor.banned, "blur": not contributor.active}
+        
+    except Exception as e:
+        # Handle token verification errors
+        context = {"output": "Please sign in again.", "banned": False, "blur": False}
 
-    return JsonResponse(context)
+    
+    return index(request)
+
+#--------------------new code ends--------------
 
 
 @require_GET
