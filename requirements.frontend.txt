@@ -30,4 +30,3 @@ shortuuid
 
 # For Google Auth
 authlib
-uuid

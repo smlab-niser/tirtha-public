@@ -736,9 +736,6 @@ if (uploadForm.hasClass("blur-form")) {
   uploadFormElems.attr("inert", "");
 }
 
-// ❗Handle Google SO❗
-var signInStatus = $("#signin-status");
-
 // ========================== AJAX UPLOAD START ==========================
 uploadForm.on("submit", function (e) {
   e.preventDefault();

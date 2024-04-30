@@ -8,7 +8,7 @@ from urllib.parse import unquote
 
 import pytz
 from django.conf import settings
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 from google.auth.transport import requests
@@ -21,18 +21,17 @@ from .models import ARK, Contribution, Contributor, Image, Mesh, Run
 from .tasks import post_save_contrib_imageops
 from .utilsark import parse_ark
 
-#imports for user auth (eliminating signin with google)
-from authlib.jose import jwt
-from authlib.integrations.django_client import OAuth
+
+from authlib.jose import jwt #pip install authlib
+from authlib.integrations.django_client import OAuth #for the oauth setup
 import uuid
 
 oauth = OAuth()
-#-----------setup for the new signin using Authlib method----------------
 
 PRE_URL = settings.PRE_URL
 GOOGLE_LOGIN = settings.GOOGLE_LOGIN
 ADMIN_MAIL = settings.ADMIN_MAIL
-appConf = settings.APP_CONF #
+appConf = settings.APP_CONF 
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
 
@@ -169,9 +168,7 @@ def index(request, vid=None, runid=None):
     if not GOOGLE_LOGIN:
         token = "INSECURE-DEFAULT-TOKEN"
         request.session["auth_token"] = token
-        
-        
-
+              
     token = request.session.get("auth_token", None)
 
     if token:
@@ -187,16 +184,14 @@ def index(request, vid=None, runid=None):
                 context.update({"signin_class": ""})
 
     #block for profile image url
-    try:
+    if token is not None:
         context["profile_image_url"] = token.get('userinfo').get('picture') #adding the currently signed in profile image to the context
-    except Exception as e:
-        pass
+    
 
     return render(request, template, context)
 
-#-----------------updated code using signin with google
 
-def _signin(token, create=False):
+def _signin(token):
     """
     Handles token-based authentication.
     Verifies the token and retrieves or creates the contributor.
@@ -218,23 +213,14 @@ def _signin(token, create=False):
         email = payload.get('email')
         name = payload.get('name')
   
-
         # Get or create contributor
-        contributor, created = Contributor.objects.get_or_create(email=email, defaults={'active': False})
+        contributor, created = Contributor.objects.get_or_create(email=email,name = name, defaults={'active': False})
 
-        try:
-            contrib = Contributor.objects.get(email=email)
-        except Contributor.DoesNotExist:
-            if create:
-                # NOTE: Treating email as unique ID, both for our DB and Google's
-                # NOTE: Contributor is created as inactive | Manual activation required
-                # CHECK: TODO: Allow auto-activation after testing
-                contrib = Contributor.objects.create(
-                    name=name, email=email, active=False
-                )
-            else:
-                output = "Contributor not found. Please sign in first."
-                return output, contrib
+        
+        # NOTE: Treating email as unique ID, both for our DB and Google's
+        # NOTE: Contributor is created as inactive | Manual activation required
+        # CHECK: TODO: Allow auto-activation after testing
+
 
         # If name has changed, update name
         if name != contrib.name:
@@ -282,7 +268,7 @@ def logout(request):
 @require_GET
 def tokenAuth(request):
     """
-    Sets auth token cookie post token-based authentication.
+    Authorizes & sets auth token with relavent token information about the user
     """                                
     # stored_state = request.session.get('auth_state')
     # received_state = request.GET.get('state')
@@ -293,20 +279,20 @@ def tokenAuth(request):
         token = dict(token)
         request.session["auth_token"] = token
 
-        # Call _signin function to handle token-based authentication
-        output, contributor = _signin(token)
+        # # Call _signin function to handle token-based authentication
+        # output, contributor = _signin(token)
          
-        # Create response data
-        context = {"output": output, "banned": contributor.banned, "blur": not contributor.active}
+        # # Create response data
+        # context = {"output": output, "banned": contributor.banned, "blur": not contributor.active}
         
     except Exception as e:
         # Handle token verification errors
-        context = {"output": "Please sign in again.", "banned": False, "blur": False}
+        # context = {"output": "Please sign in again.", "banned": False, "blur": False}
+        request.session["auth_token"] = None
 
-    
     return index(request)
 
-#--------------------new code ends--------------
+
 
 
 @require_GET

@@ -120,17 +120,14 @@
             <section id="upload-area">
                 <h2>Contribute to Tirtha</h2>
                 <div class="button-container">
-                    {% if signin_msg == "Please sign in to upload images." %}
-                        <a id="signinButton" class="upload-signin" href="{% url 'signinGoogle' %}">
+                    <a id="signinButton" class="upload-signin" href="{% url 'signinGoogle' %}">
+                        {% if signin_msg == "Please sign in to upload images." %}
                             <span>Sign in with Google</span>
-                        </a>
-                    {% else %}
-                        <a id="signinButton" class="upload-signin" href="{% url 'signinGoogle' %}">
+                        {% else %}
                             <img class="profile-image" src="{{ profile_image_url }}" alt="Profile Image">
                             <span>Sign in with another account</span>
-                        </a>
-                    {% endif %}
-
+                        {% endif %}
+                    </a>
                 </div>
                 <output id="signin-status">
                     {{ signin_msg }}
