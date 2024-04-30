@@ -7,48 +7,50 @@ const modelArea = doc.getElementById('model-area');
 const model = doc.getElementById('model');
 const fControls = doc.getElementById('floating-controls');
 const infoBtn = doc.getElementById('info-btn');
-const PRE_URL = "" // TODO: Use env
-
+const PRE_URL = ""; // TODO: Use env
+console.log("Is this the file")
 // ========================== FS START ==========================
-// ❗ Handle fullscreen❗
-const expandBtn = doc.getElementById('expand');
-const expParent = expandBtn.parentElement;
+//// ❗ Handle fullscreen❗
+
+// Handle fullscreen
+const expandBtn = $('#expand');
+const expParent = expandBtn.parent();
 
 function isInFullScreen() {
-    return (doc.fullScreenElement && doc.fullScreenElement !== null) || (doc.mozFullScreen || doc.webkitIsFullScreen);
+    return (document.fullScreenElement && document.fullScreenElement !== null) || (document.mozFullScreen || document.webkitIsFullScreen);
 }
 
 function requestFullScreen() {
-    el = modelArea
+    el = modelArea;
     var requestMethod = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullScreen;
     requestMethod.call(el);
 
     setTimeout(() => {
         model.classList.add("model-fs");
-        doc.querySelector(".controls").style.display = "none";
+        $('.controls').hide();
     }, 100);
 }
 
 function exitFullScreen() {
-    el = doc;
+    el = document;
     var requestMethod = el.cancelFullScreen || el.webkitCancelFullScreen || el.mozCancelFullScreen || el.exitFullscreen || el.webkitExitFullscreen;
     requestMethod.call(el);
 
     setTimeout(() => {
         model.classList.remove("model-fs");
-        doc.querySelector(".controls").style.display = "flex";
+        $('.controls').show();
     }, 100);
 }
 
-expandBtn.addEventListener("click", () => {
+expandBtn.click(function () {
     if (!isInFullScreen()) {
         setTimeout(() => {
-            expParent.style.top = "0.5rem";
+            expParent.css("top", "0.5rem");
         }, 100);
         requestFullScreen();
     } else {
         setTimeout(() => {
-            expParent.style.top = "0";
+            expParent.css("top", "0");
         }, 100);
         exitFullScreen();
     }
@@ -58,47 +60,60 @@ expandBtn.addEventListener("click", () => {
 function exitIfFS() {
     if (!isInFullScreen()) {
         setTimeout(() => {
-            expParent.style.top = "0";
+            expParent.css("top", "0");
             model.classList.remove("model-fs");
-            doc.querySelector(".controls").style.display = "flex";
+            $('.controls').show();
         }, 100);
     }
 }
 
-doc.addEventListener('fullscreenchange', exitIfFS);
-doc.addEventListener('webkitfullscreenchange', exitIfFS);
-doc.addEventListener('mozfullscreenchange', exitIfFS);
-doc.addEventListener('MSFullscreenChange', exitIfFS);
-// ========================== FS END ==========================
+$(document).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', exitIfFS);
 
-// ========================== SCROLL DOWN START ==========================
+// Scroll Down
 let timeoutId;
+
 function debounce(func, delay) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(func, delay);
 }
 
-// This fixes the show / hide info getting stuck prob
-// And the nav bar getting stuck if opened and window resized
-window.addEventListener("resize", () => {
-    if (screen.width > 768) {
-        body.style.setProperty("--side-current-width", side.clientWidth + 15 + "px");
+// Resize function
+function resizeFunction() {
+    if ($(window).innerWidth() > 768) {
+        $('body').css("--side-current-width", $('#side').width() + 15 + "px");
         debounce(contDialog.close(), 100); // Close modal
         debounce(setTimeout(() => { // Close nav
-            if (window.innerWidth < 768) {
-                side.classList.remove("hide-side");
-                modelArea.classList.remove("hide-side-model-area");
-                doc.querySelectorAll("#info-btn > span")[1].textContent = "Show information";
+            if ($(window).innerWidth() < 768) {
+                $('#side').removeClass("hide-side");
+                $('#modelArea').removeClass("hide-side-model-area");
+                $('#info-btn > span:eq(1)').text("Show information");
             }
-            nav.classList.remove("translate-nav");
-            fControls.classList.remove("translate-floating-controls");
-            body.classList.remove("blur");
-            body.classList.remove("overflow-toggle");
-        }, 100),
-        100);
+            $('#nav').removeClass("translate-nav");
+            $('#fControls').removeClass("translate-floating-controls");
+            $('body').removeClass("blur");
+            $('body').removeClass("overflow-toggle");
+        }, 100), 100);
     }
-});
-// }
+}
+
+// Add or remove resize event listener based on screen width
+function addOrRemoveResizeListener() {
+    if ($(window).innerWidth() > 400) {
+
+        $(window).on('resize', resizeFunction);
+    } else {
+        console.log("switch off resize")
+        $(window).off('resize', resizeFunction);
+    }
+}
+
+// Initially add or remove resize event listener based on screen width
+addOrRemoveResizeListener();
+
+// Recheck screen width on window resize
+$(window).on('resize', addOrRemoveResizeListener);
+
+
 // ========================== SCROLL DOWN END ==========================
 
 // ========================== NAV START ==========================
@@ -121,7 +136,7 @@ menu.addEventListener('click', () => {
 
 // Close menu on click outside nav
 doc.addEventListener('click', (e) => {
-    if (e.target &&  e.target.classList.contains('blur')) {
+    if (e.target && e.target.classList.contains('blur')) {
         toggleMenu();
     }
     else if (e.target && e.target.id == 'model-viewer-id') {
@@ -155,17 +170,17 @@ infoBtn.addEventListener('click', toggleInfo);
 
 // ========================== FORMAT DATA-LIST START ==========================
 // ❗Format data-list❗
-var options = $("#meshes option").map(function() {
+var options = $("#meshes option").map(function () {
     return this.value;
 }
 ).get();
 
-var mesh_names = options.map(function(val) {
+var mesh_names = options.map(function (val) {
     // Replace '__' with ' / ' and '_' with ' '
     return val.split('__').join(' / ').replace('_', ' ')
 });
 
-$('#meshes option').each(function(i) {
+$('#meshes option').each(function (i) {
     $(this).val(mesh_names[i]);
 });
 // ========================== FORMAT DATA-LIST END ==========================
@@ -179,12 +194,12 @@ $("#search").on('input', function (e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/search/",
-        data: {"query": $(this).val()},
+        data: { "query": $(this).val() },
         dataType: "json",
         success: function (resp) {
             if (resp.meshes_json != null) {
                 $(".models").empty(); // Clear list
-                $.each(resp.meshes_json, function(mesh) {
+                $.each(resp.meshes_json, function (mesh) {
                     $(".models").append(
                         "<a class='model-previews' href='" + PRE_URL + "/models/"
                         + resp.meshes_json[mesh].verbose_id +
@@ -220,7 +235,7 @@ $("#select-run").on("change", function (e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/loadRun/",
-        data: { "runark" : runark },
+        data: { "runark": runark },
         success: function (resp) {
             if (resp.run != null) {
                 // NOTE: Fix for the apparent model-viewer memory leak
@@ -255,7 +270,7 @@ $("#select-run").on("change", function (e) {
 
 // ========================== AJAX MESH LOAD START ==========================
 // ❗Handle mesh load❗
-$(".model-previews").on('click', function(e) {
+$(".model-previews").on('click', function (e) {
     e.preventDefault();
     var vid = $(this).attr("href").split("/")[4];
     var page_vid = window.location.pathname.split("/")[3];
@@ -265,7 +280,7 @@ $(".model-previews").on('click', function(e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/loadMesh/",
-        data: { "vid" : vid },
+        data: { "vid": vid },
         success: function (resp) {
             if (resp.mesh != null) {
                 if (resp.mesh.has_run == false) {
@@ -277,11 +292,11 @@ $(".model-previews").on('click', function(e) {
                     modStat.css('background-color', 'orange');
 
                     // Change model-status back after 5 seconds
-                    setTimeout(function() {
+                    setTimeout(function () {
                         modStat.html(ms_html);
                         modStat.css('background-color', ms_bg);
                     }
-                    , 5000);
+                        , 5000);
                 }
                 else {
                     // NOTE: Fix for the apparent model-viewer memory leak
@@ -362,7 +377,7 @@ const MAX_FILES = 1500, // NOTE: Limit to 1500 images. Tweak as needed.
 async function checkExif(file) {
     return new Promise((resolve, reject) => {
         var reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             var resultArray = new Uint8Array(e.target.result);
             var exifMarker = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // "Exif\0\0"
 
@@ -385,13 +400,13 @@ async function checkExif(file) {
 }
 
 // Show modal with SO & Form
-contBtn.addEventListener('click', function() {
+contBtn.addEventListener('click', function () {
     contDialog.showModal();
     body.classList.toggle("overflow-toggle");
 });
 
 // Close modal on receiving a click outside
-contDialog.addEventListener('click', function(el) {
+contDialog.addEventListener('click', function (el) {
     if (el.target.id == 'cont-form') {
         body.classList.toggle("overflow-toggle");
         contDialog.close();
@@ -401,7 +416,7 @@ contDialog.addEventListener('click', function(el) {
 // Adds files to upInput using DataTransfer
 function syncInput() {
     const dt = new DataTransfer();
-    selectedFiles.forEach(function(file) {
+    selectedFiles.forEach(function (file) {
         dt.items.add(file);
     });
     upInput.files = dt.files;
@@ -427,7 +442,7 @@ function removeFile(pic) {
     const name = pic.name;
     selectedFiles.delete(pic);
     // Match by name and delete from compressedFiles
-    compressedFiles = compressedFiles.filter(function(el) {
+    compressedFiles = compressedFiles.filter(function (el) {
         return el.name !== name;
     });
 
@@ -497,7 +512,7 @@ async function createGallery(files, signal) {
                 // Add <img> element
                 const reader = new FileReader();
                 await new Promise((resolve, reject) => {
-                    reader.onloadend = function() {
+                    reader.onloadend = function () {
                         // Check if `Clear` was clicked
                         if (signal.aborted)
                             return;
@@ -567,7 +582,7 @@ async function createGallery(files, signal) {
                                 let removeBtn = createElem('button')
                                 removeBtn.innerHTML = "✕";
                                 removeBtn.classList.add("remove");
-                                removeBtn.addEventListener('click', function(e) {
+                                removeBtn.addEventListener('click', function (e) {
                                     e.preventDefault();
                                     this.parentElement.remove();
                                     removeFile(pic);
@@ -596,7 +611,7 @@ async function createGallery(files, signal) {
 
 upInput.addEventListener(
     "change",
-    function(e) {
+    function (e) {
         e.preventDefault();
         let ctrl = new AbortController();
         controller = ctrl;
@@ -619,7 +634,7 @@ function clearGallery() {
 
 clearBtn.addEventListener(
     'click',
-    function() {
+    function () {
         if (selectedFiles.size > 0 && compressedFiles.length > 0) {
             clearGallery();
             $("#file-count").html("No files selected.");
@@ -629,7 +644,7 @@ clearBtn.addEventListener(
 );
 // ========================== DRAG & DROP START ==========================
 // ❗Handle drag & drop❗ | Adapted from: https://codepen.io/joezimjs/pen/yPWQbd
-function preventDefaults (e) {
+function preventDefaults(e) {
     e.preventDefault();
     e.stopPropagation();
 }
@@ -640,21 +655,21 @@ function preventDefaults (e) {
     doc.body.addEventListener(evt, preventDefaults, false)
 })
 
-// Highlights drop area, when item is dragged over it
-;['dragenter', 'dragover'].forEach(evt => {
-    upGal.addEventListener(evt, () => {
-        upGal.classList.add('highlight');
-    }, false);
-})
-;['dragleave', 'drop'].forEach(evt => {
-    upGal.addEventListener(evt, () => {
-        upGal.classList.remove('highlight');
-    }, false);
-})
+    // Highlights drop area, when item is dragged over it
+    ;['dragenter', 'dragover'].forEach(evt => {
+        upGal.addEventListener(evt, () => {
+            upGal.classList.add('highlight');
+        }, false);
+    })
+    ;['dragleave', 'drop'].forEach(evt => {
+        upGal.addEventListener(evt, () => {
+            upGal.classList.remove('highlight');
+        }, false);
+    })
 
 // Handles dragged & dropped files
 upGal.addEventListener('drop',
-    function(e) {
+    function (e) {
         let ctrl = new AbortController();
         controller = ctrl;
         createGallery(e.dataTransfer.files, ctrl.signal);
@@ -680,7 +695,7 @@ function onGoogleSignIn(creds) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/googleAuth/",
-        data: { "token" : creds.credential },
+        data: { "token": creds.credential },
         success: function (resp) {
             signInStatus.html(resp.output);
             if (resp.blur == false) {
@@ -700,12 +715,12 @@ function onGoogleSignIn(creds) {
 // ========================== GOOGLE AUTH END ==========================
 
 // ========================== AJAX UPLOAD START ==========================
-uploadForm.on('submit', function(e) {
+uploadForm.on('submit', function (e) {
     e.preventDefault();
 
     // Sync compressedFiles with upInput
     const dt = new DataTransfer();
-    compressedFiles.forEach(function(file) {
+    compressedFiles.forEach(function (file) {
         dt.items.add(file);
     });
     upInput.files = dt.files;
@@ -715,7 +730,7 @@ uploadForm.on('submit', function(e) {
         $("#file-count").html("No files selected.");
         // Set text-shadow to draw attention for 1s
         $("#file-count").css("text-shadow", "0 0 10px #ff0000");
-        setTimeout(function() {
+        setTimeout(function () {
             $("#file-count").css("text-shadow", "none");
         }, 1000);
 
@@ -737,7 +752,7 @@ uploadForm.on('submit', function(e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/preUpload/",
-        data: { "mesh_vid" : mesh_vid },
+        data: { "mesh_vid": mesh_vid },
         success: function (resp) {
             $('#upload-result').html(resp.output);
             if (resp.allowupload == true)
@@ -769,9 +784,9 @@ uploadForm.on('submit', function(e) {
             dataType: "json",
             processData: false,
             contentType: false,
-            xhr: function() {
+            xhr: function () {
                 var xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
+                xhr.upload.addEventListener('progress', function (e) {
                     if (e.lengthComputable) {
                         var percentComplete = e.loaded / e.total * 100;
                         $('progress').val(percentComplete);
