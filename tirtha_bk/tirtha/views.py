@@ -189,6 +189,7 @@ def _signin(token):
     Handles token-based authentication.
     Verifies the token and retrieves or creates the contributor.
     """
+    # For development only
     if not GOOGLE_LOGIN:
         # Return default contributor
         contrib = Contributor.objects.get(email=ADMIN_MAIL)
@@ -202,15 +203,15 @@ def _signin(token):
         payload = token.get("userinfo")
         email = payload.get("email")
         name = payload.get("name")
-        # Get or create contributor
-        contributor, created = Contributor.objects.get_or_create(
-            email=email, name=name, defaults={"active": False}
-        )
-
         # NOTE: Treating email as unique ID, both for our DB and Google's
         # NOTE: Contributor is created as inactive | Manual activation required
         # CHECK: TODO: Allow auto-activation after testing
 
+        # Get or create contributor
+        contributor, created = Contributor.objects.get_or_create(
+            email=email, name=name, defaults={"active": False}
+        )
+        
         # If name has changed, update name
         if name != contrib.name:
             contrib.name = name
