@@ -44,6 +44,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tirtha_bk.wsgi.application"
 
+# Application definition
+INSTALLED_APPS = [
+    "tirtha.apps.TirthaConfig",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_cleanup.apps.CleanupConfig",  # For cleaning up orphaned files in media
+    "django_extensions",
+    "dbbackup",  # django-dbbackup
+    "authlib",  # Include Authlib for OAuth integration
+]
+
+MIDDLEWARE = ["django.contrib.sessions.middleware.SessionMiddleware"]
+
+# Appconfig changes
+appConf = {
+    "OAUTH2_CLIENT_ID": "GOOGLE CLIENT ID",
+    "OAUTH2_CLIENT_SECRET": "CLIENT SECRET ID",
+    "OAUTH2_META_URL": "https://accounts.google.com/.well-known/openid-configuration"
+    } # TODO:PUT THE ACTUAL KEY AND ID
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
