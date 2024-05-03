@@ -9,7 +9,6 @@ const model = doc.getElementById('model');
 const fControls = doc.getElementById('floating-controls');
 const infoBtn = doc.getElementById('info-btn');
 const PRE_URL = ""; // TODO: Use env
-console.log("Is this the file")
 // ========================== FS START ==========================
 //// ❗ Handle fullscreen❗
 
@@ -18,7 +17,7 @@ const expandBtn = $('#expand');
 const expParent = expandBtn.parent();
 
 function isInFullScreen() {
-    return (document.fullScreenElement && document.fullScreenElement !== null) || (document.mozFullScreen || document.webkitIsFullScreen);
+    return (doc.fullScreenElement && doc.fullScreenElement !== null) || (doc.mozFullScreen || doc.webkitIsFullScreen);
 }
 
 function requestFullScreen() {
@@ -39,7 +38,7 @@ function exitFullScreen() {
 
     setTimeout(() => {
         model.classList.remove("model-fs");
-        $('.controls').show();
+        $('.controls').css('display','flex');
     }, 100);
 }
 
@@ -137,6 +136,7 @@ function exitIfFS() {
 }
 
 $(document).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', exitIfFS);
+<<<<<<< HEAD
 =======
   if (!isInFullScreen()) {
     setTimeout(() => {
@@ -153,14 +153,19 @@ doc.addEventListener("mozfullscreenchange", exitIfFS);
 doc.addEventListener("MSFullscreenChange", exitIfFS);
 // ========================== FS END ==========================
 >>>>>>> upstream/main
+=======
+// ========================== FS END ==========================
 
-// Scroll Down
+// ========================== SCROLL DOWN START ==========================
+>>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
+
 let timeoutId;
 
 function debounce(func, delay) {
   clearTimeout(timeoutId);
   timeoutId = setTimeout(func, delay);
 }
+// This fixes the show / hide info getting stuck prob
 
 <<<<<<< HEAD
 // Resize function
@@ -185,10 +190,8 @@ function resizeFunction() {
 // Add or remove resize event listener based on screen width
 function addOrRemoveResizeListener() {
     if ($(window).innerWidth() > 400) {
-
         $(window).on('resize', resizeFunction);
     } else {
-        console.log("switch off resize")
         $(window).off('resize', resizeFunction);
     }
 }
@@ -198,6 +201,7 @@ addOrRemoveResizeListener();
 
 // Recheck screen width on window resize
 $(window).on('resize', addOrRemoveResizeListener);
+<<<<<<< HEAD
 
 
 =======
@@ -230,6 +234,8 @@ window.addEventListener("resize", () => {
 });
 // }
 >>>>>>> upstream/main
+=======
+>>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
 // ========================== SCROLL DOWN END ==========================
 
 // ========================== NAV START ==========================
@@ -566,6 +572,7 @@ $(".model-previews").on("click", function (e) {
             );
           });
 
+<<<<<<< HEAD
           // Change page title & url
           $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
           if (vid != page_vid) {
@@ -575,6 +582,19 @@ $(".model-previews").on("click", function (e) {
               window.location.origin + PRE_URL + "/models/" + vid
             );
           }
+=======
+                    // Change page title & url
+                    $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
+                    if (vid != page_vid) {
+                        window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + vid);
+                    }
+                }
+            }
+            
+        },
+        error: function (resp) {
+            console.log("GET ERROR in loadMesh.");
+>>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
         }
       } else {
         console.log("No matching meshes were found.");
@@ -1092,9 +1112,9 @@ function preventDefaults(e) {
             upGal.classList.remove('highlight');
         }, false);
     })
-
 // Handles dragged & dropped files
 upGal.addEventListener('drop',
+<<<<<<< HEAD
     function (e) {
         let ctrl = new AbortController();
         controller = ctrl;
@@ -1130,6 +1150,13 @@ upGal.addEventListener(
     createGallery(e.dataTransfer.files, ctrl.signal);
   },
   false
+=======
+function (e) {
+    let ctrl = new AbortController();
+    controller = ctrl; // Declaring controller using let
+    createGallery(e.dataTransfer.files, ctrl.signal);
+}, false
+>>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
 );
 // ========================== DRAG & DROP END ==========================
 
