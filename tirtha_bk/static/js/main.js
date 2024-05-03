@@ -8,7 +8,6 @@ const model = doc.getElementById('model');
 const fControls = doc.getElementById('floating-controls');
 const infoBtn = doc.getElementById('info-btn');
 const PRE_URL = ""; // TODO: Use env
-console.log("Is this the file")
 // ========================== FS START ==========================
 //// ❗ Handle fullscreen❗
 
@@ -17,7 +16,7 @@ const expandBtn = $('#expand');
 const expParent = expandBtn.parent();
 
 function isInFullScreen() {
-    return (document.fullScreenElement && document.fullScreenElement !== null) || (document.mozFullScreen || document.webkitIsFullScreen);
+    return (doc.fullScreenElement && doc.fullScreenElement !== null) || (doc.mozFullScreen || doc.webkitIsFullScreen);
 }
 
 function requestFullScreen() {
@@ -38,7 +37,7 @@ function exitFullScreen() {
 
     setTimeout(() => {
         model.classList.remove("model-fs");
-        $('.controls').show();
+        $('.controls').css('display','flex');
     }, 100);
 }
 
@@ -68,14 +67,17 @@ function exitIfFS() {
 }
 
 $(document).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', exitIfFS);
+// ========================== FS END ==========================
 
-// Scroll Down
+// ========================== SCROLL DOWN START ==========================
+
 let timeoutId;
 
 function debounce(func, delay) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(func, delay);
 }
+// This fixes the show / hide info getting stuck prob
 
 // Resize function
 function resizeFunction() {
@@ -99,10 +101,8 @@ function resizeFunction() {
 // Add or remove resize event listener based on screen width
 function addOrRemoveResizeListener() {
     if ($(window).innerWidth() > 400) {
-
         $(window).on('resize', resizeFunction);
     } else {
-        console.log("switch off resize")
         $(window).off('resize', resizeFunction);
     }
 }
@@ -112,8 +112,6 @@ addOrRemoveResizeListener();
 
 // Recheck screen width on window resize
 $(window).on('resize', addOrRemoveResizeListener);
-
-
 // ========================== SCROLL DOWN END ==========================
 
 // ========================== NAV START ==========================
@@ -334,9 +332,7 @@ $(".model-previews").on('click', function (e) {
                     }
                 }
             }
-            else {
-                console.log("No matching meshes were found.");
-            }
+            
         },
         error: function (resp) {
             console.log("GET ERROR in loadMesh.");
@@ -666,15 +662,13 @@ function preventDefaults(e) {
             upGal.classList.remove('highlight');
         }, false);
     })
-
 // Handles dragged & dropped files
 upGal.addEventListener('drop',
-    function (e) {
-        let ctrl = new AbortController();
-        controller = ctrl;
-        createGallery(e.dataTransfer.files, ctrl.signal);
-    },
-    false
+function (e) {
+    let ctrl = new AbortController();
+    controller = ctrl; // Declaring controller using let
+    createGallery(e.dataTransfer.files, ctrl.signal);
+}, false
 );
 // ========================== DRAG & DROP END ==========================
 
