@@ -1,6 +1,6 @@
 // Elements to be manipulated
 const doc = document;
-<<<<<<< HEAD
+
 const body = doc.querySelector('body');
 const nav = doc.querySelector('nav');
 const side = doc.getElementById('side');
@@ -54,7 +54,7 @@ expandBtn.click(function () {
         }, 100);
         exitFullScreen();
     }
-=======
+
 const body = doc.querySelector("body");
 const nav = doc.querySelector("nav");
 const side = doc.getElementById("side");
@@ -120,12 +120,12 @@ expandBtn.addEventListener("click", () => {
     }, 100);
     exitFullScreen();
   }
->>>>>>> upstream/main
+
 });
 
 // Exit when fullscreen is exited via Esc keypress
 function exitIfFS() {
-<<<<<<< HEAD
+
     if (!isInFullScreen()) {
         setTimeout(() => {
             expParent.css("top", "0");
@@ -136,8 +136,7 @@ function exitIfFS() {
 }
 
 $(document).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', exitIfFS);
-<<<<<<< HEAD
-=======
+
   if (!isInFullScreen()) {
     setTimeout(() => {
       expParent.style.top = "0";
@@ -167,7 +166,6 @@ function debounce(func, delay) {
 }
 // This fixes the show / hide info getting stuck prob
 
-<<<<<<< HEAD
 // Resize function
 function resizeFunction() {
     if ($(window).innerWidth() > 768) {
@@ -201,10 +199,7 @@ addOrRemoveResizeListener();
 
 // Recheck screen width on window resize
 $(window).on('resize', addOrRemoveResizeListener);
-<<<<<<< HEAD
 
-
-=======
 // This fixes the show / hide info getting stuck prob
 // And the nav bar getting stuck if opened and window resized
 window.addEventListener("resize", () => {
@@ -233,9 +228,7 @@ window.addEventListener("resize", () => {
   }
 });
 // }
->>>>>>> upstream/main
-=======
->>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
+
 // ========================== SCROLL DOWN END ==========================
 
 // ========================== NAV START ==========================
@@ -257,7 +250,7 @@ menu.addEventListener("click", () => {
 });
 
 // Close menu on click outside nav
-<<<<<<< HEAD
+
 doc.addEventListener('click', (e) => {
     if (e.target && e.target.classList.contains('blur')) {
         toggleMenu();
@@ -266,14 +259,14 @@ doc.addEventListener('click', (e) => {
         if (nav.classList.contains('translate-nav')) {
             toggleMenu(); // Close nav
         }
-=======
+
 doc.addEventListener("click", (e) => {
   if (e.target && e.target.classList.contains("blur")) {
     toggleMenu();
   } else if (e.target && e.target.id == "model-viewer-id") {
     if (nav.classList.contains("translate-nav")) {
       toggleMenu(); // Close nav
->>>>>>> upstream/main
+
     }
   }
 });
@@ -306,32 +299,32 @@ infoBtn.addEventListener("click", toggleInfo);
 
 // ========================== FORMAT DATA-LIST START ==========================
 // ❗Format data-list❗
-<<<<<<< HEAD
+
 var options = $("#meshes option").map(function () {
-=======
+
 var options = $("#meshes option")
   .map(function () {
->>>>>>> upstream/main
+
     return this.value;
   })
   .get();
 
 var mesh_names = options.map(function (val) {
-<<<<<<< HEAD
+
     // Replace '__' with ' / ' and '_' with ' '
     return val.split('__').join(' / ').replace('_', ' ')
 });
 
 $('#meshes option').each(function (i) {
     $(this).val(mesh_names[i]);
-=======
+
   // Replace '__' with ' / ' and '_' with ' '
   return val.split("__").join(" / ").replace("_", " ");
 });
 
 $("#meshes option").each(function (i) {
   $(this).val(mesh_names[i]);
->>>>>>> upstream/main
+
 });
 // ========================== FORMAT DATA-LIST END ==========================
 
@@ -341,7 +334,6 @@ $("#search").on("input", function (e) {
   // LATE_EXP: Marked for refactor + views.py.
   e.preventDefault();
 
-<<<<<<< HEAD
     $.ajax({
         type: "GET",
         url: PRE_URL + "/search/",
@@ -374,7 +366,7 @@ $("#search").on("input", function (e) {
         }
     })
 })
-=======
+
   $.ajax({
     type: "GET",
     url: PRE_URL + "/search/",
@@ -410,7 +402,7 @@ $("#search").on("input", function (e) {
     },
   });
 });
->>>>>>> upstream/main
+
 // ========================== AJAX SEARCH END ==========================
 
 // ========================== AJAX RUN LOAD START ==========================
@@ -420,7 +412,6 @@ $("#select-run").on("change", function (e) {
   var runark = $(this).val();
   var page_vid = window.location.pathname.split("/")[4];
 
-<<<<<<< HEAD
     $.ajax({
         type: "GET",
         url: PRE_URL + "/loadRun/",
@@ -430,7 +421,7 @@ $("#select-run").on("change", function (e) {
                 // NOTE: Fix for the apparent model-viewer memory leak
                 // LATE_EXP: TODO: Expose this as an experimental setting in the UI for users to toggle.
                 customElements.get("model-viewer").modelCacheSize = 0;
-=======
+
   $.ajax({
     type: "GET",
     url: PRE_URL + "/loadRun/",
@@ -440,7 +431,6 @@ $("#select-run").on("change", function (e) {
         // NOTE: Fix for the apparent model-viewer memory leak
         // LATE_EXP: TODO: Expose this as an experimental setting in the UI for users to toggle.
         customElements.get("model-viewer").modelCacheSize = 0;
->>>>>>> upstream/main
 
         // Load mesh
         $("model-viewer").attr("src", resp.run.mesh_src);
@@ -479,21 +469,20 @@ $("#select-run").on("change", function (e) {
 
 // ========================== AJAX MESH LOAD START ==========================
 // ❗Handle mesh load❗
-<<<<<<< HEAD
+
 $(".model-previews").on('click', function (e) {
     e.preventDefault();
     var vid = $(this).attr("href").split("/")[4];
     var page_vid = window.location.pathname.split("/")[3];
-=======
+
 $(".model-previews").on("click", function (e) {
   e.preventDefault();
   var vid = $(this).attr("href").split("/")[4];
   var page_vid = window.location.pathname.split("/")[3];
->>>>>>> upstream/main
+
 
   var modStat = $(this).find(".model-status");
 
-<<<<<<< HEAD
     $.ajax({
         type: "GET",
         url: PRE_URL + "/loadMesh/",
@@ -503,7 +492,7 @@ $(".model-previews").on("click", function (e) {
                 if (resp.mesh.has_run == false) {
                     const ms_html = modStat.html();
                     const ms_bg = modStat.css('background-color');
-=======
+
   $.ajax({
     type: "GET",
     url: PRE_URL + "/loadMesh/",
@@ -513,13 +502,12 @@ $(".model-previews").on("click", function (e) {
         if (resp.mesh.has_run == false) {
           const ms_html = modStat.html();
           const ms_bg = modStat.css("background-color");
->>>>>>> upstream/main
+
 
           // Set model-status to this for 5 seconds
           modStat.html("Model pending");
           modStat.css("background-color", "orange");
 
-<<<<<<< HEAD
                     // Change model-status back after 5 seconds
                     setTimeout(function () {
                         modStat.html(ms_html);
@@ -530,7 +518,7 @@ $(".model-previews").on("click", function (e) {
                 else {
                     // NOTE: Fix for the apparent model-viewer memory leak
                     customElements.get("model-viewer").modelCacheSize = 0;
-=======
+
           // Change model-status back after 5 seconds
           setTimeout(function () {
             modStat.html(ms_html);
@@ -539,7 +527,7 @@ $(".model-previews").on("click", function (e) {
         } else {
           // NOTE: Fix for the apparent model-viewer memory leak
           customElements.get("model-viewer").modelCacheSize = 0;
->>>>>>> upstream/main
+
 
           $("model-viewer").attr("poster", resp.mesh.prev_url);
           $("model-viewer").attr("src", resp.mesh.src);
@@ -572,7 +560,7 @@ $(".model-previews").on("click", function (e) {
             );
           });
 
-<<<<<<< HEAD
+
           // Change page title & url
           $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
           if (vid != page_vid) {
@@ -582,7 +570,7 @@ $(".model-previews").on("click", function (e) {
               window.location.origin + PRE_URL + "/models/" + vid
             );
           }
-=======
+
                     // Change page title & url
                     $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
                     if (vid != page_vid) {
@@ -594,7 +582,7 @@ $(".model-previews").on("click", function (e) {
         },
         error: function (resp) {
             console.log("GET ERROR in loadMesh.");
->>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
+
         }
       } else {
         console.log("No matching meshes were found.");
@@ -637,19 +625,19 @@ const MAX_FILES = 1500, // NOTE: Limit to 1500 images. Tweak as needed.
   QUAL = 0.7; // JPEG quality
 
 async function checkExif(file) {
-<<<<<<< HEAD
+
     return new Promise((resolve, reject) => {
         var reader = new FileReader();
         reader.onload = function (e) {
             var resultArray = new Uint8Array(e.target.result);
             var exifMarker = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // "Exif\0\0"
-=======
+
   return new Promise((resolve, reject) => {
     var reader = new FileReader();
     reader.onload = function (e) {
       var resultArray = new Uint8Array(e.target.result);
       var exifMarker = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // "Exif\0\0"
->>>>>>> upstream/main
+
 
       // Search for the Exif marker
       for (var i = 0; i < resultArray.length - exifMarker.length; i++) {
@@ -669,7 +657,7 @@ async function checkExif(file) {
 }
 
 // Show modal with SO & Form
-<<<<<<< HEAD
+
 contBtn.addEventListener('click', function () {
     contDialog.showModal();
     body.classList.toggle("overflow-toggle");
@@ -681,7 +669,7 @@ contDialog.addEventListener('click', function (el) {
         body.classList.toggle("overflow-toggle");
         contDialog.close();
     }
-=======
+
 contBtn.addEventListener("click", function () {
   contDialog.showModal();
   body.classList.toggle("overflow-toggle");
@@ -693,24 +681,24 @@ contDialog.addEventListener("click", function (el) {
     body.classList.toggle("overflow-toggle");
     contDialog.close();
   }
->>>>>>> upstream/main
+
 });
 
 // Adds files to upInput using DataTransfer
 function syncInput() {
-<<<<<<< HEAD
+
     const dt = new DataTransfer();
     selectedFiles.forEach(function (file) {
         dt.items.add(file);
     });
     upInput.files = dt.files;
-=======
+
   const dt = new DataTransfer();
   selectedFiles.forEach(function (file) {
     dt.items.add(file);
   });
   upInput.files = dt.files;
->>>>>>> upstream/main
+
 }
 
 // Update counter
@@ -735,21 +723,21 @@ function addFile(file) {
 
 // Removes file from selectedFiles & upInput
 function removeFile(pic) {
-<<<<<<< HEAD
+
     const name = pic.name;
     selectedFiles.delete(pic);
     // Match by name and delete from compressedFiles
     compressedFiles = compressedFiles.filter(function (el) {
         return el.name !== name;
     });
-=======
+
   const name = pic.name;
   selectedFiles.delete(pic);
   // Match by name and delete from compressedFiles
   compressedFiles = compressedFiles.filter(function (el) {
     return el.name !== name;
   });
->>>>>>> upstream/main
+
 
   syncInput();
   updateCounter();
@@ -799,7 +787,6 @@ async function createGallery(files, signal) {
     for (let i = 0; i < files.length; i++) {
       const pic = files[i];
 
-<<<<<<< HEAD
             // Add pic to gallery only if it exists in selectedFiles, post validation
             if (selectedFiles.size < MAX_FILES) {
                 // Validate filetype
@@ -904,7 +891,7 @@ async function createGallery(files, signal) {
                     reader.readAsDataURL(pic);
                 });
             }
-=======
+
       // Add pic to gallery only if it exists in selectedFiles, post validation
       if (selectedFiles.size < MAX_FILES) {
         // Validate filetype
@@ -913,7 +900,7 @@ async function createGallery(files, signal) {
             `File ${pic.name} is not a supported filetype! It will be ignored.`
           );
           continue;
->>>>>>> upstream/main
+
         }
 
         // Check if Exif data is present | Validate Exif
@@ -1029,7 +1016,7 @@ async function createGallery(files, signal) {
 }
 
 upInput.addEventListener(
-<<<<<<< HEAD
+
     "change",
     function (e) {
         e.preventDefault();
@@ -1038,7 +1025,7 @@ upInput.addEventListener(
         createGallery(this.files, ctrl.signal);
     },
     false
-=======
+
   "change",
   function (e) {
     e.preventDefault();
@@ -1047,7 +1034,7 @@ upInput.addEventListener(
     createGallery(this.files, ctrl.signal);
   },
   false
->>>>>>> upstream/main
+
 );
 
 // Handles gallery clear
@@ -1062,7 +1049,6 @@ function clearGallery() {
 }
 
 clearBtn.addEventListener(
-<<<<<<< HEAD
     'click',
     function () {
         if (selectedFiles.size > 0 && compressedFiles.length > 0) {
@@ -1071,7 +1057,7 @@ clearBtn.addEventListener(
         }
     },
     false
-=======
+
   "click",
   function () {
     if (selectedFiles.size > 0 && compressedFiles.length > 0) {
@@ -1080,18 +1066,15 @@ clearBtn.addEventListener(
     }
   },
   false
->>>>>>> upstream/main
+
 );
 // ========================== DRAG & DROP START ==========================
 // ❗Handle drag & drop❗ | Adapted from: https://codepen.io/joezimjs/pen/yPWQbd
 function preventDefaults(e) {
-<<<<<<< HEAD
     e.preventDefault();
     e.stopPropagation();
-=======
   e.preventDefault();
   e.stopPropagation();
->>>>>>> upstream/main
 }
 
 // Prevents default drag behaviors
@@ -1100,7 +1083,6 @@ function preventDefaults(e) {
   doc.body.addEventListener(evt, preventDefaults, false);
 });
 
-<<<<<<< HEAD
     // Highlights drop area, when item is dragged over it
     ;['dragenter', 'dragover'].forEach(evt => {
         upGal.addEventListener(evt, () => {
@@ -1114,19 +1096,18 @@ function preventDefaults(e) {
     })
 // Handles dragged & dropped files
 upGal.addEventListener('drop',
-<<<<<<< HEAD
+
     function (e) {
         let ctrl = new AbortController();
         controller = ctrl;
         createGallery(e.dataTransfer.files, ctrl.signal);
-=======
+
 // Highlights drop area, when item is dragged over it
 ["dragenter", "dragover"].forEach((evt) => {
   upGal.addEventListener(
     evt,
     () => {
       upGal.classList.add("highlight");
->>>>>>> upstream/main
     },
     false
   );
@@ -1150,13 +1131,12 @@ upGal.addEventListener(
     createGallery(e.dataTransfer.files, ctrl.signal);
   },
   false
-=======
+
 function (e) {
     let ctrl = new AbortController();
     controller = ctrl; // Declaring controller using let
     createGallery(e.dataTransfer.files, ctrl.signal);
 }, false
->>>>>>> 8c3141091e6c8abf353f6307885ce0ca3ace3393
 );
 // ========================== DRAG & DROP END ==========================
 
@@ -1216,7 +1196,7 @@ uploadForm.on('submit', function (e) {
         setTimeout(function () {
             $("#file-count").css("text-shadow", "none");
         }, 1000);
-=======
+
 // ========================== AJAX UPLOAD START ==========================
 uploadForm.on("submit", function (e) {
   e.preventDefault();
@@ -1236,7 +1216,7 @@ uploadForm.on("submit", function (e) {
     setTimeout(function () {
       $("#file-count").css("text-shadow", "none");
     }, 1000);
->>>>>>> upstream/main
+
 
     return;
   }
@@ -1251,7 +1231,6 @@ uploadForm.on("submit", function (e) {
   formData.append("mesh_vid", mesh_vid);
   formData.delete("mesh");
 
-<<<<<<< HEAD
     // Check if the mesh_vid is valid and if so, whether the mesh is "completed"
     $("#upload-result").html("Please wait! Checking...");
     $.ajax({
@@ -1276,7 +1255,7 @@ uploadForm.on("submit", function (e) {
             clearBtn.disabled = false;
             clearBtn.classList.remove("disabled-btn");
             $('#upload-result').html("Error! Please try again.");
-=======
+
   // Check if the mesh_vid is valid and if so, whether the mesh is "completed"
   $("#upload-result").html("Please wait! Checking...");
   $.ajax({
@@ -1292,7 +1271,6 @@ uploadForm.on("submit", function (e) {
         if (resp.blur == true) {
           uploadForm.addClass("blur-form");
           uploadFormElems.attr("inert", "");
->>>>>>> upstream/main
         }
       }
     },
@@ -1304,7 +1282,6 @@ uploadForm.on("submit", function (e) {
     },
   });
 
-<<<<<<< HEAD
     function uploadFiles() {
         // Upload files
         $("#upload-result").html("Please wait! Uploading...");
@@ -1341,7 +1318,6 @@ uploadForm.on("submit", function (e) {
                 clearBtn.disabled = false;
                 clearBtn.classList.remove("disabled-btn");
                 $('#upload-result').html("Error! Please try again.");
-=======
   function uploadFiles() {
     // Upload files
     $("#upload-result").html("Please wait! Uploading...");
@@ -1360,7 +1336,6 @@ uploadForm.on("submit", function (e) {
             if (e.lengthComputable) {
               var percentComplete = (e.loaded / e.total) * 100;
               $("progress").val(percentComplete);
->>>>>>> upstream/main
             }
           },
           false
