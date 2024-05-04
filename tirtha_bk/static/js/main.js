@@ -1,17 +1,18 @@
 // Elements to be manipulated
 const doc = document;
-const body = doc.querySelector('body');
-const nav = doc.querySelector('nav');
-const side = doc.getElementById('side');
-const modelArea = doc.getElementById('model-area');
-const model = doc.getElementById('model');
-const fControls = doc.getElementById('floating-controls');
-const infoBtn = doc.getElementById('info-btn');
+const body = doc.querySelector("body");
+const nav = doc.querySelector("nav");
+const side = $("#side");
+const modelArea = $("#model-area");
+const model = $("#model");
+const fControls = $("#floating-controls");
+const infoBtn = $("#info-btn");
 const PRE_URL = ""; // TODO: Use env
 
+
 // ========================== FS START ==========================
-//// ❗ Handle fullscreen❗
-const expandBtn = $('#expand');
+// ❗ Handle fullscreen❗
+const expandBtn = $("#expand");
 const expParent = expandBtn.parent();
 
 function isInFullScreen() {
@@ -25,7 +26,7 @@ function requestFullScreen() {
 
     setTimeout(() => {
         model.classList.add("model-fs");
-        $('.controls').hide();
+        $(".controls").hide();
     }, 100);
 }
 
@@ -36,7 +37,7 @@ function exitFullScreen() {
 
     setTimeout(() => {
         model.classList.remove("model-fs");
-        $('.controls').css('display', 'flex');
+        $(".controls").css("display", "flex");
     }, 100);
 }
 
@@ -60,16 +61,16 @@ function exitIfFS() {
         setTimeout(() => {
             expParent.css("top", "0");
             model.classList.remove("model-fs");
-            $('.controls').show();
+            $(".controls").css("display", "flex");
         }, 100);
     }
 }
 
-$(doc).on('fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange', exitIfFS);
-// ========================== FS  END ==========================
+$(doc).on("fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange", exitIfFS);
+// ========================== FS END ==========================
+
 
 // ========================== SCROLL DOWN START ==========================
-// Scroll Down
 let timeoutId;
 
 function debounce(func, delay) {
@@ -82,18 +83,18 @@ function debounce(func, delay) {
 // And the nav bar getting stuck if opened and window resized
 function resizeFunction() {
     if ($(window).innerWidth() > 768) {
-        $('body').css("--side-current-width", $('#side').width() + 15 + "px");
+        $("body").css("--side-current-width", $("#side").width() + 15 + "px");
         debounce(contDialog.close(), 100); // Close modal
         debounce(setTimeout(() => { // Close nav
             if ($(window).innerWidth() < 768) {
-                $('#side').removeClass("hide-side");
-                $('#modelArea').removeClass("hide-side-model-area");
-                $('#info-btn > span:eq(1)').text("Show information");
+                $("#side").removeClass("hide-side");
+                $("#modelArea").removeClass("hide-side-model-area");
+                $("#info-btn > span:eq(1)").text("Show information");
             }
-            $('#nav').removeClass("translate-nav");
-            $('#fControls').removeClass("translate-floating-controls");
-            $('body').removeClass("blur");
-            $('body').removeClass("overflow-toggle");
+            $("#nav").removeClass("translate-nav");
+            $("#fControls").removeClass("translate-floating-controls");
+            $("body").removeClass("blur");
+            $("body").removeClass("overflow-toggle");
         }, 100), 100);
     }
 }
@@ -101,9 +102,9 @@ function resizeFunction() {
 // Add or remove resize event listener based on screen width
 function addOrRemoveResizeListener() {
     if ($(window).innerWidth() > 400) {
-        $(window).on('resize', resizeFunction);
+        $(window).on("resize", resizeFunction);
     } else {
-        $(window).off('resize', resizeFunction);
+        $(window).off("resize", resizeFunction);
     }
 }
 
@@ -111,34 +112,35 @@ function addOrRemoveResizeListener() {
 addOrRemoveResizeListener();
 
 // Recheck screen width on window resize
-$(window).on('resize', addOrRemoveResizeListener);
+$(window).on("resize", addOrRemoveResizeListener);
 // ========================== SCROLL DOWN END ==========================
+
 
 // ========================== NAV START ==========================
 // ❗Responsive nav & floating-controls❗
-const menu = doc.getElementById('menu');
+const menu = $("#menu");
 
 function toggleMenu() {
     setTimeout(() => {
-        nav.classList.toggle('translate-nav');
-        fControls.classList.toggle('translate-floating-controls');
+        nav.classList.toggle("translate-nav");
+        fControls.classList.toggle("translate-floating-controls");
         body.classList.toggle("blur");
         body.classList.toggle("overflow-toggle");
     }, 100);
 }
 
 // Open menu on click
-menu.addEventListener('click', () => {
+menu.addEventListener("click", () => {
     toggleMenu();
 });
 
 // Close menu on click outside nav
-doc.addEventListener('click', (e) => {
-    if (e.target && e.target.classList.contains('blur')) {
+doc.addEventListener("click", (e) => {
+    if (e.target && e.target.classList.contains("blur")) {
         toggleMenu();
     }
-    else if (e.target && e.target.id == 'model-viewer-id') {
-        if (nav.classList.contains('translate-nav')) {
+    else if (e.target && e.target.id == "model-viewer-id") {
+        if (nav.classList.contains("translate-nav")) {
             toggleMenu(); // Close nav
         }
     }
@@ -163,43 +165,45 @@ function toggleInfo() {
     }
 }
 
-infoBtn.addEventListener('click', toggleInfo);
+infoBtn.addEventListener("click", toggleInfo);
 // ========================== SIDE END ==========================
+
 
 // ========================== FORMAT DATA-LIST START ==========================
 // ❗Format data-list❗
-var options = $("#meshes option").map(function () {
+var options = $("#meshes option").map(function() {
     return this.value;
 }
 ).get();
 
-var mesh_names = options.map(function (val) {
-    // Replace '__' with ' / ' and '_' with ' '
-    return val.split('__').join(' / ').replace('_', ' ')
+var mesh_names = options.map(function(val) {
+    // Replace "__" with " / " and "_" with " "
+    return val.split("__").join(" / ").replace("_", " ")
 });
 
-$('#meshes option').each(function (i) {
+$("#meshes option").each(function(i) {
     $(this).val(mesh_names[i]);
 });
 // ========================== FORMAT DATA-LIST END ==========================
 
+
 // ========================== AJAX SEARCH START ==========================
 // ❗Handle search❗
-$("#search").on('input', function (e) {
+$("#search").on("input", function (e) {
     // LATE_EXP: Marked for refactor + views.py.
     e.preventDefault();
 
     $.ajax({
         type: "GET",
         url: PRE_URL + "/search/",
-        data: { "query": $(this).val() },
+        data: {"query": $(this).val()},
         dataType: "json",
         success: function (resp) {
             if (resp.meshes_json != null) {
                 $(".models").empty(); // Clear list
-                $.each(resp.meshes_json, function (mesh) {
+                $.each(resp.meshes_json, function(mesh) {
                     $(".models").append(
-                        "<a class='model-previews' href='" + PRE_URL + "/models/"
+                       "<a class='model-previews' href='" + PRE_URL + "/models/"
                         + resp.meshes_json[mesh].verbose_id +
                         "/'><div class='model-status' style='background-color: "
                         + resp.meshes_json[mesh].completed_col +
@@ -208,7 +212,7 @@ $("#search").on('input', function (e) {
                         + resp.meshes_json[mesh].thumb_url +
                         "); background-size: cover;'><div class='model-title'>"
                         + mesh +
-                        "</div></div></a>"
+                        "</div></div></a>" 
                     );
                 });
             }
@@ -223,6 +227,7 @@ $("#search").on('input', function (e) {
 })
 // ========================== AJAX SEARCH END ==========================
 
+
 // ========================== AJAX RUN LOAD START ==========================
 // ❗Handle run load❗
 $("#select-run").on("change", function (e) {
@@ -233,7 +238,7 @@ $("#select-run").on("change", function (e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/loadRun/",
-        data: { "runark": runark },
+        data: { "runark" : runark },
         success: function (resp) {
             if (resp.run != null) {
                 // NOTE: Fix for the apparent model-viewer memory leak
@@ -266,9 +271,10 @@ $("#select-run").on("change", function (e) {
 });
 // ========================== AJAX RUN LOAD END ==========================
 
+
 // ========================== AJAX MESH LOAD START ==========================
 // ❗Handle mesh load❗
-$(".model-previews").on('click', function (e) {
+$(".model-previews").on("click", function(e) {
     e.preventDefault();
     var vid = $(this).attr("href").split("/")[4];
     var page_vid = window.location.pathname.split("/")[3];
@@ -278,23 +284,23 @@ $(".model-previews").on('click', function (e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/loadMesh/",
-        data: { "vid": vid },
+        data: { "vid" : vid },
         success: function (resp) {
             if (resp.mesh != null) {
                 if (resp.mesh.has_run == false) {
                     const ms_html = modStat.html();
-                    const ms_bg = modStat.css('background-color');
+                    const ms_bg = modStat.css("background-color");
 
                     // Set model-status to this for 5 seconds
-                    modStat.html('Model pending');
-                    modStat.css('background-color', 'orange');
+                    modStat.html("Model pending");
+                    modStat.css("background-color", "orange");
 
                     // Change model-status back after 5 seconds
-                    setTimeout(function () {
+                    setTimeout(function() {
                         modStat.html(ms_html);
-                        modStat.css('background-color', ms_bg);
+                        modStat.css("background-color", ms_bg);
                     }
-                        , 5000);
+                    , 5000);
                 }
                 else {
                     // NOTE: Fix for the apparent model-viewer memory leak
@@ -343,9 +349,10 @@ $(".model-previews").on('click', function (e) {
 });
 // ========================== AJAX MESH LOAD END ==========================
 
+
 // ========================== HQ DOWNLOAD START ==========================
 // TODO:❗Handle HQ download❗ - LATE_EXP: For later.
-// $('#hq').click(function() {
+// $("#hq").click(function() {
 //     // Add download functionality
 //     // TODO: options for "data products"
 //     // downloadDialog.showModal();
@@ -354,15 +361,16 @@ $(".model-previews").on('click', function (e) {
 // });
 // ========================== HQ DOWNLOAD END ==========================
 
+
 // ========================== MODAL START ==========================
 // ❗Handle contribute modal❗
-const upInput = doc.getElementById('upload-input');
-const contBtn = doc.getElementById('cont-btn');
-const clearBtn = doc.getElementById('clear-btn');
-const subBtn = doc.getElementById('submit-btn');
-const upLabel = doc.getElementById('upload-label');
-const contDialog = doc.getElementById('cont-form');
-var upGal = doc.getElementById('upload-gallery');
+const upInput = $("#upload-input");
+const contBtn = $("#cont-btn");
+const clearBtn = $("#clear-btn");
+const subBtn = $("#submit-btn");
+const upLabel = $("#upload-label");
+const contDialog = $("#cont-form");
+var upGal = $("#upload-gallery");
 var compressedFiles = [];
 const selectedFiles = new Set();
 const MAX_FILES = 1500, // NOTE: Limit to 1500 images. Tweak as needed.
@@ -375,7 +383,7 @@ const MAX_FILES = 1500, // NOTE: Limit to 1500 images. Tweak as needed.
 async function checkExif(file) {
     return new Promise((resolve, reject) => {
         var reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = function(e) {
             var resultArray = new Uint8Array(e.target.result);
             var exifMarker = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // "Exif\0\0"
 
@@ -398,14 +406,14 @@ async function checkExif(file) {
 }
 
 // Show modal with SO & Form
-contBtn.addEventListener('click', function () {
+contBtn.addEventListener("click", function() {
     contDialog.showModal();
     body.classList.toggle("overflow-toggle");
 });
 
 // Close modal on receiving a click outside
-contDialog.addEventListener('click', function (el) {
-    if (el.target.id == 'cont-form') {
+contDialog.addEventListener("click", function(el) {
+    if (el.target.id == "cont-form") {
         body.classList.toggle("overflow-toggle");
         contDialog.close();
     }
@@ -414,7 +422,7 @@ contDialog.addEventListener('click', function (el) {
 // Adds files to upInput using DataTransfer
 function syncInput() {
     const dt = new DataTransfer();
-    selectedFiles.forEach(function (file) {
+    selectedFiles.forEach(function(file) {
         dt.items.add(file);
     });
     upInput.files = dt.files;
@@ -440,7 +448,7 @@ function removeFile(pic) {
     const name = pic.name;
     selectedFiles.delete(pic);
     // Match by name and delete from compressedFiles
-    compressedFiles = compressedFiles.filter(function (el) {
+    compressedFiles = compressedFiles.filter(function(el) {
         return el.name !== name;
     });
 
@@ -495,7 +503,7 @@ async function createGallery(files, signal) {
             // Add pic to gallery only if it exists in selectedFiles, post validation
             if (selectedFiles.size < MAX_FILES) {
                 // Validate filetype
-                if (!pic.type.startsWith('image/')) {
+                if (!pic.type.startsWith("image/")) {
                     alert(`File ${pic.name} is not a supported filetype! It will be ignored.`);
                     continue;
                 }
@@ -510,7 +518,7 @@ async function createGallery(files, signal) {
                 // Add <img> element
                 const reader = new FileReader();
                 await new Promise((resolve, reject) => {
-                    reader.onloadend = function () {
+                    reader.onloadend = function() {
                         // Check if `Clear` was clicked
                         if (signal.aborted)
                             return;
@@ -520,7 +528,7 @@ async function createGallery(files, signal) {
                         image.src = reader.result;
                         var add = true;
                         image.onload = async () => {
-                            let a = createElem('a');
+                            let a = createElem("a");
 
                             let imgWidth = image.width;
                             let imgHeight = image.height;
@@ -570,17 +578,17 @@ async function createGallery(files, signal) {
                                 thumbCtx.drawImage(image, 0, 0, THUMB_DIM_LOC, THUMB_DIM_LOC);
                                 thumbCanvas.toBlob((blob) => {
                                     // Add <img> element with thumbnail
-                                    const thumbImg = createElem('img');
+                                    const thumbImg = createElem("img");
                                     thumbImg.src = URL.createObjectURL(blob);
                                     thumbImg.classList.add("added-pic");
                                     a.appendChild(thumbImg);
                                 }, "image/jpeg");
 
                                 // Add remove button
-                                let removeBtn = createElem('button')
+                                let removeBtn = createElem("button")
                                 removeBtn.innerHTML = "✕";
                                 removeBtn.classList.add("remove");
-                                removeBtn.addEventListener('click', function (e) {
+                                removeBtn.addEventListener("click", function(e) {
                                     e.preventDefault();
                                     this.parentElement.remove();
                                     removeFile(pic);
@@ -609,7 +617,7 @@ async function createGallery(files, signal) {
 
 upInput.addEventListener(
     "change",
-    function (e) {
+    function(e) {
         e.preventDefault();
         let ctrl = new AbortController();
         controller = ctrl;
@@ -627,12 +635,12 @@ function clearGallery() {
     upInput.value = "";
     selectedFiles.clear();
     compressedFiles = [];
-    $('progress').val(0);
+    $("progress").val(0);
 }
 
 clearBtn.addEventListener(
-    'click',
-    function () {
+    "click",
+    function() {
         if (selectedFiles.size > 0 && compressedFiles.length > 0) {
             clearGallery();
             $("#file-count").html("No files selected.");
@@ -643,32 +651,32 @@ clearBtn.addEventListener(
 
 // ========================== DRAG & DROP START ==========================
 // ❗Handle drag & drop❗ | Adapted from: https://codepen.io/joezimjs/pen/yPWQbd
-function preventDefaults(e) {
+function preventDefaults (e) {
     e.preventDefault();
     e.stopPropagation();
 }
 
 // Prevents default drag behaviors
-;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+;["dragenter", "dragover", "dragleave", "drop"].forEach(evt => {
     upGal.addEventListener(evt, preventDefaults, false)
     doc.body.addEventListener(evt, preventDefaults, false)
 })
 
 // Highlights drop area, when item is dragged over it
-;['dragenter', 'dragover'].forEach(evt => {
+;["dragenter", "dragover"].forEach(evt => {
     upGal.addEventListener(evt, () => {
-        upGal.classList.add('highlight');
+        upGal.classList.add("highlight");
     }, false);
 })
-;['dragleave', 'drop'].forEach(evt => {
+;["dragleave", "drop"].forEach(evt => {
     upGal.addEventListener(evt, () => {
-        upGal.classList.remove('highlight');
+        upGal.classList.remove("highlight");
     }, false);
 })
 
 // Handles dragged & dropped files
-upGal.addEventListener('drop',
-    function (e) {
+upGal.addEventListener("drop",
+    function(e) {
         let ctrl = new AbortController();
         controller = ctrl;
         createGallery(e.dataTransfer.files, ctrl.signal);
@@ -678,32 +686,32 @@ upGal.addEventListener('drop',
 // ========================== DRAG & DROP END ==========================
 
 // ========================== GOOGLE AUTH START ==========================
-var uploadForm = $('#upload-form');
-var uploadFormElems = uploadForm.find('input, button, label, select, #content-license');
+var uploadForm = $("#upload-form");
+var uploadFormElems = uploadForm.find("input, button, label, select, #content-license");
 
-// If 'blur-form' class is present at page load, disable focus for some elements
+// If "blur-form" class is present at page load, disable focus for some elements
 if (uploadForm.hasClass("blur-form")) {
-    uploadFormElems.attr('inert', '');
+    uploadFormElems.attr("inert", "");
 }
 
 // ❗Handle Google SO❗
-var signInStatus = $('#signin-status');
+var signInStatus = $("#signin-status");
 
 // Google Identity Services callback
 function onGoogleSignIn(creds) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/googleAuth/",
-        data: { "token": creds.credential },
+        data: { "token" : creds.credential },
         success: function (resp) {
             signInStatus.html(resp.output);
             if (resp.blur == false) {
                 uploadForm.removeClass("blur-form");
-                uploadFormElems.removeAttr('inert');
+                uploadFormElems.removeAttr("inert");
             }
             else {
                 uploadForm.addClass("blur-form");
-                uploadFormElems.attr('inert', '');
+                uploadFormElems.attr("inert", "");
             }
         },
         error: function (resp) {
@@ -714,12 +722,12 @@ function onGoogleSignIn(creds) {
 // ========================== GOOGLE AUTH END ==========================
 
 // ========================== AJAX UPLOAD START ==========================
-uploadForm.on('submit', function (e) {
+uploadForm.on("submit", function(e) {
     e.preventDefault();
 
     // Sync compressedFiles with upInput
     const dt = new DataTransfer();
-    compressedFiles.forEach(function (file) {
+    compressedFiles.forEach(function(file) {
         dt.items.add(file);
     });
     upInput.files = dt.files;
@@ -729,7 +737,7 @@ uploadForm.on('submit', function (e) {
         $("#file-count").html("No files selected.");
         // Set text-shadow to draw attention for 1s
         $("#file-count").css("text-shadow", "0 0 10px #ff0000");
-        setTimeout(function () {
+        setTimeout(function() {
             $("#file-count").css("text-shadow", "none");
         }, 1000);
 
@@ -741,8 +749,8 @@ uploadForm.on('submit', function (e) {
     clearBtn.classList.add("disabled-btn");
 
     var formData = new FormData(uploadForm[0]);
-    // Convert mesh_name to verbose_id - replace ' / ' with '__' & ' ' with '_'
-    var mesh_vid = formData.get("mesh").split(' / ').join('__').replace(' ', '_');
+    // Convert mesh_name to verbose_id - replace " / " with "__" & " " with "_"
+    var mesh_vid = formData.get("mesh").split(" / ").join("__").replace(" ", "_");
     formData.append("mesh_vid", mesh_vid);
     formData.delete("mesh");
 
@@ -751,9 +759,9 @@ uploadForm.on('submit', function (e) {
     $.ajax({
         type: "GET",
         url: PRE_URL + "/preUpload/",
-        data: { "mesh_vid": mesh_vid },
+        data: { "mesh_vid" : mesh_vid },
         success: function (resp) {
-            $('#upload-result').html(resp.output);
+            $("#upload-result").html(resp.output);
             if (resp.allowupload == true)
                 uploadFiles();
             else {
@@ -761,7 +769,7 @@ uploadForm.on('submit', function (e) {
                 clearBtn.classList.remove("disabled-btn");
                 if (resp.blur == true) {
                     uploadForm.addClass("blur-form");
-                    uploadFormElems.attr('inert', '');
+                    uploadFormElems.attr("inert", "");
                 }
             }
         },
@@ -769,7 +777,7 @@ uploadForm.on('submit', function (e) {
             console.log("GET ERROR in preUpload.");
             clearBtn.disabled = false;
             clearBtn.classList.remove("disabled-btn");
-            $('#upload-result').html("Error! Please try again.");
+            $("#upload-result").html("Error! Please try again.");
         }
     });
 
@@ -783,32 +791,32 @@ uploadForm.on('submit', function (e) {
             dataType: "json",
             processData: false,
             contentType: false,
-            xhr: function () {
+            xhr: function() {
                 var xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function (e) {
+                xhr.upload.addEventListener("progress", function(e) {
                     if (e.lengthComputable) {
                         var percentComplete = e.loaded / e.total * 100;
-                        $('progress').val(percentComplete);
+                        $("progress").val(percentComplete);
                     }
                 }, false);
                 return xhr;
             },
             success: function (resp) {
                 if (resp["status"] == "Success") {
-                    uploadForm.trigger('reset');
+                    uploadForm.trigger("reset");
                     clearBtn.disabled = false;
                     clearBtn.classList.remove("disabled-btn");
                     clearGallery();
                     $("#file-count").html("No files selected.");
                 }
                 $("#select-country").focus();
-                $('#upload-result').html(resp.output);
+                $("#upload-result").html(resp.output);
             },
             error: function (resp) {
                 console.log("POST ERROR in upload.");
                 clearBtn.disabled = false;
                 clearBtn.classList.remove("disabled-btn");
-                $('#upload-result').html("Error! Please try again.");
+                $("#upload-result").html("Error! Please try again.");
             }
         });
     }
