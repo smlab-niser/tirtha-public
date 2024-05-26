@@ -35,7 +35,7 @@
 ---
 
 > [!important]
-> Please go here for the new Tirtha site: https://smlab.niser.ac.in/project/tirtha/.
+> Please go here for the Tirtha Dev site: https://smlab.niser.ac.in/project/tirtha/dev/.
 
 ---
 
@@ -59,7 +59,7 @@ and is under active development. All contributions are welcome. Please read
 See [Citation](#citation) for information on how to cite this project. A 
 [CITATION.cff](./CITATION.cff) file is also available in the repository.
 
-> [!important]
+> [!NOTE]
 > For the Gaussian Splatting (GS) pipeline, we have used the original implementation from https://github.com/graphdeco-inria/gaussian-splatting/. ***This is currently for research purposes only and is not part of the open-source release***.
 
 ## System Architecture
