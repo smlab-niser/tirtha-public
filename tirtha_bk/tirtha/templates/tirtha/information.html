@@ -12,12 +12,15 @@
             {% comment %} NOTE: Descending order by run.ended_at {% endcomment %}
             <select id="select-run" title="Select a run">
                 {% for ra in runs_arks %}
-                <option value="{{ ra }}" {% if ra == run.ark.ark %}selected{% endif %}>
+                <option value="{{ ra }}" {% if ra == run.ID %}selected{% endif %}>
                     {{ ra }}
                 </option>
                 {% endfor %}
             </select>
             <ul>
+                <li id="recons-type">
+                    Reconstruction type: {{ run.get_kind_display }}
+                </li>
                 <li id="latest-recons">
                     Reconstructed on: {{ run.ended_at | date:"F j, Y" }}
                 </li>
@@ -40,31 +43,28 @@
             {{ mesh.description | safe }}
         </p>
         {% comment %} NOTE: Following is needed for XHR {% endcomment %}
+        {% comment %} TODO: FIXME: NOTE: Not doing XHR anymore for GS Runs {% endcomment %}
         <hgroup>
             <h4 id="info-h4">Model Statistics</h4>
-            {% comment %} NOTE: Descending order by run.ended_at {% endcomment %}
             <select id="select-run" title="Select a run">
                 <option value="N.A." selected>
                     N.A.
                 </option>
             </select>
             <ul>
+                <li id="recons-type">
+                    Reconstruction type: N.A.
+                </li>
                 <li id="latest-recons">
-                    {% if mesh.reconstructed_at %}
-                        Reconstructed on: {{ mesh.reconstructed_at | date:"F j, Y" }}
-                    {% else %}
-                        Reconstructed on: N.A.
-                    {% endif %}
+                    Reconstructed on: N.A.
                 </li>
                 <li id="contrib-count">
                     {% comment %} Since the reconstruction isn't done yet,
                     only show number of contributions {% endcomment %}
-                    Contributions: N.A.
-                    {% comment %} {{ mesh_contribution_count }} {% endcomment %}
+                    Contributions: {{ mesh_contribution_count }}
                 </li>
                 <li id="images-count">
-                    Images: N.A.
-                    {% comment %} {{ mesh_images_count }} {% endcomment %}
+                    Images: {{ mesh_images_count }}
                 </li>
                 <li id="run-ark" title="A persistent identifier for this run">
                     ARK: <a id="run-ark-link" href="javascript:;">N.A.</a>

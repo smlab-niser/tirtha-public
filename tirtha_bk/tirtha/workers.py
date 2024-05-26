@@ -6,6 +6,11 @@ from pathlib import Path
 from subprocess import STDOUT, CalledProcessError, check_output
 from typing import Optional
 
+# For .splat conversion
+import numpy as np
+from io import BytesIO
+from plyfile import PlyData
+
 # ImageOps
 import cv2
 import pytz
@@ -30,10 +35,17 @@ from .alicevision import AliceVision
 from .utils import Logger
 from .utilsark import generate_noid, noid_check_digit
 
+from .preprocessing import Preprocess
+from .optimization import Optimization
+
+
 STATIC = Path(settings.STATIC_ROOT)
 MEDIA = Path(settings.MEDIA_ROOT)
 LOG_DIR = Path(settings.LOG_DIR)
 ARCHIVE_ROOT = Path(settings.ARCHIVE_ROOT)
+GS_SAVE_ITERS = settings.GS_SAVE_ITERS
+GS_MAX_ITER = settings.GS_MAX_ITER
+GS_CONVERTER = settings.GS_CONVERTER_PATH
 MESHOPS_MIN_IMAGES = settings.MESHOPS_MIN_IMAGES
 ALICEVISION_DIRPATH = settings.ALICEVISION_DIRPATH
 NSFW_MODEL_DIRPATH = settings.NSFW_MODEL_DIRPATH
@@ -62,12 +74,13 @@ class MeshOps:
         self.meshStr = f"{self.meshVID} <=> {self.meshID}"  # Used in logging
 
         # Create new Run
-        self.run = run = Run.objects.create(mesh=mesh)
+        self.run = run = Run.objects.create(mesh=mesh, kind="aV")
         run.save()  # Creates run directory
         self.runID = runID = run.ID
+        self.runDir = STATIC / "models" / Path(run.directory)
 
         # Set up Logger
-        self.log_path = LOG_DIR / f"MeshOps/{meshID}/"
+        self.log_path = LOG_DIR / f"MeshOps/{meshID}/" / self.runDir.stem
         if not self.log_path.exists():
             self.log_path.mkdir(parents=True, exist_ok=True)
 
@@ -80,7 +93,6 @@ class MeshOps:
 
         # Source (images) & run directories
         self.imageDir = MEDIA / f"models/{meshID}/images/good/"
-        self.runDir = STATIC / "models" / Path(run.directory)
 
         cls.logger.info(f"Created new Run {runID} for mesh {self.meshStr}.")
         cls.logger.info(f"Run directory: {self.runDir}")
@@ -244,7 +256,7 @@ class MeshOps:
             cls.logger.error(
                 f"Error in command execution for {logger.name}. Check log file: {log_path}."
             )
-            # NOTE: Won't appear in VSCode's Jupyter Notebook (March 2023)
+            # NOTE: Won't appear in VSCode's Jupyter Notebook (May 2024)
             error.add_note(f"{logger.name} failed. Check log file: {log_path}.")
             raise error
 
@@ -431,11 +443,11 @@ class MeshOps:
         """
         meshStr = self.meshStr
         curr_runID = self.runID
-        arcDir = ARCHIVE_ROOT / self.meshID / "cache" / curr_runID
+        arcDir = ARCHIVE_ROOT / self.meshID / "cache" / self.runDir.stem
 
         self.logger.info(f"Cleaning up runs for mesh {meshStr}.")
         try:
-            # 1. Delete errored-out runs
+            # 1. Delete errored-out runs (including GS runs)
             self.logger.info(
                 f"Looking up & deleting errored-out runs for mesh {meshStr}..."
             )
@@ -751,6 +763,454 @@ class ImageOps:
         lg.info("Finished updating contribution.")
 
 
+class GSOps:
+    """
+    TODO: @Anubhav Create a base class and reuse a ton of code
+    Runs the Gaussian splatting pipeline
+
+    """
+    def __init__(self, meshID: str, saving_iterations: int):
+        self.meshID = meshID
+        self.saving_iterations = saving_iterations
+        self.mesh = mesh = Mesh.objects.get(ID=meshID)
+        self.meshVID = mesh.verbose_id
+        self.meshStr = f"{self.meshVID} <=> {self.meshID}"  # Used in logging
+
+        # Create new Run
+        self.run = run = Run.objects.create(mesh=mesh, kind="GS")
+        run.save()  # Creates run directory
+        self.runID = runID = run.ID
+        self.runDir = STATIC / "models" / Path(run.directory)
+
+        # Set up Logger
+        self.log_path = LOG_DIR / f"GSOps/{meshID}" / self.runDir.stem
+        if not self.log_path.exists():
+            self.log_path.mkdir(parents=True, exist_ok=True)
+
+        self.cls = cls = self.__class__
+        # NOTE: Attributes with self.__class__ will only work if the class is instantiated.
+        cls.logger = Logger(log_path=self.log_path, name=f"{cls.__name__}_{runID[:8]}")
+        cls.logger.info(
+            f"ID {meshID} has Verbose ID (VID) {self.meshVID}. Using VID for logging."
+        )
+
+        # Source (images) & run directories
+        self.imageDir = MEDIA / f"models/{meshID}/images/good"
+
+        cls.logger.info(f"Created new GS Run {runID} for mesh {self.meshStr}.")
+        cls.logger.info(f"GS Run directory: {self.runDir}")
+        cls.logger.info(f"GS Run log file: {cls.logger._log_file}")
+        self._update_mesh_status("Processing")
+
+        # Use image filenames (UUIDs in DB) to fetch images & corresponding contributors
+        self.imageFiles = sorted(self.imageDir.glob("*"))
+        self.imageUUIDs = [imageFile.stem for imageFile in self.imageFiles]
+        try:
+            # NOTE: This does not raise an error if the image is not found in the DB
+            # CHECK: Test ain_bulk()
+            self.images = Image.objects.in_bulk(
+                self.imageUUIDs, field_name="ID"
+            ).values()
+            self.contributions = [image.contribution for image in self.images]
+            self.contributors = [
+                contribution.contributor for contribution in self.contributions
+            ]
+
+            # Set the `images` & `contributors` attributes of the Run
+            # CHECK: Test `aset()`
+            run.images.set(self.images)
+            run.contributors.set(self.contributors)
+            run.save()
+            cls.logger.info(
+                f"Set the `images` & `contributors` attributes of Run {runID}."
+            )
+        except Exception as e:
+            self._handle_error(excep=e, caller="Fetching images & contributors")
+
+        # Specify the run order (else alphabetical order)
+        self._run_order = [
+            "run_preprocess",
+            "run_optimization",
+            "run_filtering",
+            "run_convert",
+            "run_cleanup",
+            "run_ark",
+            "run_finalize",
+        ]
+
+    def _update_mesh_status(self, status: str):
+        """
+        Updates the mesh status in the DB
+
+        Parameters
+        ----------
+        status : str
+            The status to update the mesh to
+
+        """
+
+        self.mesh.status = status
+        self.mesh.save()  # NOTE: Consider the effect on signals.py when saving Mesh or any other model
+        self.logger.info(
+            f"Updated mesh.status to '{status}' for mesh {self.meshStr}..."
+        )
+    
+    def _update_run_status(self, status: str):
+        """
+        Updates the run status in the DB
+
+        Parameters
+        ----------
+        status : str
+            The status to update the run to
+
+        """
+        self.run.status = status
+        self.run.save()
+        self.logger.info(f"Updated run.status to '{status}' for run {self.runID}...")
+
+    def _handle_error(self, excep: Exception, caller: str):
+        """
+        Handles errors during the worker execution
+
+        Parameters
+        ----------
+        excep : Exception
+            The exception that was raised
+        caller : str
+            The name of the function that raised the exception
+
+        """
+        # Log the error
+        self.logger.error(f"{caller} step failed for mesh {self.meshStr}.")
+        self.logger.error(f"{excep}", exc_info=True)
+
+        # Update statuses to 'Error'
+        self._update_mesh_status("Error")
+        self.run.ended_at = timezone.now()
+        self.run.save()
+        self._update_run_status("Error")
+
+        raise excep
+    
+    @classmethod  # NTE: Won't be picklable as a regular method
+    def _serialRunner(cls, cmd: str, log_file: Path):
+        """
+        Run a command serially and log the output
+
+        Parameters
+        ----------
+        cmd : str
+            Command to run
+        log_file : Path
+            Path to the log file
+
+        """
+        logger = Logger(log_file.stem, log_file.parent)
+        log_path = Path(log_file).resolve()
+        try:
+            cls.logger.info(f"Starting command execution. Log file: {log_path}.")
+            logger.info(f"Command:\n{cmd}")
+            output = check_output(cmd, shell=True, stderr=STDOUT)
+            logger.info(f"Output:\n{output.decode().strip()}")
+            cls.logger.info(f"Finished command execution. Log file: {log_path}.")
+        except CalledProcessError as error:
+            logger.error(f"\n{error.output.decode().strip()}")
+            cls.logger.error(
+                f"Error in command execution for {logger.name}. Check log file: {log_path}."
+            )
+            # NOTE: Won't appear in VSCode's Jupyter Notebook (May 2024)
+            error.add_note(f"{logger.name} failed. Check log file: {log_path}.")
+            raise error
+
+    def run_preprocess(self):
+        """
+        Runs the preprocessing pipeline on the imageset
+
+        """
+        self.logger.info(f"Preprocessing images for mesh {self.meshStr}.")
+        process_images = Preprocess(self.meshID, self.imageDir, self.runDir, self.log_path)
+        self.logger.info(f"Check log file: {process_images.log_path}.")
+
+        # Run preprocessing
+        process_images._run_all()
+
+    def run_optimization(self):
+        """
+        Runs the main GS optimization pipeline on the imageset
+
+        """
+        self.logger.info(f"Creating GS for mesh {self.meshStr}.")
+        optimization = Optimization(self.saving_iterations, self.runDir, self.log_path)
+        self.logger.info(f"Check log file: {optimization.log_path}.")
+
+        # Run the optimization pipeline
+        optimization._run_all()
+
+    def run_filtering(self):
+        """
+        Runs the filtering pipeline on the generated Gaussian splat point clouds
+        # TODO: @Anubhav Include the relevant code in the repo instead of using the python lib / command.
+
+        """
+        # Paths
+        out_path = self.runDir / "output/filtered/"
+        out_path.mkdir(parents=True, exist_ok=True)
+        inp = self.runDir / f"output/point_cloud/iteration_{GS_MAX_ITER}/point_cloud.ply"
+        out = out_path / "filtered.ply"
+
+        # Build command
+        cmd_init = f"{GS_CONVERTER} -i "
+        opts = "-f 3dgs --density_filter --remove_flyers"
+        cmd = cmd_init + f"{inp} -o {out} {opts}"
+        log_path = self.log_path / f"filtering.log"
+
+        self.logger.info(f"Running filtering for generated point clouds {self.meshStr}.")
+        self.logger.info(f"Command: {cmd}")
+        self._serialRunner(cmd, log_path)
+
+        # Check if output was produced
+        if not out.is_file():
+            self._handle_error(
+                FileNotFoundError(f"Output not produced for {out}."), "Filtering"
+            )
+
+        self.logger.info(f"Finished filtering GS for mesh: {self.meshStr}.")
+
+    def run_convert(self):
+        """
+        Taken from https://github.com/antimatter15/splat/blob/main/convert.py 
+        Licensed under the MIT License
+
+        """
+        
+        # Paths
+        input_file = self.runDir / "output/filtered/filtered.ply"
+        output_file = self.runDir / "output/filtered/filtered.splat"
+
+        self.logger.info(f"Converting .ply to .splat...")
+        self.logger.info(f"Input file: {input_file}.")
+
+        # TODO: @Anubhav Optimize & rewrite + add filtering with params here 
+        plydata = PlyData.read(input_file)
+        vert = plydata["vertex"]
+        sorted_indices = np.argsort(
+            -np.exp(vert["scale_0"] + vert["scale_1"] + vert["scale_2"])
+            / (1 + np.exp(-vert["opacity"]))
+        )
+        buffer = BytesIO()
+        for idx in sorted_indices:
+            v = plydata["vertex"][idx]
+            position = np.array([v["x"], v["y"], v["z"]], dtype=np.float32)
+            scales = np.exp(
+                np.array(
+                    [v["scale_0"], v["scale_1"], v["scale_2"]],
+                    dtype=np.float32,
+                )
+            )
+            rot = np.array(
+                [v["rot_0"], v["rot_1"], v["rot_2"], v["rot_3"]],
+                dtype=np.float32,
+            )
+            SH_C0 = 0.28209479177387814
+            color = np.array(
+                [
+                    0.5 + SH_C0 * v["f_dc_0"],
+                    0.5 + SH_C0 * v["f_dc_1"],
+                    0.5 + SH_C0 * v["f_dc_2"],
+                    1 / (1 + np.exp(-v["opacity"])),
+                ]
+            )
+            buffer.write(position.tobytes())
+            buffer.write(scales.tobytes())
+            buffer.write((color * 255).clip(0, 255).astype(np.uint8).tobytes())
+            buffer.write(
+                ((rot / np.linalg.norm(rot)) * 128 + 128)
+                .clip(0, 255)
+                .astype(np.uint8)
+                .tobytes()
+            )
+
+        splat_data = buffer.getvalue()
+        
+        # Save
+        self.logger.info(f"Saving to {output_file}.")
+        with open(output_file, "wb") as f:
+                f.write(splat_data)
+        self.logger.info(f"Converted .ply to .splat.")
+    
+    def run_cleanup(self):
+        """
+        Does the following:
+        1. Cleans up older errored-out runs.
+        2. Copies current Gaussian run's .splat to "published".
+        2. Archives current run.
+        NOTE: Errored-out runs are not deleted during their run, but only during the next run.
+        This is done to allow for debugging.
+
+        """
+        meshStr = self.meshStr
+        curr_runID = self.runID
+        arcDir = ARCHIVE_ROOT / self.meshID / "gscache" / self.runDir.stem
+
+        self.logger.info(f"Cleaning up runs for mesh {meshStr}.")
+        try:
+            # 1. Delete errored-out runs (including aV runs)
+            self.logger.info(
+                f"Looking up & deleting errored-out runs for mesh {meshStr}..."
+            )
+            runs = Run.objects.filter(mesh=self.mesh, status="Error").order_by(
+                "-ended_at"
+            )
+            if len(runs) > 0:
+                for run in runs:
+                    runDir = STATIC / "models" / Path(run.directory)
+                    self.logger.info(
+                        f"GS Run {run.ID} for mesh {meshStr} has errors. Deleting..."
+                    )
+                    shutil.rmtree(runDir)  # Delete folder
+                    run.delete()  # Delete from DB
+                    self.logger.info(f"Deleted run {run.ID} for mesh {meshStr}.")
+            self.logger.info(
+                f"Deleted {len(runs)} errored-out runs for mesh {meshStr}."
+            )
+
+            # 2. Copy current run's .splat to STATIC / "models" / meshID / "published" / run.id.splat
+            self.logger.info(f"Copying .splat for GS run {curr_runID} for mesh {meshStr}...")
+            src = self.runDir / f"output/filtered/filtered.splat"
+            self.arkURL = (
+                f"models/{self.meshID}/published/{self.meshID}_{curr_runID}.splat"
+            )
+            dest = STATIC / self.arkURL
+            shutil.copy2(src, dest)
+            self.logger.info(f"Copied .splat for GS run {curr_runID} for mesh {meshStr}.")
+
+            # 3. Move everything else to arcDir
+            self.logger.info(
+                f"Archiving GS run {curr_runID} for mesh {meshStr} to {arcDir}."
+            )
+            shutil.move(self.runDir, arcDir)  # Move run folder to archive
+            self.run.directory = str(arcDir)  # Update run directory
+            self._update_run_status("Archived")  # Update run status & save
+            self.logger.info(
+                f"Archived run {curr_runID} for mesh {meshStr} to {arcDir}."
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error cleaning up runs for mesh {meshStr}.")
+            self._handle_error(e, "Archiver")
+        self.logger.info(f"Finished cleaning up runs for mesh {meshStr}.")
+
+    def run_ark(self, ark_len=16):
+        """
+        Runs the ark generator to generate a unique ark for the run.
+
+        Parameters
+        ----------
+        ark_len : int
+            Length of the ark to be generated
+            Default: 16
+
+        """
+        arkURL, run, mesh, meshStr = self.arkURL, self.run, self.mesh, self.meshStr
+        naan, shoulder = ARK_NAAN, ARK_SHOULDER
+        run.ended_at = timezone.now()
+
+        # Create metadata
+        self.logger.info(
+            f"Creating metadata for ARK for Gaussian splatting run {run.ID} for mesh {meshStr}..."
+        )
+        def_commit = (
+            "This ARK was generated & is managed by Project Tirtha (https://smlab.niser.ac.in/project/tirtha/). "
+            + "We are committed to maintaining this ARK as per our Terms of Use (https://smlab.niser.ac.in/project/tirtha/#terms) "
+            + "and Privacy Policy (https://smlab.niser.ac.in/project/tirtha/#privacy)."
+        )
+
+        metadata = {
+            "monument": {
+                "name": str(mesh.name),
+                "location": f"{mesh.district}, {mesh.state}, {mesh.country}",  # LATE_EXP: f"{mesh.lat}, {mesh.lon}"
+                "verbose_id": str(mesh.verbose_id),
+                "thumbnail": f"{BASE_URL}{mesh.thumbnail.url}",
+                "description": str(mesh.description),
+                "completed": True if mesh.completed else False,
+            },
+            "run": {
+                "ID": str(run.ID),
+                "ended_at": str(run.ended_at),
+                "contributors": list(run.contributors.values_list("name", flat=True)),
+                "images": int(run.images.count()),
+            },
+            "notice": def_commit,
+        }
+        metadata_json = json.dumps(metadata)
+        self.logger.info(
+            f"Created metadata for ARK for Gaussian splatting run {run.ID} for mesh {meshStr}..."
+        )
+
+        # Generate ark - NOTE: Adapted from arklet
+        self.logger.info(f"Generating ARK for Gaussian splatting run {run.ID} for mesh {meshStr}...")
+        ark, collisions = None, 0
+        while True:
+            noid = generate_noid(ark_len)
+            base_ark_string = f"{naan}{shoulder}{noid}"
+            check_digit = noid_check_digit(base_ark_string)
+            ark_string = f"{base_ark_string}{check_digit}"
+            try:
+                ark = ARK.objects.create(
+                    ark=ark_string,
+                    naan=naan,
+                    shoulder=shoulder,
+                    assigned_name=f"{noid}{check_digit}",
+                    url=f"{BASE_URL}/static/{arkURL}",
+                    metadata=metadata_json,
+                )
+                self.logger.info(f"ARK URL: {BASE_URL}/static/{arkURL}")
+                break
+            except IntegrityError:
+                collisions += 1
+                continue
+        msg = f"Generated ARK for Gaussian splatting run {run.ID} for mesh {meshStr} after {collisions} collision(s)."
+        if collisions == 0:
+            self.logger.info(msg)
+        else:
+            self.logger.warning(msg)
+
+        # Update run
+        run.ark = ark
+        run.save()
+        self.arkStr = str(ark_string)
+        
+    def run_finalize(self):
+        """
+        Finalizes current run
+
+        """
+        self.logger.info(f"Finalizing GS run {self.runID} for mesh {self.meshStr}.")
+        self.mesh.reconstructed_at = datetime.now(pytz.timezone("Asia/Kolkata"))
+        self.logger.info(f"GS Run {self.runID} finished for mesh {self.meshStr}.")
+        self._update_mesh_status("Live")
+        self.logger.info(
+            f"Finished finalizing GS run {self.runID} for mesh {self.meshStr}."
+        )
+
+    def _run_all(self):
+        """
+        Runs all the steps with default parameters.
+
+        Raises
+        ------
+        ValueError
+            If `_run_order` is not defined
+
+        """
+        if self._run_order:
+            for step in self._run_order:
+                getattr(self, step)()
+        else:
+            raise ValueError("_run_order is not defined.")
+
+
 """
 Tasks
 
@@ -807,3 +1267,36 @@ def mo_runner(contrib_id: str):
         cons.print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {e}")
         raise e
     cons.rule("MeshOps Runner End")
+
+
+def to_runner(contrib_id: str):
+    """
+    Runs GSOps on a `models.Mesh` and publishes the results.
+
+    """
+    contrib = Contribution.objects.get(ID=contrib_id)
+    meshID = str(contrib.mesh.ID)
+    meshVID = str(contrib.mesh.verbose_id)
+
+    cons = Console()  # This appears as normal printed logs in celery logs.
+    cons.rule("GSOps Runner Start")
+    cons.print(
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Triggered by {contrib.ID} for Mesh {meshVID} <=> {meshID}."
+    )
+    cons.print(
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Starting GSOps on Mesh {meshVID} <=> {meshID}."
+    )
+    try:
+        tO = GSOps(meshID=meshID, saving_iterations=GS_SAVE_ITERS)
+        cons.print(f"Check {tO.log_path} for more details.")
+        tO._run_all()
+        cons.print(
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Finished GSOps on {meshVID} <=> {meshID}."
+        )  # <----------------
+    except Exception as e:
+        cons.print(
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: ERROR encountered in GSOps for {meshVID} <=> {meshID}!"
+        )
+        cons.print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {e}")
+        raise e
+    cons.rule("GSOps Runner End")

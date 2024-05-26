@@ -4,7 +4,7 @@
 __pycache__/
 data/
 paper/
-3dgs/
+tdenv/
 
 # Folders - django
 migrations/
@@ -19,6 +19,7 @@ Meshroom-2021.1.0/
 Meshroom-2023.1.0/
 
 # Files
+db*
 db.sqlite3
 local_settings.py
 gunicorn.conf.py

@@ -3,8 +3,6 @@ from pathlib import Path
 from django.conf import settings
 
 # Local imports
-from tirtha.models import Contributor
-
 from .celery import app, crontab, get_task_logger
 from .utils import Logger
 
@@ -44,32 +42,40 @@ def post_save_contrib_imageops(contrib_id):
 
     # FIXME: TODO: MESHOPS_CONTRIB_DELAY = 0.1 (6 minutes), till the image checks are fixed.
     # Create mesh after MESHOPS_CONTRIB_DELAY hours
+
     cel_logger.info(
-        f"post_save_contrib_imageops: Will trigger MeshOps for {contrib_id} after {MESHOPS_CONTRIB_DELAY} hours..."
+        f"post_save_contrib_imageops: Will trigger reconstruction pipelines for {contrib_id} after {MESHOPS_CONTRIB_DELAY} hours..."
     )
-    mo_runner_task.apply_async(
+    recon_runner_task.apply_async(
         args=(contrib_id,), countdown=MESHOPS_CONTRIB_DELAY * 60 * 60
     )
 
 
 @app.task
-def mo_runner_task(contrib_id):
+def recon_runner_task(contrib_id):
     """
-    Triggers `MeshOps`, when a `Run` instance is created.
+    Triggers `MeshOps` & `GSOps`, when a `Run` instance is created.
 
     """
-    from .workers import mo_runner, prerun_check
+    from .workers import mo_runner, to_runner, prerun_check
 
-    cel_logger.info(f"mo_runner_task: Triggering MeshOps for contrib_id: {contrib_id}.")
     cel_logger.info(
-        f"mo_runner_task: Running prerun checks for contrib_id: {contrib_id}..."
+        f"recon_runner_task: Running prerun checks for contrib_id: {contrib_id}..."
     )
     chk, msg = prerun_check(contrib_id)
-    cel_logger.info(f"mo_runner_task: {contrib_id} - {msg}")
+    cel_logger.info(f"recon_runner_task: {contrib_id} - {msg}")
     if chk:
-        cel_logger.info(f"mo_runner_task: Running MeshOps for {contrib_id}...")
+        # GSOps
+        cel_logger.info(f"recon_runner_task: Triggering GSOps for contrib_id: {contrib_id}.")
+        cel_logger.info(f"recon_runner_task: Running GSOps for {contrib_id}...")
+        to_runner(contrib_id=contrib_id)
+        cel_logger.info(f"recon_runner_task: Finished running GSOps for {contrib_id}.")
+
+        # MeshOps
+        cel_logger.info(f"recon_runner_task: Triggering MeshOps for contrib_id: {contrib_id}.")
+        cel_logger.info(f"recon_runner_task: Running MeshOps for {contrib_id}...")
         mo_runner(contrib_id=contrib_id)
-        cel_logger.info(f"mo_runner_task: Finished running MeshOps for {contrib_id}.")
+        cel_logger.info(f"recon_runner_task: Finished running MeshOps for {contrib_id}.")
 
 
 @app.task
@@ -97,7 +103,7 @@ def backup_task():
 def db_cleanup_task():
     """
     Cleans up the database.
-    - Removes contributors with no contributions.
+    - Removes contributors with no contributions for privacy reasons.
 
     """
     cln_logger = Logger(name="db_cleanup", log_path=LOG_DIR)
@@ -113,11 +119,3 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         DBCLEANUP_INTERVAL, db_cleanup_task.s(), name="db_cleanup_task"
     )
-
-    # TODO: Remove later
-    # Calls create_move_leaderboard_task() every LEADERBOARD_INTERVAL.
-    # sender.add_periodic_task(
-    #     LEADERBOARD_INTERVAL,
-    #     create_move_leaderboard_task.s(),
-    #     name="create_move_leaderboard_task",
-    # )

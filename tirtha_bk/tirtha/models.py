@@ -370,6 +370,15 @@ class Run(models.Model):
     directory = models.CharField(
         max_length=200, blank=True, verbose_name="Run directory"
     )
+    
+    # Kind options
+    kind_options = [
+        ("aV", "Photogrammetry"),
+        ("GS", "Gaussian Splatting"),
+    ]
+    kind = models.CharField(
+        max_length=50, blank=False, choices=kind_options, default="aV"
+    )
 
     # Status of the run
     status_options = [
@@ -421,5 +430,8 @@ class Run(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if not self.directory:
-            self.directory = f"{self.mesh.ID}/cache/{self.started_at.strftime('%Y-%m-%d-%H-%M-%S')}__{str(self.ID)}"
+            if self.kind == "aV":
+                self.directory = f"{self.mesh.ID}/cache/{self.started_at.strftime('%Y-%m-%d-%H-%M-%S')}__{str(self.ID)}"
+            elif self.kind == "GS":
+                self.directory = f"{self.mesh.ID}/gscache/{self.started_at.strftime('%Y-%m-%d-%H-%M-%S')}__{str(self.ID)}"
         super().save(update_fields=["directory"])

@@ -106,6 +106,14 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
 
 ## Worker-related settings
+# GS
+COLMAP_PATH = "colmap"  # NOTE: Ensure the binary is on system PATH
+GS_CONVERTER_PATH = "3dgsconverter"
+GS_SAVE_ITERS = [15_000, 30_000]
+GS_MAX_ITER = GS_SAVE_ITERS[-1]
+GS_DENSIFY_MAX_ITER = GS_MAX_ITER // 2
+
+# MR
 # NOTE: Defaulting to Meshroom 2021 for now. 2023 will require further changes
 ALICEVISION_DIRPATH = BASE_DIR / "bin21"
 NSFW_MODEL_DIRPATH = (
