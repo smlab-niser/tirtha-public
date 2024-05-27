@@ -17,7 +17,6 @@ urlpatterns = [
     path(pre + "competition/", views.competition, name="competition"),  # NOTE: Order matters
     path(pre + "howto/", views.howto, name="howto"),
     path(pre + "googleAuth/", views.googleAuth, name="googleAuth"),
-    path(pre + "logout/", views.logout, name="logout"),  # NOTE: For the logout of user
     path(pre + "preUpload/", views.pre_upload_check, name="preUpload"),
     path(pre + "upload/", views.upload, name="upload"),
     path(pre + "search/", views.search, name="search"),
