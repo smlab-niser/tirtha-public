@@ -31,8 +31,7 @@
 
 html {
     box-sizing: border-box;
-    letter-spacing: 0;
-    /* Firefox, Safari */
+    letter-spacing: 0; /* Firefox, Safari */
 }
 
 body {
@@ -65,10 +64,7 @@ body {
 }
 
 /* Link defaults */
-a:link,
-a:visited,
-a:hover,
-a:active {
+a:link, a:visited, a:hover, a:active  {
     color: var(--link-col);
 }
 
@@ -108,8 +104,7 @@ ol {
 
 /* buttons */
 .buttons {
-    all: unset;
-    /* Reset all button styles */
+    all: unset; /* Reset all button styles */
 
     display: flex;
     justify-content: center;
@@ -141,7 +136,6 @@ ol {
 .buttons:focus {
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
 }
-
 /* buttons ends here */
 
 /* ar-button & floating-controls */
@@ -246,14 +240,12 @@ ol {
 #floating-controls #menu {
     display: none;
 }
-
 /* floating-controls props end here */
 
 /* ==================
    Combined props
   ================== */
-#side,
-nav {
+#side, nav {
     max-height: calc(100lvh - var(--body-margin) * 2);
 
     background-color: var(--fg-col);
@@ -270,8 +262,7 @@ nav {
 }
 
 /* Hide scrollbar - Safari */
-#side::-webkit-scrollbar,
-nav::-webkit-scrollbar {
+#side::-webkit-scrollbar, nav::-webkit-scrollbar {
     display: none;
 }
 
@@ -280,7 +271,7 @@ details {
     border-bottom: var(--details-default-border);
 }
 
-details>* {
+details > * {
     border-radius: 0.4rem;
 }
 
@@ -301,8 +292,7 @@ details summary::-webkit-details-marker {
     word-break: break-all;
 }
 
-details:last-child,
-#privacy {
+details:last-child, #privacy {
     border-bottom: none;
 }
 
@@ -354,12 +344,11 @@ details[open] #privacy {
     padding-left: clamp(1.25rem, 1.4rem, 1.5dvw);
 }
 
-.details-inner ul li,
-pre {
+.details-inner ul li, pre {
     margin: 0.3rem 0;
 }
 
-.details-inner .ul-inner>li {
+.details-inner .ul-inner > li {
     margin: 0.15rem 0;
 }
 
@@ -388,11 +377,11 @@ details[open] {
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
 }
 
-details[open]>summary {
+details[open] > summary {
     border-bottom: 1px dashed rgba(220, 20, 60, 0.6);
 }
 
-details[open]>summary:hover {
+details[open] > summary:hover {
     box-shadow: none;
     transform: none;
 }
@@ -415,7 +404,6 @@ details[open] summary::after {
     /* ✖, ✕ | 🞫 <- Not working */
     font-weight: 600;
 }
-
 /* #side > details ends here */
 
 /* ==================
@@ -510,8 +498,7 @@ details[open] summary::after {
     box-shadow: 0 0 2.5rem 0.4rem rgba(0, 0, 0, 0.8);
 }
 
-.model-preview-inner,
-.model-title {
+.model-preview-inner, .model-title {
     transition: var(--default-transition);
 }
 
@@ -557,7 +544,6 @@ details[open] summary::after {
     color: white;
     z-index: 2;
 }
-
 /* ==================
   nav props end here
   ================== */
@@ -613,18 +599,12 @@ model-viewer {
     height: 100%;
 }
 
-div.container>div.userInput.show {
-    outline: none;
-}
+
 
 /* ==================
-  model-area props end here
+   GS Viewer props
   ================== */
-
-/* ==================
- GS Viewer props
- ================== */
- #gs-canvas {
+#gs-canvas {
     width: 100%;
     height: 100%;
 }
@@ -672,7 +652,16 @@ div.container>div.userInput.show {
     background-color: var(--progress-bar-col);
     border-radius: 5px;
 }
-/* GS Viewer props end here */
+/* ==================
+   GS Viewer props end here
+  ================== */
+
+div.container > div.userInput.show {
+    outline: none;
+}
+/* ==================
+  model-area props end here
+  ================== */
 
 /* ==================
    side
@@ -752,7 +741,6 @@ div.container>div.userInput.show {
 
     line-height: var(--info-line-height);
 }
-
 /* ==================
   side props end here
  ================== */
@@ -776,22 +764,18 @@ div.container>div.userInput.show {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
 }
-
 @keyframes fadeIn {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
 }
-
 #cont-form[open] {
     -webkit-animation: fadeIn 0.2s ease-in normal;
     animation: fadeIn 0.2s ease-in normal;
@@ -846,47 +830,28 @@ div.container>div.userInput.show {
     text-align: center;
     font-weight: 400;
 }
-
 /* ToS props end here */
 
 /* Upload form props - also see above */
-
-/* google signin button  */
-
-.button-container {
-    text-align: center;
-}
-
 .upload-signin {
-    display: inline-flex;
-    margin: 0 auto;
-    padding: 4px 10px;
-    background-color: #ffffff;
-    color: white;
-    border: 2px solid #c9c9c9;
-    border-radius: 25px;
-    text-align: center;
-    text-decoration: none;
-    transition: box-shadow 0.3s ease-out;
+    padding: clamp(0.5rem, 0.75rem, 1dvw) clamp(0rem, 1rem, 1dvw);
 }
 
-.upload-signin:hover {
-    box-shadow: 5px 5px 20px 0px #a0a0a0;
-    /* Add a subtle shadow on hover */
+/* Google Sign-in button */
+.upload-signin > div {
+    display: grid;
+    place-content: center;
 }
 
-.upload-signin img.profile-image {
-    margin-right: 2px;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
+.upload-signin > div > div {
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    border-radius: 2rem;
 }
 
-.upload-signin span {
-    display: inline-block;
-    padding: 5px 10px;
-    color: inherit;
+.upload-signin > div > div:hover,
+.upload-signin > div > div:focus {
+    cursor: pointer;
+    box-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.8);
 }
 
 #signin-status {
@@ -926,8 +891,7 @@ div.container>div.userInput.show {
     transition: all 1s ease;
 }
 
-#select-run {
-    /* Run selection */
+#select-run { /* Run selection */
     width: 100%;
     margin: clamp(0.6rem, 0.75rem, 1.1dvw) auto;
     margin-bottom: 0;
@@ -940,7 +904,6 @@ div.container>div.userInput.show {
 
     transition: all 0.2s ease;
 }
-
 /* select-related props end here */
 
 /* Uploaded image related props */
@@ -976,6 +939,7 @@ div.container>div.userInput.show {
 #upload-gallery a img {
     width: 100%;
     height: 100%;
+
     border-radius: 0.5rem;
 }
 
@@ -1004,13 +968,8 @@ div.container>div.userInput.show {
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Progress bar */
@@ -1038,7 +997,6 @@ progress::-webkit-progress-value {
     background-color: var(--progress-bar-val-col);
     border-radius: 2rem;
 }
-
 /* Progress bar-related props end here */
 .remove {
     position: absolute;
@@ -1082,7 +1040,6 @@ progress::-webkit-progress-value {
         -8px 8px 8px rgba(0, 0, 0, 0.4),
         -8px 3px 8px rgba(0, 0, 0, 0.4);
 }
-
 /* uploaded image related props end here */
 
 /* Hide the default file-picker button */
@@ -1138,10 +1095,10 @@ progress::-webkit-progress-value {
     height: clamp(0.8rem, 1.1rem, 1.5dvw);
 
     accent-color: var(--agree-text-col);
-    box-shadow: none;
+    box-shadow:     ;
 }
 
-#agree-check:checked+label {
+#agree-check:checked + label {
     color: var(--agree-text-col);
 }
 
@@ -1150,7 +1107,6 @@ progress::-webkit-progress-value {
     font-size: 90%;
     color: gray;
 }
-
 /* ToS Checkbox + License props end here */
 
 #submit-area {
@@ -1165,8 +1121,7 @@ progress::-webkit-progress-value {
 }
 
 /* Upload result + file-count - <output> */
-#upload-result,
-#file-count {
+#upload-result, #file-count {
     text-align: center;
     display: inline-block;
     width: 100%;
@@ -1175,7 +1130,6 @@ progress::-webkit-progress-value {
 
     margin: 0.1rem 0 0;
 }
-
 /* Upload form props end here */
 /* ==================
  Cont-dialog props end here
@@ -1196,8 +1150,7 @@ footer {
     border-radius: 0.4rem;
 }
 
-#footer-links,
-#footer-lic-icons {
+#footer-links, #footer-lic-icons {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1208,8 +1161,7 @@ footer {
     margin: 1.2rem 0 -0.5rem 0;
 }
 
-#footer-links a,
-#footer-lic-icons a {
+#footer-links a, #footer-lic-icons a {
     display: flex;
     margin: clamp(0.1rem, 0.2rem, 1dvw) clamp(0.2rem, 0.4rem, 1dvw);
 }
@@ -1233,7 +1185,6 @@ footer p a img {
     width: 10.6725vw;
     height: 6vw;
 }
-
 /* footer props end here */
 
 /* Related to media-rules / JS toggles */
@@ -1271,7 +1222,7 @@ footer p a img {
 }
 
 /* Blur when nav is open */
-.blur>*:not(nav) {
+.blur > *:not(nav) {
     filter: var(--default-blur);
     pointer-events: none;
     user-select: none;
@@ -1292,8 +1243,7 @@ footer p a img {
     filter: blur(2px);
 }
 
-.blur-form,
-.blur-form>* {
+.blur-form, .blur-form > * {
     pointer-events: none;
     user-select: none;
 }
@@ -1311,7 +1261,7 @@ footer p a img {
 @media screen and (max-width: 768px) {
     body {
         grid-template-areas: 'model'
-            'info';
+                             'info';
         grid-template-columns: unset;
 
         overflow-y: auto;
@@ -1360,7 +1310,6 @@ footer p a img {
     #info {
         padding: 0.4rem;
     }
-
     /* side props end here */
 
     /* model-area */
@@ -1382,14 +1331,12 @@ footer p a img {
     .controls .buttons {
         width: 100%;
     }
-
     /* model-area props end here */
 
     /* dialog props */
     #cont-inner {
         width: 84dvw;
     }
-
     /* dialog props end here */
 
     /* nav */
@@ -1401,7 +1348,6 @@ footer p a img {
 
         transition: var(--default-transition);
     }
-
     /* nav props end here */
 
     /* footer */
@@ -1413,6 +1359,5 @@ footer p a img {
         width: 10.6725rem;
         height: 6rem;
     }
-
     /* footer props end here */
 }
