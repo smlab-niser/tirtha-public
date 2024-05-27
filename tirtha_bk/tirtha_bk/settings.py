@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     "django_cleanup.apps.CleanupConfig",  # For cleaning up orphaned files in media
     "django_extensions",
     "dbbackup",  # django-dbbackup
-    "authlib",  # Include Authlib for OAuth integration
 ]
 
 MIDDLEWARE = ["django.contrib.sessions.middleware.SessionMiddleware"]
