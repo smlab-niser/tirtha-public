@@ -3,9 +3,7 @@
 # * Too many different contexts for signin() and googleAuth().
 # * search()'s code is inconvenient (main.js).
 # * See FIXME:s and LATE_EXP:s below.
-from urllib.parse import unquote
 
-import pytz
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -470,7 +468,7 @@ def resolveARK(request, ark: str):
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
     
-    except ARK.DoesNotExist as e:
+    except ARK.DoesNotExist:
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
 
 

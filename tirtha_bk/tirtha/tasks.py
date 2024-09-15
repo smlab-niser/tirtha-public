@@ -9,19 +9,19 @@ from .utils import Logger
 cel_logger = get_task_logger(__name__)
 LOG_DIR = Path(settings.LOG_DIR)
 MESHOPS_CONTRIB_DELAY = settings.MESHOPS_CONTRIB_DELAY  # hours
-BACKUP_INTERVAL = crontab(minute=0, hour=0)  # Every 24 hours at 00:00
+BACKUP_INTERVAL = crontab(minute=0, hour=0, day_of_week=0)  # Every Sunday at 00:00
 DBCLEANUP_INTERVAL = crontab(
     minute=0, hour=0, day_of_week=0
-)  # Every 1 week at 00:00 on Sunday
+)  # Every week at 00:00 on Sunday
 
 
 @app.task
-def post_save_contrib_imageops(contrib_id):
+def post_save_contrib_imageops(contrib_id: str) -> None:
     """
     Triggers `ImageOps`, when a `Contribution` instance is created & saved.
 
     """
-    from .workers import ImageOps
+    from .imageops import ImageOps
 
     # Check images
     cel_logger.info(
@@ -52,12 +52,12 @@ def post_save_contrib_imageops(contrib_id):
 
 
 @app.task
-def recon_runner_task(contrib_id):
+def recon_runner_task(contrib_id: str) -> None:
     """
     Triggers `MeshOps` & `GSOps`, when a `Run` instance is created.
 
     """
-    from .workers import mo_runner, to_runner, prerun_check
+    from .workers import prerun_check, ops_runner
 
     cel_logger.info(
         f"recon_runner_task: Running prerun checks for contrib_id: {contrib_id}..."
@@ -65,17 +65,15 @@ def recon_runner_task(contrib_id):
     chk, msg = prerun_check(contrib_id)
     cel_logger.info(f"recon_runner_task: {contrib_id} - {msg}")
     if chk:
-        # GSOps
-        cel_logger.info(f"recon_runner_task: Triggering GSOps for contrib_id: {contrib_id}.")
-        cel_logger.info(f"recon_runner_task: Running GSOps for {contrib_id}...")
-        to_runner(contrib_id=contrib_id)
-        cel_logger.info(f"recon_runner_task: Finished running GSOps for {contrib_id}.")
-
-        # MeshOps
-        cel_logger.info(f"recon_runner_task: Triggering MeshOps for contrib_id: {contrib_id}.")
-        cel_logger.info(f"recon_runner_task: Running MeshOps for {contrib_id}...")
-        mo_runner(contrib_id=contrib_id)
-        cel_logger.info(f"recon_runner_task: Finished running MeshOps for {contrib_id}.")
+        for op in ["GS", "aV"]:
+            cel_logger.info(
+                f"recon_runner_task: Triggering {op}Ops for contrib_id: {contrib_id}."
+            )
+            cel_logger.info(f"recon_runner_task: Running {op}Ops for {contrib_id}...")
+            ops_runner(contrib_id=contrib_id, kind=op)
+            cel_logger.info(
+                f"recon_runner_task: Finished running {op}Ops for {contrib_id}."
+            )
 
 
 @app.task

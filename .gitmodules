@@ -4,9 +4,3 @@
 [submodule "tirtha_bk/nn_models/nsfw_model"]
 	path = tirtha_bk/nn_models/nsfw_model
 	url = https://github.com/JeS24/nsfw_model.git
-[submodule "tirtha_bk/tirtha/submodules/simple-knn"]
-	path = tirtha_bk/tirtha/submodules/simple-knn
-	url = ./tirtha_bk/tirtha/submodules/simple-knn
-[submodule "tirtha_bk/tirtha/submodules/diff-gaussian-rasterization"]
-	path = tirtha_bk/tirtha/submodules/diff-gaussian-rasterization
-	url = ./tirtha_bk/tirtha/submodules/diff-gaussian-rasterization
