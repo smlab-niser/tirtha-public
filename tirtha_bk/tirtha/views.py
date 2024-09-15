@@ -46,19 +46,20 @@ def index(request, vid=None, runid=None):
     used.
 
     """
-    if runid is not None:        
+    if runid is not None:
         try:
             run = Run.objects.get(ID=runid)
             runs_arks = list(
                 run.mesh.runs.filter(status="Archived")
                 .order_by("-ended_at")
-                .values_list("ark", flat=True)
+                .values_list("ark", "ended_at")
             )
 
             # Move the selected run to the front
-            if run.ark.ark in runs_arks:
-                runs_arks.remove(run.ark.ark)
-                runs_arks.insert(0, run.ark.ark)
+            runs_arks = [
+                (ark, ended_at) for ark, ended_at in runs_arks if ark != run.ark.ark
+            ]
+            runs_arks.insert(0, (run.ark.ark, run.ended_at))
 
             context.update(
                 {
@@ -102,13 +103,14 @@ def index(request, vid=None, runid=None):
             runs_arks = list(
                 mesh.runs.filter(status="Archived")
                 .order_by("-ended_at")
-                .values_list("ark", flat=True)
+                .values_list("ark", "ended_at")
             )
 
             # Move the selected run to the front
-            if run.ark.ark in runs_arks:
-                runs_arks.remove(run.ark.ark)
-                runs_arks.insert(0, run.ark.ark)
+            runs_arks = [
+                (ark, ended_at) for ark, ended_at in runs_arks if ark != run.ark.ark
+            ]
+            runs_arks.insert(0, (run.ark.ark, run.ended_at))
 
         except Run.DoesNotExist:
             run = None
@@ -467,7 +469,7 @@ def resolveARK(request, ark: str):
         # Try to find the ARK in the database
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
-    
+
     except ARK.DoesNotExist:
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
 

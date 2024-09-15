@@ -40,7 +40,7 @@ body {
     margin: var(--body-margin);
 
     display: grid;
-    grid-template-columns: minmax(22.5%, 25%) minmax(57.5%, 65%) minmax(8rem, 12rem);
+    grid-template-columns: minmax(22.5%, 25%) 1fr clamp(10%, 12.5rem, 15%);
     column-gap: 0.5vw;
 
     /* TODO: Dark mode */
@@ -1095,7 +1095,7 @@ progress::-webkit-progress-value {
     height: clamp(0.8rem, 1.1rem, 1.5dvw);
 
     accent-color: var(--agree-text-col);
-    box-shadow:     ;
+    box-shadow: none;
 }
 
 #agree-check:checked + label {
