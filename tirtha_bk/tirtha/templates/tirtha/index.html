@@ -94,17 +94,24 @@
             </div> {% endcomment %}
         </div>
 
+        <div id="floating-banners">
+            {% comment %} Paper link {% endcomment %}
+            <a id="top-paper-banner" class="material-symbols-outlined" href="https://arxiv.org/abs/2308.01246" target="_blank">
+                article_shortcut
+            </a>
+            {% if run %}
+                {% if run.kind == 'GS' %}
+                    <a id="top-banner" class="material-symbols-outlined" href="https://github.com/smlab-niser/tirtha-public/issues/new/choose" target="_blank">
+                        bug_report
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
+
         {% if run %}
             {% if run.kind == 'aV' %}
                 {% include "tirtha/modelViewer.html" %}
             {% elif run.kind == 'GS' %}
-                <!-- TODO:  -->
-                <a id="top-banner" href="https://github.com/smlab-niser/tirtha-public/issues/new/choose" target="_blank">
-                    <span class="material-symbols-outlined" style="margin-right: 0.2rem;">
-                        bug_report
-                    </span>
-                    BETA
-                </a>
                 {% include "tirtha/gsViewer.html" %}
             {% endif %}
         {% else %}

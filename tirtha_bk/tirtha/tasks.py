@@ -21,7 +21,6 @@ def post_save_contrib_imageops(contrib_id: str) -> None:
     Triggers `ImageOps`, when a `Contribution` instance is created & saved.
 
     """
-    from .imageops import ImageOps
 
     # Check images
     cel_logger.info(
@@ -30,6 +29,8 @@ def post_save_contrib_imageops(contrib_id: str) -> None:
     cel_logger.info(
         f"post_save_contrib_imageops: Checking images for contrib_id: {contrib_id}..."
     )
+    from .imageops import ImageOps
+
     iops = ImageOps(contrib_id=contrib_id)
     # FIXME: TODO: Till the VRAM + concurrency issue is fixed, skipping image checks.
     iops.check_images()

@@ -4,12 +4,15 @@ from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
 
-from nn_models.MANIQA.batch_predict import MANIQAScore  # Local import
-from nsfw_detector import predict  # Local package installation
 from silence_tensorflow import silence_tensorflow
 
 # Local imports
 from tirtha.models import Contribution
+
+# TODO: FIXME: Uncomment when fixed
+# TODO: CHECK: for standard model repos, from where we can inference directly instead of local setup.
+# from nn_models.MANIQA.batch_predict import MANIQAScore  # Local import
+# from nsfw_detector import predict  # Local package installation
 
 from .utils import Logger
 

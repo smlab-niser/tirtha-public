@@ -228,16 +228,15 @@ $("#search").on("input", function (e) {
 
 
 // ========================== AJAX RUN LOAD START ==========================
-// ❗Handle run load❗
+// ❗Handle run load❗- TODO: FIXME: See if AJAX can be restored, else remove.
 $("#select-run").on("change", function (e) {
     e.preventDefault();
-    // var runark = $(this).val();
-    // var page_vid = window.location.pathname.split("/")[2];
 
     var runark = $(this).val();
     window.location.replace(PRE_URL + "/ark:/" + runark);
 
-    // TODO: Remove or refactor
+    // var page_vid = window.location.pathname.split("/")[2];
+
     // $.ajax({
     //     type: "GET",
     //     url: PRE_URL + "/loadRun/",
@@ -276,12 +275,10 @@ $("#select-run").on("change", function (e) {
 
 
 // ========================== AJAX MESH LOAD START ==========================
-// ❗Handle mesh load❗
+// ❗Handle mesh load❗ - TODO: FIXME: See if AJAX can be restored, else remove.
 // NOTE: TODO: Let these behave like normal links if no XHR
 // $(".model-previews").on('click', function(e) {
 //     e.preventDefault();
-
-//     // TODO: idx
 //     var vid = $(this).attr("href").split("/")[2];
 //     var page_vid = window.location.pathname.split("/")[1];
 
@@ -290,7 +287,6 @@ $("#select-run").on("change", function (e) {
 //     // NOTE: Not needed if preventDefault() is NOT used
 //     // window.location.replace(PRE_URL + "/models/" + vid);
 
-//     // TODO: Remove or refactor
 //     // $.ajax({
 //     //     type: "GET",
 //     //     url: PRE_URL + "/loadMesh/",
