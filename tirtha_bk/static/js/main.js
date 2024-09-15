@@ -1,13 +1,13 @@
 // Elements to be manipulated
 const doc = document;
-const body = doc.querySelector("body");
-const nav = doc.querySelector("nav");
-const side = $("#side");
-const modelArea = $("#model-area");
-const model = $("#model");
-const fControls = $("#floating-controls");
-const infoBtn = $("#info-btn");
-const PRE_URL = ""; // TODO: Use env
+const body = doc.querySelector('body');
+const nav = doc.querySelector('nav');
+const side = doc.getElementById('side');
+const modelArea = doc.getElementById('model-area');
+const model = doc.getElementById('model');
+const fControls = doc.getElementById('floating-controls');
+const infoBtn = doc.getElementById('info-btn');
+const PRE_URL = "/project/tirtha"
 
 
 // ========================== FS START ==========================
@@ -229,124 +229,127 @@ $("#search").on("input", function (e) {
 
 
 // ========================== AJAX RUN LOAD START ==========================
-// ❗Handle run load❗
+// ❗Handle run load❗ - TODO: FIXME: See if AJAX can be restored, else remove.
 $("#select-run").on("change", function (e) {
     e.preventDefault();
     var runark = $(this).val();
-    var page_vid = window.location.pathname.split("/")[4];
+    window.location.replace(PRE_URL + "/ark:/" + runark);
 
-    $.ajax({
-        type: "GET",
-        url: PRE_URL + "/loadRun/",
-        data: { "runark" : runark },
-        success: function (resp) {
-            if (resp.run != null) {
-                // NOTE: Fix for the apparent model-viewer memory leak
-                // LATE_EXP: TODO: Expose this as an experimental setting in the UI for users to toggle.
-                customElements.get("model-viewer").modelCacheSize = 0;
+    // var page_vid = window.location.pathname.split("/")[4];
 
-                // Load mesh
-                $("model-viewer").attr("src", resp.run.mesh_src);
-                $("model-viewer").attr("orientation", resp.run.orientation);
-                // Run details
-                $("#latest-recons").html("Reconstructed on: " + resp.run.ended_at);
-                $("#contrib-count").html("Contributors: " + resp.run.contrib_count);
-                $("#images-count").html("Images: " + resp.run.images_count);
-                $("#run-ark-link").html(resp.run.run_ark);
-                $("#run-ark-link").attr("href", resp.run.run_ark_url);
+    // $.ajax({
+    //     type: "GET",
+    //     url: PRE_URL + "/loadRun/",
+    //     data: { "runark" : runark },
+    //     success: function (resp) {
+    //         if (resp.run != null) {
+    //             // NOTE: Fix for the apparent model-viewer memory leak
+    //             // LATE_EXP: TODO: Expose this as an experimental setting in the UI for users to toggle.
+    //             customElements.get("model-viewer").modelCacheSize = 0;
 
-                // Change page title
-                $(doc).attr("title", "Project Tirtha | " + resp.run.mesh_name);
-                // Change page url
-                window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + page_vid + "/" + resp.run.runid + "/");
-            }
-            else {
-                console.log("No matching runs were found.");
-            }
-        },
-        error: function (resp) {
-            console.log("GET ERROR in loadRun.");
-        }
-    })
+    //             // Load mesh
+    //             $("model-viewer").attr("src", resp.run.mesh_src);
+    //             $("model-viewer").attr("orientation", resp.run.orientation);
+    //             // Run details
+    //             $("#latest-recons").html("Reconstructed on: " + resp.run.ended_at);
+    //             $("#contrib-count").html("Contributors: " + resp.run.contrib_count);
+    //             $("#images-count").html("Images: " + resp.run.images_count);
+    //             $("#run-ark-link").html(resp.run.run_ark);
+    //             $("#run-ark-link").attr("href", resp.run.run_ark_url);
+
+    //             // Change page title
+    //             $(doc).attr("title", "Project Tirtha | " + resp.run.mesh_name);
+    //             // Change page url
+    //             window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + page_vid + "/" + resp.run.runid + "/");
+    //         }
+    //         else {
+    //             console.log("No matching runs were found.");
+    //         }
+    //     },
+    //     error: function (resp) {
+    //         console.log("GET ERROR in loadRun.");
+    //     }
+    // })
 });
 // ========================== AJAX RUN LOAD END ==========================
 
 
 // ========================== AJAX MESH LOAD START ==========================
-// ❗Handle mesh load❗
-$(".model-previews").on("click", function(e) {
-    e.preventDefault();
-    var vid = $(this).attr("href").split("/")[4];
-    var page_vid = window.location.pathname.split("/")[3];
+// ❗Handle mesh load❗ - TODO: FIXME: See if AJAX can be restored, else remove.
+// NOTE: TODO: Let these behave like normal links if no XHR
+// $(".model-previews").on('click', function(e) {
+//     e.preventDefault();
+//     var vid = $(this).attr("href").split("/")[4];
+//     var page_vid = window.location.pathname.split("/")[3];
 
-    var modStat = $(this).find(".model-status");
+//     var modStat = $(this).find(".model-status");
 
-    $.ajax({
-        type: "GET",
-        url: PRE_URL + "/loadMesh/",
-        data: { "vid" : vid },
-        success: function (resp) {
-            if (resp.mesh != null) {
-                if (resp.mesh.has_run == false) {
-                    const ms_html = modStat.html();
-                    const ms_bg = modStat.css("background-color");
+//     $.ajax({
+//         type: "GET",
+//         url: PRE_URL + "/loadMesh/",
+//         data: { "vid" : vid },
+//         success: function (resp) {
+//             if (resp.mesh != null) {
+//                 if (resp.mesh.has_run == false) {
+//                     const ms_html = modStat.html();
+//                     const ms_bg = modStat.css('background-color');
 
-                    // Set model-status to this for 5 seconds
-                    modStat.html("Model pending");
-                    modStat.css("background-color", "orange");
+//                     // Set model-status to this for 5 seconds
+//                     modStat.html('Model pending');
+//                     modStat.css('background-color', 'orange');
 
-                    // Change model-status back after 5 seconds
-                    setTimeout(function() {
-                        modStat.html(ms_html);
-                        modStat.css("background-color", ms_bg);
-                    }
-                    , 5000);
-                }
-                else {
-                    // NOTE: Fix for the apparent model-viewer memory leak
-                    customElements.get("model-viewer").modelCacheSize = 0;
+//                     // Change model-status back after 5 seconds
+//                     setTimeout(function() {
+//                         modStat.html(ms_html);
+//                         modStat.css('background-color', ms_bg);
+//                     }
+//                     , 5000);
+//                 }
+//                 else {
+//                     // NOTE: Fix for the apparent model-viewer memory leak
+//                     customElements.get("model-viewer").modelCacheSize = 0;
 
-                    $("model-viewer").attr("poster", resp.mesh.prev_url);
-                    $("model-viewer").attr("src", resp.mesh.src);
-                    $("model-viewer").attr("orientation", resp.mesh.orientation);
+//                     $("model-viewer").attr("poster", resp.mesh.prev_url);
+//                     $("model-viewer").attr("src", resp.mesh.src);
+//                     $("model-viewer").attr("orientation", resp.mesh.orientation);
 
-                    $("#mesh-name").html("About " + resp.mesh.name);
-                    $("#mesh-info").html(resp.mesh.desc);
-                    // Last reconstructed time
-                    $("#latest-recons").html("Reconstructed on: " + resp.mesh.last_recons);
-                    // Contrib stat
-                    if (resp.mesh.contrib_type == "run")
-                        $("#contrib-count").html("Contributors: " + resp.mesh.contrib_count);
-                    else
-                        $("#contrib-count").html("Contributions: " + resp.mesh.contrib_count);
-                    $("#images-count").html("Images: " + resp.mesh.images_count);
-                    // ARK
-                    $("#run-ark-link").html(resp.mesh.run_ark);
-                    $("#run-ark-link").attr("href", resp.mesh.run_ark_url);
-                    // Populate #select-run
-                    $("#select-run").html("");
-                    $.each(resp.mesh.runs_arks, function (idx, runark) {
-                        $("#select-run").append(
-                            "<option value='" + runark + "'>" + runark + "</option>"
-                        );
-                    });
+//                     $("#mesh-name").html("About " + resp.mesh.name);
+//                     $("#mesh-info").html(resp.mesh.desc);
+//                     // Last reconstructed time
+//                     $("#latest-recons").html("Reconstructed on: " + resp.mesh.last_recons);
+//                     // Contrib stat
+//                     if (resp.mesh.contrib_type == "run")
+//                         $("#contrib-count").html("Contributors: " + resp.mesh.contrib_count);
+//                     else
+//                         $("#contrib-count").html("Contributions: " + resp.mesh.contrib_count);
+//                     $("#images-count").html("Images: " + resp.mesh.images_count);
+//                     // ARK
+//                     $("#run-ark-link").html(resp.mesh.run_ark);
+//                     $("#run-ark-link").attr("href", resp.mesh.run_ark_url);
+//                     // Populate #select-run
+//                     $("#select-run").html("");
+//                     $.each(resp.mesh.runs_arks, function (idx, runark) {
+//                         $("#select-run").append(
+//                             "<option value='" + runark + "'>" + runark + "</option>"
+//                         );
+//                     });
 
-                    // Change page title & url
-                    $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
-                    if (vid != page_vid) {
-                        window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + vid);
-                    }
-                }
-            }
-            else {
-                console.log("No matching meshes were found.");
-            }
-        },
-        error: function (resp) {
-            console.log("GET ERROR in loadMesh.");
-        }
-    })
-});
+//                     // Change page title & url
+//                     $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
+//                     if (vid != page_vid) {
+//                         window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + vid);
+//                     }
+//                 }
+//             }
+//             else {
+//                 console.log("No matching meshes were found.");
+//             }
+//         },
+//         error: function (resp) {
+//             console.log("GET ERROR in loadMesh.");
+//         }
+//     })
+// });
 // ========================== AJAX MESH LOAD END ==========================
 
 

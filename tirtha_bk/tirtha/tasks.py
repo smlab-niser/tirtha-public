@@ -11,7 +11,8 @@ from .utils import Logger
 cel_logger = get_task_logger(__name__)
 LOG_DIR = Path(settings.LOG_DIR)
 MESHOPS_CONTRIB_DELAY = settings.MESHOPS_CONTRIB_DELAY  # hours
-BACKUP_INTERVAL = crontab(minute=0, hour=0)  # Every 24 hours at 00:00
+# BACKUP_INTERVAL = crontab(minute=0, hour=0)  # Every 24 hours at 00:00
+BACKUP_INTERVAL = crontab(minute=0, hour=0, day_of_week=0)  # Every 1 week at 00:00 on Sunday
 DBCLEANUP_INTERVAL = crontab(
     minute=0, hour=0, day_of_week=0
 )  # Every 1 week at 00:00 on Sunday

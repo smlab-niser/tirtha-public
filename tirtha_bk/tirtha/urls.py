@@ -1,7 +1,14 @@
 from django.urls import path, re_path
 from django.conf import settings
+from django.contrib import admin
 
 from . import views
+
+
+admin.site.site_url = "/" + settings.PRE_URL
+admin.site.site_header = "Project Tirtha Admin"
+admin.site.site_title = "Project Tirtha"
+admin.site.index_title = "Admin Portal"
 
 
 pre = settings.PRE_URL
@@ -15,8 +22,9 @@ urlpatterns = [
     path(pre + "preUpload/", views.pre_upload_check, name="preUpload"),
     path(pre + "upload/", views.upload, name="upload"),
     path(pre + "search/", views.search, name="search"),
-    path(pre + "loadMesh/", views.loadMesh, name="loadMesh"),
-    path(pre + "loadRun/", views.loadRun, name="loadRun"),
+    # FIXME: TODO: Disabling in favour of redirect for GS Runs
+    # path(pre + "loadMesh/", views.loadMesh, name="loadMesh"),
+    # path(pre + "loadRun/", views.loadRun, name="loadRun"),
     path(pre + "models/<str:vid>/", views.index, name="indexMesh"),
     path(pre + "models/<str:vid>/<str:runid>/", views.index, name="indexMesh"),
     re_path(rf"^{pre}(resolve/)?(?P<ark>ark:/?.*$)", views.resolveARK, name="resolveARK"), #LATE_EXP: Add support for `?info` and `??info` queries or something similar. Check ARK spec.

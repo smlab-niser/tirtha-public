@@ -41,28 +41,6 @@ oauth.register(
     server_metadata_url=f'{appConf.get("OAUTH2_META_URL")}',
 )
 
-def competition(request):
-    """
-    Renders a static page with details about the Tirtha competition.
-
-    """
-    if request.method == "GET":
-        template = "tirtha/competition.html"
-        return render(request, template)
-    return handler403(request)  # FIXME: Change to 405
-
-
-def howto(request):
-    """
-    Renders a static page with instructions on how to use Tirtha.
-
-    """
-    if request.method == "GET":
-        template = "tirtha/howto.html"
-        return render(request, template)
-    return handler403(request)  # FIXME: Change to 405
-
-
 def index(request, vid=None, runid=None):
     template = "tirtha/index.html"
 
@@ -82,7 +60,7 @@ def index(request, vid=None, runid=None):
     used.
 
     """
-    if runid is not None:
+    if runid is not None:        
         try:
             run = Run.objects.get(ID=runid)
             runs_arks = list(
@@ -90,6 +68,11 @@ def index(request, vid=None, runid=None):
                 .order_by("-ended_at")
                 .values_list("ark", flat=True)
             )
+
+            # Move the selected run to the front
+            if run.ark.ark in runs_arks:
+                runs_arks.remove(run.ark.ark)
+                runs_arks.insert(0, run.ark.ark)
 
             context.update(
                 {
@@ -102,7 +85,7 @@ def index(request, vid=None, runid=None):
                 }
             )
         except Run.DoesNotExist as e:
-            handler404(request, e)
+            return handler404(request, e)
 
     elif runid is None:
         if vid is None:
@@ -111,7 +94,7 @@ def index(request, vid=None, runid=None):
             try:
                 mesh = Mesh.objects.get(verbose_id=vid)
             except Mesh.DoesNotExist as e:
-                handler404(request, e)
+                return handler404(request, e)
 
         # Add mesh info
         context.update(
@@ -135,6 +118,12 @@ def index(request, vid=None, runid=None):
                 .order_by("-ended_at")
                 .values_list("ark", flat=True)
             )
+
+            # Move the selected run to the front
+            if run.ark.ark in runs_arks:
+                runs_arks.remove(run.ark.ark)
+                runs_arks.insert(0, run.ark.ark)
+
         except Run.DoesNotExist:
             run = None
 
@@ -184,7 +173,109 @@ def index(request, vid=None, runid=None):
     return render(request, template, context)
 
 
-def _signin(token):
+# TODO: FIXME: Commented out since no XHR to accommodate GS runs
+# @require_GET
+# def loadMesh(request):
+#     """
+#     Allows AJAX requests to load mesh.
+
+#     """
+#     vid = request.GET.get("vid", None)
+
+#     try:
+#         mesh = Mesh.objects.get(verbose_id=vid)
+#         runs_arks = list(
+#             mesh.runs.filter(status="Archived")
+#             .order_by("-ended_at")
+#             .values_list("ark", flat=True)
+#         )
+#         # Get latest successful run for mesh (among Run.status == "Archived")
+#         try:
+#             run = mesh.runs.filter(status="Archived").latest("ended_at")
+#         except Run.DoesNotExist:
+#             run = None
+
+#         # FIXME: LATE_EXP: Maybe remove default meshes and only allow runs to be loaded.
+#         # Having both is counter-intuitive.
+#         data = {
+#             "status": "Mesh found!",
+#             "mesh": {
+#                 "status": mesh.status,
+#                 "has_run": True if run else False,
+#                 "src": run.ark.url
+#                 if run
+#                 else PRE_URL + f"static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
+#                 "prev_url": mesh.preview.url,
+#                 "name": mesh.name,
+#                 "desc": mesh.description,
+#                 "last_recons": str(
+#                     mesh.reconstructed_at.astimezone(
+#                         pytz.timezone("Asia/Kolkata")
+#                     ).strftime("%B %d, %Y")
+#                 )
+#                 if mesh.reconstructed_at
+#                 else "Not reconstructed yet.",
+#                 "contrib_type": "run" if run else "mesh",
+#                 "runs_arks": runs_arks if runs_arks else ["N.A."],
+#                 "run_ark": f"{run.ark}" if run else "N.A.",
+#                 "run_ark_url": f"{BASE_URL}/{run.ark}" if run else "javascript:;",
+#                 "contrib_count": int(run.contributors.count())
+#                 if run
+#                 else mesh.contributions.count(),
+#                 "images_count": int(run.images.count())
+#                 if run
+#                 else Image.objects.filter(contribution__mesh=mesh).count(),
+#                 "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg"
+#                 if run
+#                 else f"{mesh.rotaZ}deg {mesh.rotaX}deg {mesh.rotaY}deg",
+#             },
+#         }
+#     except Mesh.DoesNotExist:
+#         data = {"status": "Mesh not found!", "mesh": None}
+
+#     return JsonResponse(data)
+
+
+# @require_GET
+# def loadRun(request):
+#     """
+#     Allows AJAX requests to load run.
+
+#     """
+#     runark = request.GET.get("runark", None)
+#     runark = "ark:/" + unquote(runark)
+
+#     try:
+#         naan, assigned_name = parse_ark(runark)
+#         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
+#         run = ark.run
+#         data = {
+#             "status": "Run found!",
+#             "run": {
+#                 "mesh_src": run.ark.url,
+#                 "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg",
+#                 "ended_at": str(
+#                     run.ended_at.astimezone(pytz.timezone("Asia/Kolkata")).strftime(
+#                         "%B %d, %Y"
+#                     )
+#                 ),
+#                 "contrib_count": int(run.contributors.count()),
+#                 "images_count": int(run.images.count()),
+#                 "contrib_type": "run",
+#                 "run_ark": f"{run.ark}",
+#                 "run_ark_url": f"{BASE_URL}/{run.ark}",
+#                 "mesh_name": run.mesh.name,
+#                 "runid": run.ID,
+#             },
+#         }
+
+#     except Run.DoesNotExist as e:
+#         data = {"status": "Run not found!", "run": None}
+
+#     return JsonResponse(data)
+
+
+def _signin(token, create=False):
     """
     Handles token-based authentication.
     Verifies the token and retrieves or creates the contributor.
@@ -231,147 +322,27 @@ def _signin(token):
 
     return output, contrib
 
-@require_GET
-def google_login(request):
-    # build a full authorize callback uri
-
-    new_state = str(uuid.uuid4())  # Generate a new UUID
-    redirect_uri = request.build_absolute_uri("/signin-google")# TODO: build the redirect uri as per configugered in the GOOGLE BACKEND
-    request.session["auth_state"] = new_state
-
-    return oauth.google.authorize_redirect(request, redirect_uri, state=new_state)
 
 @require_GET
-def logout(request):
-    #FIXME: Currently button does not exist in the UI
-    # user can signout after signing in if the user wants to
-    # build a logout button
+def googleAuth(request):
     """
-    Pops the user from the session post logout.
-    The user is redirected to the index page.
-    """
-    request.session.pop("auth_token", None)
-    return redirect("index")
+    Sets auth token cookie post Google Auth.
 
-@require_GET
-def tokenAuth(request):
     """
-    Authorizes & sets auth token with relavent token information about the user
-    """
-    # stored_state = request.session.get('auth_state')
-    # received_state = request.GET.get('state')
+    token = request.GET["token"]
+    output, contrib = _signin(token, create=True)
 
-    try:
-        # Get token from OAuth provider
-        token = oauth.google.authorize_access_token(request)
-        token = dict(token)
+    context = {"output": output, "banned": False, "blur": False}
+
+    # Store JWT in session
+    if contrib is not None:
         request.session["auth_token"] = token
+        request.session.set_expiry(0)  # Session expires when browser closes
 
-    except Exception as e:
-        # Handle token verification errors
-        request.session["auth_token"] = None
+        if contrib.banned or not contrib.active:
+            context.update({"blur": True})
 
-    return index(request)
-
-@require_GET
-def loadMesh(request):
-    """
-    Allows AJAX requests to load mesh.
-
-    """
-    vid = request.GET.get("vid", None)
-
-    try:
-        mesh = Mesh.objects.get(verbose_id=vid)
-        runs_arks = list(
-            mesh.runs.filter(status="Archived")
-            .order_by("-ended_at")
-            .values_list("ark", flat=True)
-        )
-        # Get latest successful run for mesh (among Run.status == "Archived")
-        try:
-            run = mesh.runs.filter(status="Archived").latest("ended_at")
-        except Run.DoesNotExist:
-            run = None
-
-        # FIXME: LATE_EXP: Maybe remove default meshes and only allow runs to be loaded.
-        # Having both is counter-intuitive.
-        data = {
-            "status": "Mesh found!",
-            "mesh": {
-                "status": mesh.status,
-                "has_run": True if run else False,
-                "src": run.ark.url
-                if run
-                else PRE_URL + f"static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
-                "prev_url": mesh.preview.url,
-                "name": mesh.name,
-                "desc": mesh.description,
-                "last_recons": str(
-                    mesh.reconstructed_at.astimezone(
-                        pytz.timezone("Asia/Kolkata")
-                    ).strftime("%B %d, %Y")
-                )
-                if mesh.reconstructed_at
-                else "Not reconstructed yet.",
-                "contrib_type": "run" if run else "mesh",
-                "runs_arks": runs_arks if runs_arks else ["N.A."],
-                "run_ark": f"{run.ark}" if run else "N.A.",
-                "run_ark_url": f"{BASE_URL}/{run.ark}" if run else "javascript:;",
-                "contrib_count": int(run.contributors.count())
-                if run
-                else mesh.contributions.count(),
-                "images_count": int(run.images.count())
-                if run
-                else Image.objects.filter(contribution__mesh=mesh).count(),
-                "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg"
-                if run
-                else f"{mesh.rotaZ}deg {mesh.rotaX}deg {mesh.rotaY}deg",
-            },
-        }
-    except Mesh.DoesNotExist:
-        data = {"status": "Mesh not found!", "mesh": None}
-
-    return JsonResponse(data)
-
-
-@require_GET
-def loadRun(request):
-    """
-    Allows AJAX requests to load run.
-
-    """
-    runark = request.GET.get("runark", None)
-    runark = "ark:/" + unquote(runark)
-
-    try:
-        naan, assigned_name = parse_ark(runark)
-        ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
-        run = ark.run
-        data = {
-            "status": "Run found!",
-            "run": {
-                "mesh_src": run.ark.url,
-                "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg",
-                "ended_at": str(
-                    run.ended_at.astimezone(pytz.timezone("Asia/Kolkata")).strftime(
-                        "%B %d, %Y"
-                    )
-                ),
-                "contrib_count": int(run.contributors.count()),
-                "images_count": int(run.images.count()),
-                "contrib_type": "run",
-                "run_ark": f"{run.ark}",
-                "run_ark_url": f"{BASE_URL}/{run.ark}",
-                "mesh_name": run.mesh.name,
-                "runid": run.ID,
-            },
-        }
-
-    except Run.DoesNotExist as e:
-        data = {"status": "Run not found!", "run": None}
-
-    return JsonResponse(data)
+    return JsonResponse(context)
 
 
 @require_GET
@@ -500,5 +471,28 @@ def resolveARK(request, ark: str):
         # Try to find the ARK in the database
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
+    
     except ARK.DoesNotExist as e:
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
+
+
+def competition(request):
+    """
+    Renders a static page with details about the Tirtha competition.
+
+    """
+    if request.method == "GET":
+        template = "tirtha/competition.html"
+        return render(request, template)
+    return handler403(request)  # FIXME: Change to 405
+
+
+def howto(request):
+    """
+    Renders a static page with instructions on how to use Tirtha.
+
+    """
+    if request.method == "GET":
+        template = "tirtha/howto.html"
+        return render(request, template)
+    return handler403(request)  # FIXME: Change to 405

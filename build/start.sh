@@ -29,7 +29,7 @@ cd ./tirtha_bk/
 
 # Starting celery in a tmux session
 tmux new-session -d -s celery_session || tmux attach-session -t celery_session
-tmux send-keys -t celery_session "celery -A tirtha worker -l INFO --max-tasks-per-child=1 -P threads --beat" C-m
+tmux send-keys -t celery_session "celery -A tirtha worker -l INFO --max-tasks-per-child=1 -P threads --beat --concurrency=1" C-m
 
 # Starting the frontend | NOTE: Browse to HOST_IP:8000 in a browser to access the frontend.
 gunicorn --bind 0.0.0.0:$GUNICORN_PORT tirtha_bk.wsgi

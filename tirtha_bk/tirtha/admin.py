@@ -578,6 +578,7 @@ class RunAdmin(admin.ModelAdmin):
         "ID",
         "ark",
         "mesh_id_verbose",
+        "kind",
         "started_at",
         "ended_at",
         "image_count",
@@ -592,6 +593,7 @@ class RunAdmin(admin.ModelAdmin):
                     ("ID"),
                     ("ark"),
                     ("mesh_id_verbose"),
+                    ("kind"),
                     ("status"),
                     ("started_at", "ended_at"),
                     ("directory"),
@@ -605,10 +607,11 @@ class RunAdmin(admin.ModelAdmin):
             },
         ),
     )
-    list_filter = ("status",)
+    list_filter = ("status", "kind")
     list_display = (
         "ID",
         "mesh_id_verbose",
+        "kind",
         "image_count",
         "status",
         "started_at",

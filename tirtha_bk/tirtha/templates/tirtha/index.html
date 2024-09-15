@@ -82,17 +82,24 @@
                 high_quality
             </div> {% endcomment %}
         </div>
-        {% comment %} <a id="top-banner" href="javascript:;"> {% endcomment %}
-            {% comment %} target="_blank"> {% endcomment %}
-            {% comment %} <span class="material-symbols-outlined">
-                trophy
-            </span> {% endcomment %}
-            {% comment %} <span class="material-symbols-outlined" style="margin-right: 0.2rem;">
-                move_up
-            </span>
-            Site Migration in Progress {% endcomment %}
-        {% comment %} </a> {% endcomment %}
-        {% include "tirtha/modelViewer.html" %}
+        
+        {% if run %}
+            {% if run.kind == 'aV' %}
+                {% include "tirtha/modelViewer.html" %}
+            {% elif run.kind == 'GS' %}
+                <a id="top-banner" href="https://smlab.niser.ac.in/project/tirtha/dev/" target="_blank">
+                    <span class="material-symbols-outlined" style="margin-right: 0.2rem;">
+                        bug_report
+                    </span>
+                    More GS on Dev
+                </a>
+                {% include "tirtha/gsViewer.html" %}
+            {% endif %}
+        {% else %}
+            {% comment %} TODO: This can be made better. {% endcomment %}
+            {% include "tirtha/modelViewer.html" %}
+        {% endif %}
+
         <div class="controls">
             <button id="info-btn" class="buttons">
                 <span class="material-symbols-outlined">
