@@ -129,7 +129,7 @@ function toggleMenu() {
 }
 
 // Open menu on click
-menu.addEventListener("click", () => {
+menu.on("click", () => {
     toggleMenu();
 });
 
@@ -374,13 +374,13 @@ $("#select-run").on("change", function (e) {
 
 // ========================== MODAL START ==========================
 // ❗Handle contribute modal❗
-const upInput = $("#upload-input");
-const contBtn = $("#cont-btn");
-const clearBtn = $("#clear-btn");
-const subBtn = $("#submit-btn");
-const upLabel = $("#upload-label");
-const contDialog = $("#cont-form");
-var upGal = $("#upload-gallery");
+const upInput = document.getElementById("upload-input");
+const contBtn = document.getElementById("cont-btn");
+const clearBtn = document.getElementById("clear-btn");
+const subBtn = document.getElementById("submit-btn");
+const upLabel = document.getElementById("upload-label");
+const contDialog = document.getElementById("cont-form");
+var upGal = document.getElementById("upload-gallery");
 var compressedFiles = [];
 const selectedFiles = new Set();
 const MAX_FILES = 2000, // NOTE: Limit to 2000 images. Tweak as needed.
