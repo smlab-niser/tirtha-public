@@ -180,6 +180,7 @@ ol {
 }
 
 #model-area:fullscreen #floating-banners {
+    top: 0.5rem;
     left: 0.5rem;
 }
 
@@ -1194,6 +1195,10 @@ footer p a img {
 .hide-side-model-area#model-area {
     width: calc(100% + var(--side-current-width));
     transform: translateX(calc(-1 * var(--side-current-width)));
+}
+
+.hide-side-model-area #floating-banners {
+    margin-left: 0.4rem;
 }
 
 /* New pic added while uploading */
