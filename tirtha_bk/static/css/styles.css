@@ -1073,7 +1073,7 @@ progress::-webkit-progress-value {
 }
 
 #agree-check {
-    margin: 0;
+    margin: 0 0.25rem 0 0;
 
     width: clamp(0.8rem, 1.1rem, 1.5dvw);
     height: clamp(0.8rem, 1.1rem, 1.5dvw);
