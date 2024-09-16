@@ -8,8 +8,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
-from google.auth.transport import requests
-from google.oauth2 import id_token
+
 
 # Local imports
 from tirtha_bk.views import handler403, handler404
@@ -18,13 +17,27 @@ from .models import ARK, Contribution, Contributor, Image, Mesh, Run
 from .tasks import post_save_contrib_imageops
 from .utilsark import parse_ark
 
+from authlib.integrations.django_client import OAuth # for the oauth setup
+import uuid
 
 PRE_URL = settings.PRE_URL
 GOOGLE_LOGIN = settings.GOOGLE_LOGIN
 ADMIN_MAIL = settings.ADMIN_MAIL
-GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+appConf = settings.APP_CONF
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
+
+# OAuth App Setup TODO:
+oauth = OAuth()
+oauth.register(
+    "google",
+    client_id=appConf.get("OAUTH2_CLIENT_ID"),
+    client_secret=appConf.get("OAUTH2_CLIENT_SECRET"),
+    client_kwargs={
+        "scope": "openid profile email",
+    },
+    server_metadata_url=f'{appConf.get("OAUTH2_META_URL")}',
+)
 
 
 def index(request, vid=None, runid=None):
@@ -36,7 +49,7 @@ def index(request, vid=None, runid=None):
         "meshes": meshes,
         "signin_msg": "Please sign in to upload images.",
         "signin_class": "blur-form",
-        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
+        "GOOGLE_CLIENT_ID": appConf.get("OAUTH2_CLIENT_ID"),
     }
 
     """
@@ -46,7 +59,7 @@ def index(request, vid=None, runid=None):
     used.
 
     """
-    if runid is not None:
+    if runid is not None:        
         try:
             run = Run.objects.get(ID=runid)
             runs_arks = list(
@@ -151,6 +164,12 @@ def index(request, vid=None, runid=None):
 
             if not contrib.banned and contrib.active:
                 context.update({"signin_class": ""})
+
+    # block for profile image url
+    if token is not None:
+        context["profile_image_url"] = token.get("userinfo").get(
+            "picture"
+        )  # adding the currently signed in profile image to the context
 
     return render(request, template, context)
 
@@ -259,14 +278,8 @@ def index(request, vid=None, runid=None):
 
 def _signin(token, create=False):
     """
-    Handles `Sign in with Google`. Does the following:
-    * Verifies `token`
-    * Check if contributor exists in DB using details from `token`
-    * If not, create new contributor if `create` is True, else return None
-    * If yes, check if contributor is inactive or banned
-        * If yes, return error
-        * If no, return success
-
+    Handles token-based authentication.
+    Verifies the token and retrieves or creates the contributor.
     """
     # For development only
     if not GOOGLE_LOGIN:
@@ -274,33 +287,23 @@ def _signin(token, create=False):
         contrib = Contributor.objects.get(email=ADMIN_MAIL)
         output = f"Signed-in as {ADMIN_MAIL}."
         return output, contrib
-
-    contrib = None
+    
     try:
-        # Verify token
-        idinfo = id_token.verify_oauth2_token(
-            token, requests.Request(), GOOGLE_CLIENT_ID
-        )
+        contrib = None
 
         # Get contributor info
-        name = idinfo["name"]
-        email = idinfo["email"]
+        payload = token.get("userinfo")
+        email = payload.get("email")
+        name = payload.get("name")
+        # NOTE: Treating email as unique ID, both for our DB and Google's
+        # NOTE: Contributor is created as inactive | Manual activation required
+        # CHECK: TODO: Allow auto-activation after testing
 
         # Get or create contributor
-        try:
-            contrib = Contributor.objects.get(email=email)
-        except Contributor.DoesNotExist:
-            if create:
-                # NOTE: Treating email as unique ID, both for our DB and Google's
-                # NOTE: Contributor is created as inactive | Manual activation required
-                # CHECK: TODO: Allow auto-activation after testing
-                contrib = Contributor.objects.create(
-                    name=name, email=email, active=False
-                )
-            else:
-                output = "Contributor not found. Please sign in first."
-                return output, contrib
-
+        contributor, created = Contributor.objects.get_or_create(
+            email=email, name=name, defaults={"active": False}
+        )
+        
         # If name has changed, update name
         if name != contrib.name:
             contrib.name = name
@@ -469,8 +472,7 @@ def resolveARK(request, ark: str):
         # Try to find the ARK in the database
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
-
-    except ARK.DoesNotExist:
+    except ARK.DoesNotExist as e:
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
 
 

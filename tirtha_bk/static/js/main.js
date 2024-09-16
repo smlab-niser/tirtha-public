@@ -7,7 +7,8 @@ const modelArea = doc.getElementById('model-area');
 const model = doc.getElementById('model');
 const fControls = doc.getElementById('floating-controls');
 const infoBtn = doc.getElementById('info-btn');
-const PRE_URL = "/project/tirtha/dev" // TODO: Use env
+const PRE_URL = "/project/tirtha"
+
 
 // ========================== FS START ==========================
 // ❗ Handle fullscreen❗
@@ -234,8 +235,7 @@ $("#select-run").on("change", function (e) {
 
     var runark = $(this).val();
     window.location.replace(PRE_URL + "/ark:/" + runark);
-
-    // var page_vid = window.location.pathname.split("/")[2];
+    // var page_vid = window.location.pathname.split("/")[4];
 
     // $.ajax({
     //     type: "GET",
@@ -279,79 +279,76 @@ $("#select-run").on("change", function (e) {
 // NOTE: TODO: Let these behave like normal links if no XHR
 // $(".model-previews").on('click', function(e) {
 //     e.preventDefault();
-//     var vid = $(this).attr("href").split("/")[2];
-//     var page_vid = window.location.pathname.split("/")[1];
+//     var vid = $(this).attr("href").split("/")[4];
+//     var page_vid = window.location.pathname.split("/")[3];
 
 //     var modStat = $(this).find(".model-status");
 
-//     // NOTE: Not needed if preventDefault() is NOT used
-//     // window.location.replace(PRE_URL + "/models/" + vid);
+//     $.ajax({
+//         type: "GET",
+//         url: PRE_URL + "/loadMesh/",
+//         data: { "vid" : vid },
+//         success: function (resp) {
+//             if (resp.mesh != null) {
+//                 if (resp.mesh.has_run == false) {
+//                     const ms_html = modStat.html();
+//                     const ms_bg = modStat.css('background-color');
 
-//     // $.ajax({
-//     //     type: "GET",
-//     //     url: PRE_URL + "/loadMesh/",
-//     //     data: { "vid" : vid },
-//     //     success: function (resp) {
-//     //         if (resp.mesh != null) {
-//     //             if (resp.mesh.has_run == false) {
-//     //                 const ms_html = modStat.html();
-//     //                 const ms_bg = modStat.css('background-color');
+//                     // Set model-status to this for 5 seconds
+//                     modStat.html('Model pending');
+//                     modStat.css('background-color', 'orange');
 
-//     //                 // Set model-status to this for 5 seconds
-//     //                 modStat.html('Model pending');
-//     //                 modStat.css('background-color', 'orange');
+//                     // Change model-status back after 5 seconds
+//                     setTimeout(function() {
+//                         modStat.html(ms_html);
+//                         modStat.css('background-color', ms_bg);
+//                     }
+//                     , 5000);
+//                 }
+//                 else {
+//                     // NOTE: Fix for the apparent model-viewer memory leak
+//                     customElements.get("model-viewer").modelCacheSize = 0;
 
-//     //                 // Change model-status back after 5 seconds
-//     //                 setTimeout(function() {
-//     //                     modStat.html(ms_html);
-//     //                     modStat.css('background-color', ms_bg);
-//     //                 }
-//     //                 , 5000);
-//     //             }
-//     //             else {
-//     //                 // NOTE: Fix for the apparent model-viewer memory leak
-//     //                 customElements.get("model-viewer").modelCacheSize = 0;
+//                     $("model-viewer").attr("poster", resp.mesh.prev_url);
+//                     $("model-viewer").attr("src", resp.mesh.src);
+//                     $("model-viewer").attr("orientation", resp.mesh.orientation);
 
-//     //                 $("model-viewer").attr("poster", resp.mesh.prev_url);
-//     //                 $("model-viewer").attr("src", resp.mesh.src);
-//     //                 $("model-viewer").attr("orientation", resp.mesh.orientation);
+//                     $("#mesh-name").html("About " + resp.mesh.name);
+//                     $("#mesh-info").html(resp.mesh.desc);
+//                     // Last reconstructed time
+//                     $("#latest-recons").html("Reconstructed on: " + resp.mesh.last_recons);
+//                     // Contrib stat
+//                     if (resp.mesh.contrib_type == "run")
+//                         $("#contrib-count").html("Contributors: " + resp.mesh.contrib_count);
+//                     else
+//                         $("#contrib-count").html("Contributions: " + resp.mesh.contrib_count);
+//                     $("#images-count").html("Images: " + resp.mesh.images_count);
+//                     // ARK
+//                     $("#run-ark-link").html(resp.mesh.run_ark);
+//                     $("#run-ark-link").attr("href", resp.mesh.run_ark_url);
+//                     // Populate #select-run
+//                     $("#select-run").html("");
+//                     $.each(resp.mesh.runs_arks, function (idx, runark) {
+//                         $("#select-run").append(
+//                             "<option value='" + runark + "'>" + runark + "</option>"
+//                         );
+//                     });
 
-//     //                 $("#mesh-name").html("About " + resp.mesh.name);
-//     //                 $("#mesh-info").html(resp.mesh.desc);
-//     //                 // Last reconstructed time
-//     //                 $("#latest-recons").html("Reconstructed on: " + resp.mesh.last_recons);
-//     //                 // Contrib stat
-//     //                 if (resp.mesh.contrib_type == "run")
-//     //                     $("#contrib-count").html("Contributors: " + resp.mesh.contrib_count);
-//     //                 else
-//     //                     $("#contrib-count").html("Contributions: " + resp.mesh.contrib_count);
-//     //                 $("#images-count").html("Images: " + resp.mesh.images_count);
-//     //                 // ARK
-//     //                 $("#run-ark-link").html(resp.mesh.run_ark);
-//     //                 $("#run-ark-link").attr("href", resp.mesh.run_ark_url);
-//     //                 // Populate #select-run
-//     //                 $("#select-run").html("");
-//     //                 $.each(resp.mesh.runs_arks, function (idx, runark) {
-//     //                     $("#select-run").append(
-//     //                         "<option value='" + runark + "'>" + runark + "</option>"
-//     //                     );
-//     //                 });
-
-//     //                 // Change page title & url
-//     //                 $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
-//     //                 if (vid != page_vid) {
-//     //                     window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + vid);
-//     //                 }
-//     //             }
-//     //         }
-//     //         else {
-//     //             console.log("No matching meshes were found.");
-//     //         }
-//     //     },
-//     //     error: function (resp) {
-//     //         console.log("GET ERROR in loadMesh.");
-//     //     }
-//     // })
+//                     // Change page title & url
+//                     $(doc).attr("title", "Project Tirtha | " + resp.mesh.name);
+//                     if (vid != page_vid) {
+//                         window.history.pushState("", "", window.location.origin + PRE_URL + "/models/" + vid);
+//                     }
+//                 }
+//             }
+//             else {
+//                 console.log("No matching meshes were found.");
+//             }
+//         },
+//         error: function (resp) {
+//             console.log("GET ERROR in loadMesh.");
+//         }
+//     })
 // });
 // ========================== AJAX MESH LOAD END ==========================
 
@@ -377,6 +374,7 @@ const subBtn = document.getElementById("submit-btn");
 const upLabel = document.getElementById("upload-label");
 const contDialog = document.getElementById("cont-form");
 var upGal = document.getElementById("upload-gallery");
+
 var compressedFiles = [];
 const selectedFiles = new Set();
 const MAX_FILES = 2000, // NOTE: Limit to 2000 images. Tweak as needed.
