@@ -2,8 +2,13 @@
     <summary>How does it work?</summary>
     <div class="details-inner">
         <p>
-            This project utilizes open-source libraries and an automated photogrammetry pipeline, based on <a href="https://github.com/alicevision" target="_blank">AliceVision</a>, to create 3D models from crowdsourced images, broadly performing the steps described at <a href="https://alicevision.org/#photogrammetry/" target="_blank">AliceVision | Photogrammetry Pipeline</a>. The generated textured mesh is denoised, decimated, and converted to a <code>.glb</code> or
-            a <code>.glTF</code> file using <a href="https://github.com/CesiumGS/obj2gltf" target="_blank"><code>obj2gltf</code></a>. This file is optimized for web use with <a href="https://github.com/zeux/meshoptimizer" target="_blank"><code>meshoptimizer</code></a>. Finally, the 3D model is rendered in the browser using <a href="https://github.com/google/model-viewer" target="_blank"><code>&ltmodel-viewer&gt</code></a>. Please note that the model displayed here is a low-poly version due to web & mobile device constraints.
+            This project utilizes open-source libraries and automated pipelines for photogrammetry (based on <a href="https://github.com/alicevision" target="_blank">AliceVision</a>) and <a href="https://github.com/graphdeco-inria/gaussian-splatting" target="_blank">3D Gaussian Splatting</a> to create 3D models from crowdsourced images of heritage sites. On the photogrammetry side, we broadly perform the steps described at <a href="https://alicevision.org/#photogrammetry/" target="_blank">AliceVision | Photogrammetry Pipeline</a>. The generated textured mesh is denoised, decimated, and converted to a <code>.glb</code> file using <a href="https://github.com/CesiumGS/obj2gltf" target="_blank"><code>obj2gltf</code></a>. This file is optimized for web use with <a href="https://github.com/zeux/meshoptimizer" target="_blank"><code>meshoptimizer</code></a>. Finally, the 3D model is rendered in the browser using <a href="https://github.com/google/model-viewer" target="_blank"><code>&ltmodel-viewer&gt</code></a>.
+        </p>
+        <p>
+            For 3D Gaussian Splatting, we use the <a href="https://docs.nerf.studio/nerfology/methods/splat.html" target="_blank">splatfacto</a> implementation present in the excellent <a href="https://github.com/nerfstudio-project" target="_blank">nerfstudio</a>, which produces a Gaussian point cloud. This is then compressed and filtered and converted to <code>.splat</code> file for viewing on the web using a <a href="https://github.com/antimatter15/splat" target="_blank">WebGL-based 3D Gaussian Splat Viewer</a>. <i>The fuzz / floaters present in the Gaussian Splat models are artifacts of the splatting process and are not part of the original model.</i>
+        </p>
+        <p>
+            Please note that the models displayed here are low-poly, compressed versions due to web & mobile device constraints.
         </p>
     </div>
 </details>
