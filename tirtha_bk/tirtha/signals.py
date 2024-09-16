@@ -32,7 +32,7 @@ def post_migrate_create_defaults(sender, **kwargs):
         default_desc = "This is the meditation center, atop a small hill, inside the NISER campus at Khordha, Odisha."
 
         static_paths = [
-            STATIC / f"models/{mesh_ID}/cache",
+            STATIC / f"models/{mesh_ID}/avcache",
             STATIC / f"models/{mesh_ID}/published",
         ]
         for static_path in static_paths:
@@ -88,7 +88,7 @@ def post_save_mesh(sender, instance, **kwargs):
             path.mkdir(parents=True)  # Makes both these & mesh_ID folders
 
     static_paths = [
-        STATIC / f"models/{mesh_ID}/cache",
+        STATIC / f"models/{mesh_ID}/avcache",
         STATIC / f"models/{mesh_ID}/published",
     ]
     for static_path in static_paths:

@@ -37,6 +37,17 @@
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
     <!-- Scripts -->
+    <!-- TODO: FIXME: Needed for GS Viewer 2 -->
+    <!-- <script type="importmap">
+        { 
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.164/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164/examples/jsm/",
+                "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.module.js"
+            }
+        }
+    </script> -->
+    <!-- TODO: // "https://unpkg.com/browse/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.module.js" -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script type="module" src="https://www.unpkg.com/@google/model-viewer@3.1.0/dist/model-viewer.min.js"></script>
 
@@ -57,9 +68,9 @@
                 temple_buddhist
             </span>
             Project Tirtha
-            <sup id="beta-tag">
-                <a href="https://github.com/smlab-niser/tirtha-public/" target="_blank">
-                    BETA
+            <sup id="beta-tag-dev">
+                <a href="https://github.com/smlab-niser/tirtha-public/tree/dev" target="_blank">
+                    Dev
                 </a>
             </sup>
         </h1>
@@ -82,17 +93,25 @@
                 high_quality
             </div> {% endcomment %}
         </div>
-        
+
+        <div id="floating-banners">
+            {% comment %} Paper link {% endcomment %}
+            <a id="banner-paper" class="material-symbols-outlined" href="https://arxiv.org/abs/2308.01246" target="_blank">
+                article_shortcut
+            </a>
+            {% if run %}
+                {% if run.kind == 'GS' %}
+                    <a id="banner-bug" class="material-symbols-outlined" href="https://github.com/smlab-niser/tirtha-public/issues/new/choose" target="_blank">
+                        bug_report
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
+
         {% if run %}
             {% if run.kind == 'aV' %}
                 {% include "tirtha/modelViewer.html" %}
             {% elif run.kind == 'GS' %}
-                <a id="top-banner" href="https://smlab.niser.ac.in/project/tirtha/dev/" target="_blank">
-                    <span class="material-symbols-outlined" style="margin-right: 0.2rem;">
-                        bug_report
-                    </span>
-                    More GS on Dev
-                </a>
                 {% include "tirtha/gsViewer.html" %}
             {% endif %}
         {% else %}

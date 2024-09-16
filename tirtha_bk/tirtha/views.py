@@ -3,9 +3,7 @@
 # * Too many different contexts for signin() and googleAuth().
 # * search()'s code is inconvenient (main.js).
 # * See FIXME:s and LATE_EXP:s below.
-from urllib.parse import unquote
 
-import pytz
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -29,7 +27,7 @@ appConf = settings.APP_CONF
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
 
-# oauth app setup
+# OAuth App Setup TODO:
 oauth = OAuth()
 oauth.register(
     "google",
@@ -40,6 +38,7 @@ oauth.register(
     },
     server_metadata_url=f'{appConf.get("OAUTH2_META_URL")}',
 )
+
 
 def index(request, vid=None, runid=None):
     template = "tirtha/index.html"
@@ -66,13 +65,14 @@ def index(request, vid=None, runid=None):
             runs_arks = list(
                 run.mesh.runs.filter(status="Archived")
                 .order_by("-ended_at")
-                .values_list("ark", flat=True)
+                .values_list("ark", "ended_at")
             )
 
             # Move the selected run to the front
-            if run.ark.ark in runs_arks:
-                runs_arks.remove(run.ark.ark)
-                runs_arks.insert(0, run.ark.ark)
+            runs_arks = [
+                (ark, ended_at) for ark, ended_at in runs_arks if ark != run.ark.ark
+            ]
+            runs_arks.insert(0, (run.ark.ark, run.ended_at))
 
             context.update(
                 {
@@ -116,13 +116,14 @@ def index(request, vid=None, runid=None):
             runs_arks = list(
                 mesh.runs.filter(status="Archived")
                 .order_by("-ended_at")
-                .values_list("ark", flat=True)
+                .values_list("ark", "ended_at")
             )
 
             # Move the selected run to the front
-            if run.ark.ark in runs_arks:
-                runs_arks.remove(run.ark.ark)
-                runs_arks.insert(0, run.ark.ark)
+            runs_arks = [
+                (ark, ended_at) for ark, ended_at in runs_arks if ark != run.ark.ark
+            ]
+            runs_arks.insert(0, (run.ark.ark, run.ended_at))
 
         except Run.DoesNotExist:
             run = None
@@ -471,7 +472,6 @@ def resolveARK(request, ark: str):
         # Try to find the ARK in the database
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
-    
     except ARK.DoesNotExist as e:
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
 

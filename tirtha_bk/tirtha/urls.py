@@ -10,7 +10,7 @@ admin.site.site_header = "Project Tirtha Admin"
 admin.site.site_title = "Project Tirtha"
 admin.site.index_title = "Admin Portal"
 
-
+# NOTE: The `pre` variable is used to prefix the URLs with a common string.
 pre = settings.PRE_URL
 
 urlpatterns = [
@@ -22,7 +22,8 @@ urlpatterns = [
     path(pre + "preUpload/", views.pre_upload_check, name="preUpload"),
     path(pre + "upload/", views.upload, name="upload"),
     path(pre + "search/", views.search, name="search"),
-    # FIXME: TODO: Disabling in favour of redirect for GS Runs
+    # TODO: Disabling in favour of redirect for GSRuns
+    # TODO: Refactor or remove
     # path(pre + "loadMesh/", views.loadMesh, name="loadMesh"),
     # path(pre + "loadRun/", views.loadRun, name="loadRun"),
     path(pre + "models/<str:vid>/", views.index, name="indexMesh"),

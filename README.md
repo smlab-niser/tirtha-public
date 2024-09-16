@@ -35,7 +35,7 @@
 ---
 
 > [!important]
-> Please go here for the new Tirtha site: https://smlab.niser.ac.in/project/tirtha/.
+> Please go here for the Tirtha Dev site: https://smlab.niser.ac.in/project/tirtha/dev/.
 
 ---
 
@@ -59,11 +59,14 @@ and is under active development. All contributions are welcome. Please read
 See [Citation](#citation) for information on how to cite this project. A 
 [CITATION.cff](./CITATION.cff) file is also available in the repository.
 
+> [!NOTE]
+> For the Gaussian Splatting (GS) pipeline, we have used the original implementation from https://github.com/graphdeco-inria/gaussian-splatting/. ***This is currently for research purposes only and is not part of the open-source release***.
+
 ## System Architecture
 
 <picture>
-    <source srcset="./media/images/architecture-dark.webp" media="(prefers-color-scheme: dark)">
-    <img src="./media/images/architecture-light.webp" alt="Tirtha Broad Architecture">
+    <source srcset="./media/images/architecture-GS-dark.webp" media="(prefers-color-scheme: dark)">
+    <img src="./media/images/architecture-GS-light.webp" alt="Tirtha Broad Architecture">
 </picture>
 
 [See the paper](#citation) for more details.
@@ -72,21 +75,22 @@ See [Citation](#citation) for information on how to cite this project. A
 ### Hardware
 * **OS**: Ubuntu 22.04 LTS (Other Linux distros may work, but are not tested)
 * **RAM**: 16 GB+ for modestly sized image sets (< 500 images)
-* **VRAM**: 8 GB+; NVIDIA GPU required for CUDA support
+* **VRAM**: 24 GB+; NVIDIA GPU required for CUDA support & Gaussian Splatting
 * **CPU**: 16+ cores recommended
 * **Storage**: 100 GB+ free space recommended
 
 ### Software
-* **Primary**: `Python 3.11` (Developed using `Python 3.11.7`) & `Node.js` >= 18.0.0 & `npm` >= 8.0.0.
+* **Primary**: `Python 3.11` (Developed using `Python 3.11.9`) & `Node.js` >= 18.0.0 & `npm` >= 8.0.0.
 * The build process (manual or docker) automatically installs these and other dependencies. Check [Deployment / Development Setup](#deployment--development-setup) below for more details.
 
-## Deployment / Development Setup
+## Deployment / Development Setup [TODO: Outdated]
+<!-- TODO: Update this section with the new deployment instructions. -->
 
 > [!tip]
 > Please go [here](https://github.com/smlab-niser/tirtha-docker) to set up Tirtha using Docker.
 > We **strongly recommend** using Docker for deployment as well as for testing or development.
 
-### Manual Setup
+### Manual Setup 
 * Clone the repository and `cd` to the `tirtha-public` directory:
     ```sh
     git clone https://github.com/smlab-niser/tirtha-public.git
