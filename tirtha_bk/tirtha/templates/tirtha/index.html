@@ -48,7 +48,6 @@
         }
     </script> -->
     <!-- TODO: // "https://unpkg.com/browse/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.module.js" -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script type="module" src="https://www.unpkg.com/@google/model-viewer@3.1.0/dist/model-viewer.min.js"></script>
 
     <title>
@@ -68,9 +67,9 @@
                 temple_buddhist
             </span>
             Project Tirtha
-            <sup id="beta-tag-dev">
-                <a href="https://github.com/smlab-niser/tirtha-public/tree/dev" target="_blank">
-                    Dev
+            <sup id="beta-tag">
+                <a href="https://github.com/smlab-niser/tirtha-public" target="_blank">
+                    Beta
                 </a>
             </sup>
         </h1>
@@ -145,13 +144,14 @@
             <button id="take-focus"></button>
             <section id="upload-area">
                 <h2>Contribute to Tirtha</h2>
-                <div class="button-container">
-                    <a id="signinButton" class="upload-signin" href="{% url 'signinGoogle' %}">
-                        {% if signin_msg == "Please sign in to upload images." %}
-                        <span>Sign in with Google</span>
+                <div id="signin-button-container">
+                    <a id="signin-button" href="{% url 'signin' %}">
+                        {% if profile_image_url %}
+                            <img class="profile-image" src="{{ profile_image_url }}" alt="Profile Image">
+                            <span>Switch Account</span>
                         {% else %}
-                        <img class="profile-image" src="{{ profile_image_url }}" alt="Profile Image">
-                        <span>Sign in with another account</span>
+                            <img class="profile-image" src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Profile Image">
+                            <span>Google SignIn</span>
                         {% endif %}
                     </a>
                 </div>
@@ -171,7 +171,7 @@
                 Home
             </a>
             <div id="search-box">
-                <input id="search" type="text" placeholder="Search models">
+                <input id="search" type="text" placeholder="Search models" title="Search models by name, district, state or country">
             </div>
         </div>
         {% include 'tirtha/modelList.html' %}

@@ -35,7 +35,8 @@
 ---
 
 > [!important]
-> Please go here for the Tirtha Dev site: https://smlab.niser.ac.in/project/tirtha/dev/.
+> Please go here for the Tirtha site: https://smlab.niser.ac.in/project/tirtha/.
+> New features will be added to the dev site first: https://smlab.niser.ac.in/project/tirtha/dev/.
 
 ---
 

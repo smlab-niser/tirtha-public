@@ -95,9 +95,9 @@ class PostProcess:
             thresh_percen=float(thresh_percen),
         )
 
-        # Remove floaters
-        k, threshold_factor = self.rem_float_args
-        self.remove_floaters(k=int(k), threshold_factor=float(threshold_factor))
+        # # Remove floaters TODO: FIXME: This is unreasonably slow + Density filtering does a good job!
+        # k, threshold_factor = self.rem_float_args
+        # self.remove_floaters(k=int(k), threshold_factor=float(threshold_factor))
 
         # Convert the filtered `.ply` file to `.splat` format
         self.run_convert()

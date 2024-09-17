@@ -2,7 +2,7 @@
 <div class="models">
     {% if meshes %}
         {% for mesh in meshes %}
-            <a class="model-previews" href="/project/tirtha/dev/models/{{ mesh.verbose_id }}/">
+            <a class="model-previews" href="/project/tirtha/models/{{ mesh.verbose_id }}/">
                 {% if mesh.completed %}
                     <div class="model-status" style="background-color: firebrick;">Closed</div>
                 {% else %}

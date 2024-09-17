@@ -696,7 +696,7 @@ div.container > div.userInput.show {
     font-size: clamp(1.2rem, 2dvw, 2.25dvw);
 }
 
-#beta-tag-dev {
+#beta-tag {
     position: relative;
     top: -0.5rem;
 
@@ -705,19 +705,19 @@ div.container > div.userInput.show {
 
     margin: 0 0.3rem;
 
-    background-color: rgb(203, 48, 48);
-    box-shadow: 0 0 0.2rem 0.2rem rgba(203, 48, 48, 0.8);
+    background-color: rgb(41, 103, 184);
+    box-shadow: 0 0 0.2rem 0.2rem rgba(41, 103, 184, 0.8);
     border-radius: 0.4rem;
 
     user-select: none;
     transition: var(--default-transition);
 }
 
-#beta-tag-dev:hover {
+#beta-tag:hover {
     box-shadow: 0 0 0.25rem 0.25rem rgba(41, 103, 184, 0.8);
 }
 
-#beta-tag-dev a {
+#beta-tag a {
     padding: 0.4rem;
 
     color: var(--fg-col);
@@ -839,42 +839,55 @@ div.container > div.userInput.show {
 
 /* Upload form props - also see above */
 
-/* google signin button  */
-
-.button-container {
+/* ==================
+  Google SignIn button
+ ================== */
+#signin-button-container {
     text-align: center;
 }
 
-.upload-signin {
+#signin-button {
     display: inline-flex;
+    align-content: center;
+
     margin: 0 auto;
-    padding: 4px 10px;
-    background-color: #ffffff;
-    color: white;
-    border: 2px solid #c9c9c9;
-    border-radius: 25px;
+    padding: 0.4rem 1.5rem;
+
+    color: beige;
+
     text-align: center;
     text-decoration: none;
-    transition: box-shadow 0.3s ease-out;
+
+    background-color: #365bcc;
+    border-radius: 5rem;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: var(--default-transition);
 }
 
-.upload-signin:hover {
-    box-shadow: 5px 5px 20px 0px #a0a0a0;
-    /* Add a subtle shadow on hover */
+#signin-button:hover,
+#signin-button:focus {
+    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
 }
 
-.upload-signin img.profile-image {
-    margin-right: 2px;
+#signin-button img.profile-image {
+    width: clamp(1.5rem, 1.75rem, 2rem);
+    height: clamp(1.5rem, 1.75rem, 2rem);
+
+    background-color: beige;
+    border: #4285f4 2px solid;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+
     object-fit: contain;
 }
 
-.upload-signin span {
+#signin-button span {
     display: inline-block;
-    padding: 5px 10px;
-    color: inherit;
+    padding: 0.4rem;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 #signin-status {
@@ -885,9 +898,12 @@ div.container > div.userInput.show {
     text-align: center;
     color: var(--output-col);
 
-    padding: 0 0 0.5rem;
+    padding: 0.5rem 0;
     border-bottom: 1px dashed rgba(0, 0, 0, 0.5);
 }
+/* ==================
+  Google SignIn button props end here
+ ================== */
 
 /* select-related props */
 #select-mesh-wrapper {
@@ -1337,7 +1353,7 @@ footer p a img {
         font-size: 1.6rem;
     }
 
-    #beta-tag-dev {
+    #beta-tag {
         font-size: 0.75rem;
     }
 

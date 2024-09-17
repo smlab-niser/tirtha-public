@@ -20,6 +20,16 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 ALLOWED_HOSTS = ["localhost", "0.0.0.0", os.getenv("HOST_IP", "127.0.0.1")]  # CHANGEME:
 
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
 # Application definition
 INSTALLED_APPS = [
     "tirtha.apps.TirthaConfig",
@@ -39,9 +49,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PRE_URL = os.getenv("PRE_URL", "")  # CHANGEME: e.g., "/tirtha/"
 
 PROD_DIR = "/var/www/tirtha/prod/"  # Short term storage for current runs # CHANGEME:
-LOG_DIR = f"{PROD_DIR}logs"
 NFS_DIR = "/var/www/tirtha/archive/"  # Long term storage for old runs # CHANGEME: Does not need to use NFS and can be on the same system
 ARCHIVE_ROOT = f"{NFS_DIR}archives"
+LOG_DIR = f"{PROD_DIR}logs"
+LOG_LOCATION = LOG_DIR + "/tirtha.log"
 
 # Static files
 STATICFILES_DIRS = [
@@ -67,9 +78,28 @@ GOOGLE_LOGIN = os.getenv("GOOGLE_LOGIN", "False").lower() == "true"
 GOOGLE_CLIENT_ID = os.getenv(
     "GOOGLE_CLIENT_ID", ""
 )  # CHANGEME: https://developers.google.com/identity/gsi/web/guides/overview
+
+GOOGLE_CLIENT_SECRET = os.getenv(
+    "GOOGLE_CLIENT_SECRET", ""
+)  # CHANGEME: https://developers.google.com/identity/gsi/web/guides/overview
 COOKIE_EXPIRE_TIME = 3600  # 1 hour
-SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_SAMESITE = "Lax"  # NOTE: Lax needed for authlib | See: https://docs.djangoproject.com/en/5.1/ref/settings/#std-setting-SESSION_COOKIE_SAMESITE
 SESSION_COOKIE_SECURE = True if GOOGLE_LOGIN else False
+CSRF_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_PRELOAD = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year # NOTE: If sometime HTTPS is disabled, this should be removed
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+# OAuth app config
+OAUTH_CONF = {
+    "OAUTH2_CLIENT_ID": GOOGLE_CLIENT_ID,
+    "OAUTH2_CLIENT_SECRET": GOOGLE_CLIENT_SECRET,
+    "OAUTH2_META_URL": "https://accounts.google.com/.well-known/openid-configuration",
+    "OAUTH2_SCOPE": "openid profile email",
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

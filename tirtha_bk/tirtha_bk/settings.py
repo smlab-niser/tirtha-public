@@ -9,20 +9,11 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+
 from .local_settings import *
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
-
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
 
 ROOT_URLCONF = "tirtha_bk.urls"
 
@@ -58,15 +49,6 @@ INSTALLED_APPS = [
     "dbbackup",  # django-dbbackup
     "authlib",  # Include Authlib for OAuth integration
 ]
-
-MIDDLEWARE = ["django.contrib.sessions.middleware.SessionMiddleware"]
-
-# Appconfig changes
-appConf = {
-    "OAUTH2_CLIENT_ID": "GOOGLE CLIENT ID",
-    "OAUTH2_CLIENT_SECRET": "CLIENT SECRET ID",
-    "OAUTH2_META_URL": "https://accounts.google.com/.well-known/openid-configuration"
-} # TODO:PUT THE ACTUAL KEY AND ID
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

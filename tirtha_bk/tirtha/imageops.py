@@ -1,10 +1,10 @@
-import os
+# import os
 import cv2
 from pathlib import Path
 from django.utils import timezone
 from django.conf import settings
 
-from silence_tensorflow import silence_tensorflow
+# from silence_tensorflow import silence_tensorflow
 
 # Local imports
 from tirtha.models import Contribution
@@ -17,10 +17,10 @@ from tirtha.models import Contribution
 from .utils import Logger
 
 
-os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = (
-    "true"  # To force nsfw_detector model to occupy only necessary GPU memory
-)
-silence_tensorflow()  # To suppress TF warnings
+# os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = (
+#     "true"  # To force nsfw_detector model to occupy only necessary GPU memory
+# )
+# silence_tensorflow()  # To suppress TF warnings
 
 
 MEDIA = Path(settings.MEDIA_ROOT)

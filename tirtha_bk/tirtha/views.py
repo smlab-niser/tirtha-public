@@ -1,14 +1,20 @@
 # LATE_EXP: FIXME: This file requires a refactor. Too many indirections.
 # To fix:
-# * Too many different contexts for signin() and googleAuth().
 # * search()'s code is inconvenient (main.js).
 # * See FIXME:s and LATE_EXP:s below.
 
+import uuid
+import logging
 from django.conf import settings
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
+# OAuth Google SignIn
+from authlib.integrations.django_client import OAuth
+from google.auth.transport import requests
+from google.oauth2 import id_token
 
 # Local imports
 from tirtha_bk.views import handler403, handler404
@@ -17,26 +23,35 @@ from .models import ARK, Contribution, Contributor, Image, Mesh, Run
 from .tasks import post_save_contrib_imageops
 from .utilsark import parse_ark
 
-from authlib.integrations.django_client import OAuth # for the oauth setup
-import uuid
 
+LOG_LOCATION = settings.LOG_LOCATION
 PRE_URL = settings.PRE_URL
 GOOGLE_LOGIN = settings.GOOGLE_LOGIN
 ADMIN_MAIL = settings.ADMIN_MAIL
-appConf = settings.APP_CONF
+OAUTH_CONF = settings.OAUTH_CONF
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
 
-# OAuth App Setup TODO:
+# OAuth App Setup
 oauth = OAuth()
-oauth.register(
-    "google",
-    client_id=appConf.get("OAUTH2_CLIENT_ID"),
-    client_secret=appConf.get("OAUTH2_CLIENT_SECRET"),
+google = oauth.register(
+    "google",  # NOTE: More can be added
+    client_id=OAUTH_CONF.get("OAUTH2_CLIENT_ID"),
+    client_secret=OAUTH_CONF.get("OAUTH2_CLIENT_SECRET"),
     client_kwargs={
-        "scope": "openid profile email",
+        "scope": OAUTH_CONF.get("OAUTH2_SCOPE"),
     },
-    server_metadata_url=f'{appConf.get("OAUTH2_META_URL")}',
+    server_metadata_url=f'{OAUTH_CONF.get("OAUTH2_META_URL")}',
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    redirect_uri=OAUTH_CONF.get("OAUTH2_REDIRECT_URI"),
+)
+
+# Logger setup
+# Logging
+logging.basicConfig(
+    level=logging.NOTSET,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=LOG_LOCATION,
 )
 
 
@@ -49,7 +64,7 @@ def index(request, vid=None, runid=None):
         "meshes": meshes,
         "signin_msg": "Please sign in to upload images.",
         "signin_class": "blur-form",
-        "GOOGLE_CLIENT_ID": appConf.get("OAUTH2_CLIENT_ID"),
+        "GOOGLE_CLIENT_ID": OAUTH_CONF.get("OAUTH2_CLIENT_ID"),
     }
 
     """
@@ -59,7 +74,7 @@ def index(request, vid=None, runid=None):
     used.
 
     """
-    if runid is not None:        
+    if runid is not None:
         try:
             run = Run.objects.get(ID=runid)
             runs_arks = list(
@@ -149,27 +164,29 @@ def index(request, vid=None, runid=None):
     # Check if contributor is signed in
     # For development only
     if not GOOGLE_LOGIN:
-        token = "INSECURE-DEFAULT-TOKEN"
-        request.session["auth_token"] = token
+        logging.info("index -- Google login is disabled.")
+        request.session["tirtha_user_info"] = None
 
-    token = request.session.get("auth_token", None)
-    if token:
-        output, contrib = _signin(token)
-        # Store JWT in session
+    user_info = request.session.get("tirtha_user_info", None)
+    logging.info(f"index -- User info: {user_info}")
+    if user_info:
+        logging.info("index -- User info exists. Continuing...")
+        output, contrib = _signin(user_info)
+        # Store user_info in session if contributor exists
         if contrib is not None:
-            request.session["auth_token"] = token
+            request.session["tirtha_user_info"] = user_info
             request.session.secure = True
             request.session.set_expiry(0)  # Session expires when browser closes
             context.update({"signin_msg": output})
 
             if not contrib.banned and contrib.active:
                 context.update({"signin_class": ""})
+    else:
+        logging.info("index -- No user is signed in.")
 
-    # block for profile image url
-    if token is not None:
-        context["profile_image_url"] = token.get("userinfo").get(
-            "picture"
-        )  # adding the currently signed in profile image to the context
+    # Profile Image URL
+    if user_info is not None:
+        context["profile_image_url"] = user_info.get("picture")
 
     return render(request, template, context)
 
@@ -276,78 +293,131 @@ def index(request, vid=None, runid=None):
 #     return JsonResponse(data)
 
 
-def _signin(token, create=False):
+def _signin(user_info: dict) -> tuple:
     """
-    Handles token-based authentication.
-    Verifies the token and retrieves or creates the contributor.
+    Retrieves or creates the contributor.
+
     """
     # For development only
     if not GOOGLE_LOGIN:
+        logging.info("_signin -- Google login is disabled.")
         # Return default contributor
         contrib = Contributor.objects.get(email=ADMIN_MAIL)
         output = f"Signed-in as {ADMIN_MAIL}."
         return output, contrib
-    
-    try:
-        contrib = None
 
-        # Get contributor info
-        payload = token.get("userinfo")
-        email = payload.get("email")
-        name = payload.get("name")
-        # NOTE: Treating email as unique ID, both for our DB and Google's
-        # NOTE: Contributor is created as inactive | Manual activation required
-        # CHECK: TODO: Allow auto-activation after testing
+    logging.info(f"_signin -- Google login is enabled. Signing in user: {user_info}")
+    # Get contributor info
+    email = user_info.get("email")
+    name = user_info.get("name")
 
-        # Get or create contributor
-        contributor, created = Contributor.objects.get_or_create(
-            email=email, name=name, defaults={"active": False}
-        )
-        
-        # If name has changed, update name
-        if name != contrib.name:
-            contrib.name = name
-            contrib.save()
+    # NOTE: Treating email as unique ID, both for our DB and Google's
+    # NOTE: Contributor is created as inactive | Manual activation required
+    # CHECK: TODO: Allow auto-activation after testing
+    # Get or create contributor
+    contrib, _ = Contributor.objects.get_or_create(
+        email=email, defaults={"active": False}
+    )
 
-        # Check if active
-        output = f"Signed-in as {email}."
-        if not contrib.active:
-            output = f"{email} is not active. Please contact the admin."
+    # If name has changed, update name
+    if name != contrib.name:
+        logging.info(f"Updating name for {email} from {contrib.name} to {name}.")
+        contrib.name = name
+        contrib.save()
 
-        # Check if banned
-        if contrib.banned:
-            output = f"{email} has been banned. Please contact the admin."
+    # Check if active
+    output = f"Signed-in as {email}."
+    if not contrib.active:
+        logging.info(f"{email} is not active.")
+        output = f"{email} is not active. Please contact the admin."
 
-    except ValueError:  # Invalid token
-        output = "Please sign in again."
+    # Check if banned
+    if contrib.banned:
+        logging.info(f"{email} has been banned.")
+        output = f"{email} has been banned. Please contact the admin."
 
     return output, contrib
 
 
 @require_GET
-def googleAuth(request):
+def signin(request):
     """
-    Sets auth token cookie post Google Auth.
+    First step in OAuth2.0 flow. Redirects to Google's OAuth2.0 consent screen.
 
     """
-    token = request.GET["token"]
-    output, contrib = _signin(token, create=True)
+    # Build a full authorize callback URI using a new UUID
+    new_state = str(uuid.uuid4())
+    logging.info(f"signin -- Sent new_state: {new_state}")
 
-    context = {"output": output, "banned": False, "blur": False}
+    # Save the state and redirect to Google's OAuth2.0 consent screen
+    request.session["auth_random_state"] = new_state
+    redirect_uri = request.build_absolute_uri("/" + PRE_URL + "verifyToken/")
 
-    # Store JWT in session
-    if contrib is not None:
-        request.session["auth_token"] = token
-        request.session.set_expiry(0)  # Session expires when browser closes
-
-        if contrib.banned or not contrib.active:
-            context.update({"blur": True})
-
-    return JsonResponse(context)
+    return google.authorize_redirect(request, redirect_uri, state=new_state)
 
 
 @require_GET
-def pre_upload_check(request):
+def verifyToken(request):
+    """
+    Second step in OAuth2.0 flow (Callback).
+    Authorizes & sets auth token with relavent user information
+
+    """
+    request_state = request.session.get("auth_random_state", None)
+    received_state = request.GET.get("state", None)
+
+    key = f"_state_google_{received_state}"
+    request.session[key] = {
+        "data": {
+            "state": received_state,
+        }
+    }
+
+    logging.info(f"verifyToken -- Request state: {request_state}")
+    logging.info(f"verifyToken -- Received state: {received_state}")
+
+    if not received_state:
+        logging.error("Received state is empty. Aborting sign-in.")
+        return handler403(request)
+
+    if request_state is None or received_state != request_state:
+        logging.error("State mismatch. Aborting sign-in.")
+        return handler403(request)
+
+    try:
+        logging.info("Verifying token...")
+        # NOTE: dict_keys(['access_token', 'expires_in', 'scope', 'token_type', 'id_token', 'expires_at'])
+        authlib_token = google.authorize_access_token(request)
+        # logging.debug(f"verifyToken -- authlib_token: {authlib_token}")
+
+        # Google OAuth2.0 token
+        google_token = authlib_token["id_token"]
+        # logging.debug(f"verifyToken -- google_token: {google_token}")
+
+        # Verify id_token
+        idinfo = id_token.verify_oauth2_token(
+            google_token, requests.Request(), OAUTH_CONF.get("OAUTH2_CLIENT_ID")
+        )
+        logging.debug(f"verifyToken -- idinfo: {idinfo}")
+        logging.info("Token verified. Adding to session...")
+        request.session["tirtha_user_info"] = {
+            "email": idinfo.get("email"),
+            "name": idinfo.get("name"),
+            "picture": idinfo.get("picture"),
+        }
+        logging.info("Token added to session.")
+
+    except ValueError as e:
+        request.session["tirtha_user_info"] = None
+        logging.error("ERROR in token verification:")
+        logging.error(e)
+        return handler403(request)
+
+    return redirect(index)
+
+
+@require_GET
+def pre_upload_check(request) -> JsonResponse:
     """
     Pre-upload, checks if the mesh_vid is valid and if so, whether the mesh is "completed"
 
@@ -355,13 +425,13 @@ def pre_upload_check(request):
     verbose_id = request.GET["mesh_vid"]
 
     # Authenticate contributor
-    token = request.session.get("auth_token", None)
-    if token is None:
+    user_info = request.session.get("tirtha_user_info", None)
+    if user_info is None:
         return JsonResponse(
             {"allowupload": False, "blur": True, "output": "Please sign in again."}
         )
 
-    output, contrib = _signin(token)
+    output, contrib = _signin(user_info)
     if contrib is None:
         return JsonResponse({"allowupload": False, "blur": True, "output": output})
 
@@ -389,7 +459,7 @@ def pre_upload_check(request):
 
 
 @require_POST
-def upload(request):
+def upload(request) -> JsonResponse:
     """
     Handles `Upload` form. Does the following:
     * Authenticates contributor
@@ -399,15 +469,13 @@ def upload(request):
 
     """
     # Authenticate contributor
-    token = request.session.get("auth_token", None)
-    output, contrib = _signin(token)
+    user_info = request.session.get("tirtha_user_info", None)
+    output, contrib = _signin(user_info)
     if contrib is None:
         return JsonResponse({"output": output})
 
     # Match mesh
     verbose_id = request.POST["mesh_vid"]
-
-    # NOTE: try-block not needed due to pre_upload_check
     mesh = Mesh.objects.get(verbose_id__exact=verbose_id)
 
     # Create Contribution
@@ -435,9 +503,16 @@ def search(request):
     data = {"status": "Mesh not found!", "meshes_json": None}
 
     query = request.GET.get("query", None)
-    meshes = (
-        Mesh.objects.filter(name__icontains=query).exclude(hidden=True).order_by("name")
+
+    # Search by name, district, state, country
+    search_query = (
+        Q(name__icontains=query)
+        | Q(country__icontains=query)
+        | Q(state__icontains=query)
+        | Q(district__icontains=query)
     )
+    meshes = Mesh.objects.filter(search_query).exclude(hidden=True).order_by("name")
+
     meshes_json = dict()
 
     for mesh in meshes:
@@ -464,6 +539,7 @@ def resolveARK(request, ark: str):
     try:
         naan, assigned_name = parse_ark(ark)
     except ValueError as e:
+        logging.error(f"resolveARK -- ARK parsing error: {e}")
         return handler404(
             request, e
         )  # LATE_EXP: Maybe add a custom page saying the ARK is invalid
@@ -472,7 +548,8 @@ def resolveARK(request, ark: str):
         # Try to find the ARK in the database
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
-    except ARK.DoesNotExist as e:
+    except ARK.DoesNotExist:
+        logging.error(f"resolveARK -- ARK not found: {ark}")
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
 
 
@@ -481,6 +558,7 @@ def competition(request):
     Renders a static page with details about the Tirtha competition.
 
     """
+    logging.info("competition -- Accessed.")
     if request.method == "GET":
         template = "tirtha/competition.html"
         return render(request, template)
@@ -492,6 +570,7 @@ def howto(request):
     Renders a static page with instructions on how to use Tirtha.
 
     """
+    logging.info("howto -- Accessed.")
     if request.method == "GET":
         template = "tirtha/howto.html"
         return render(request, template)

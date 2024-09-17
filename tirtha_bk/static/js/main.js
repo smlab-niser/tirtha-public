@@ -81,38 +81,24 @@ function debounce(func, delay) {
 // Resize function
 // This fixes the show / hide info getting stuck prob
 // And the nav bar getting stuck if opened and window resized
-function resizeFunction() {
-    if ($(window).innerWidth() > 768) {
-        $("body").css("--side-current-width", $("#side").width() + 15 + "px");
+window.addEventListener("resize", () => {
+    if (screen.width > 768) {
+        body.style.setProperty("--side-current-width", side.clientWidth + 15 + "px");
         debounce(contDialog.close(), 100); // Close modal
         debounce(setTimeout(() => { // Close nav
-            if ($(window).innerWidth() < 768) {
-                $("#side").removeClass("hide-side");
-                $("#modelArea").removeClass("hide-side-model-area");
-                $("#info-btn > span:eq(1)").text("Show information");
+            if (window.innerWidth < 768) {
+                side.classList.remove("hide-side");
+                modelArea.classList.remove("hide-side-model-area");
+                doc.querySelectorAll("#info-btn > span")[1].textContent = "Show information";
             }
-            $("#nav").removeClass("translate-nav");
-            $("#fControls").removeClass("translate-floating-controls");
-            $("body").removeClass("blur");
-            $("body").removeClass("overflow-toggle");
-        }, 100), 100);
+            nav.classList.remove("translate-nav");
+            fControls.classList.remove("translate-floating-controls");
+            body.classList.remove("blur");
+            body.classList.remove("overflow-toggle");
+        }, 100),
+        100);
     }
-}
-
-// Add or remove resize event listener based on screen width
-function addOrRemoveResizeListener() {
-    if ($(window).innerWidth() > 400) {
-        $(window).on("resize", resizeFunction);
-    } else {
-        $(window).off("resize", resizeFunction);
-    }
-}
-
-// Initially add or remove resize event listener based on screen width
-addOrRemoveResizeListener();
-
-// Recheck screen width on window resize
-$(window).on("resize", addOrRemoveResizeListener);
+});
 // ========================== SCROLL DOWN END ==========================
 
 
@@ -689,7 +675,7 @@ upGal.addEventListener("drop",
 );
 // ========================== DRAG & DROP END ==========================
 
-// ========================== GOOGLE AUTH START ==========================
+// ========================== AUTH START ==========================
 var uploadForm = $("#upload-form");
 var uploadFormElems = uploadForm.find("input, button, label, select, #content-license");
 
@@ -697,33 +683,7 @@ var uploadFormElems = uploadForm.find("input, button, label, select, #content-li
 if (uploadForm.hasClass("blur-form")) {
     uploadFormElems.attr("inert", "");
 }
-
-// ❗Handle Google SO❗
-var signInStatus = $("#signin-status");
-
-// Google Identity Services callback
-function onGoogleSignIn(creds) {
-    $.ajax({
-        type: "GET",
-        url: PRE_URL + "/googleAuth/",
-        data: { "token" : creds.credential },
-        success: function (resp) {
-            signInStatus.html(resp.output);
-            if (resp.blur == false) {
-                uploadForm.removeClass("blur-form");
-                uploadFormElems.removeAttr("inert");
-            }
-            else {
-                uploadForm.addClass("blur-form");
-                uploadFormElems.attr("inert", "");
-            }
-        },
-        error: function (resp) {
-            console.log("GET ERROR in googleAuth.");
-        }
-    });
-}
-// ========================== GOOGLE AUTH END ==========================
+// ========================== AUTH END ==========================
 
 // ========================== AJAX UPLOAD START ==========================
 uploadForm.on("submit", function(e) {
