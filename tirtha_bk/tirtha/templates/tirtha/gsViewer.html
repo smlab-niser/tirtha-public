@@ -1,0 +1,82 @@
+<div id="model">
+    {% block model %}
+    <!-- Script tag to store the splat URL -->
+    {{ run.ark.url|json_script:"splatURL" }}
+    <!-- Script tag to store the rotations: Z, X, Y -->
+    {{ orientation|json_script:"orientation" }}
+
+    <div id="gs-progress-container">
+        <dialog open id="gs-progress-dialog">
+            <p>
+                <label id="gs-progress-indicator-label" for="gs-progress-indicator">Loading Gaussian Splat...</label>
+            </p>
+            <progress max="100" id="gs-progress-indicator"></progress>
+        </dialog>
+    </div>
+
+    <!-- Canvas to show the GS -->
+    <canvas id="gs-canvas"></canvas>
+
+    <script type="module">
+        import * as SPLAT from "https://cdn.jsdelivr.net/npm/gsplat@latest";
+
+        // Get the data from the script tag
+        const splatURL = JSON.parse(document.getElementById('splatURL').textContent);
+        const orientation = JSON.parse(document.getElementById('orientation').textContent);
+        // Parse the orientation
+        const orientationArray = orientation.split('deg ');
+        var rotaZ = parseFloat(orientationArray[0]);
+        var rotaX = parseFloat(orientationArray[1]);
+        var rotaY = parseFloat(orientationArray[2]);
+
+        const canvas = document.getElementById("gs-canvas");
+        const progressDialog = document.getElementById("gs-progress-dialog");
+        const progressIndicator = document.getElementById("gs-progress-indicator");
+
+        const renderer = new SPLAT.WebGLRenderer(canvas);
+        renderer.backgroundColor = new SPLAT.Color32(255, 250, 240, 255);
+        const scene = new SPLAT.Scene();
+        const camera = new SPLAT.Camera();
+        const controls = new SPLAT.OrbitControls(camera, canvas);
+
+        async function main() {
+            // NOTE: Example: https://github.com/huggingface/gsplat.js/blob/main/examples/ply-converter/src/main.ts`
+            const splat = await SPLAT.Loader.LoadAsync(splatURL, scene, (progress) => progressIndicator.value = progress * 100);
+            progressDialog.close();
+
+            // Set rotation
+            // NOTE: See https://github.com/huggingface/gsplat.js/blob/main/examples/scene-transformations/src/main.ts
+            const PI = Math.PI;
+
+            console.log("Orientation: ", rotaX, rotaY, rotaZ); // TODO: Remove this
+
+            // Convert deg to rad
+            rotaX = rotaX * PI / 180;
+            rotaY = rotaY * PI / 180;
+            rotaZ = rotaZ * PI / 180;
+
+            const rotation = new SPLAT.Vector3(rotaX, rotaY, rotaZ);
+            splat.rotation = SPLAT.Quaternion.FromEuler(rotation);
+            splat.applyRotation();
+
+            const handleResize = () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                // canvas.clientWidth, canvas.clientHeight // Doesn't help
+            };
+
+            const frame = () => {
+                controls.update();
+                renderer.render(scene, camera);
+                requestAnimationFrame(frame);
+            };
+
+            handleResize();
+            window.addEventListener("resize", handleResize);
+
+            requestAnimationFrame(frame);
+        }
+
+        main();
+    </script>
+    {% endblock %}
+</div>

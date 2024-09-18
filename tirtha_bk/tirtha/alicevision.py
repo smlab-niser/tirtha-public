@@ -248,7 +248,7 @@ class AliceVision:
             }
             error.add_note(
                 f"{logger.name} failed. Check log file: {log_path}."
-            )  # NOTE: Won't appear in VSCode's Jupyter Notebook (March 2023)
+            )  # NOTE: Won't appear in VSCode's Jupyter Notebook (May 2024)
             raise error
 
     def _parallelRunner(self, cmd: str, log_path: Path, caller: str):

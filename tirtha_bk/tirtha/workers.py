@@ -1,39 +1,30 @@
 import json
 import os
 import shutil
+import pytz
 from datetime import datetime
 from pathlib import Path
 from subprocess import STDOUT, CalledProcessError, check_output
+from rich.console import Console
 from typing import Optional
-
-# ImageOps
-import cv2
-import pytz
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils import timezone
-# from nn_models.MANIQA.batch_predict import MANIQAScore  # Local import # FIXME: TODO: Uncomment once fixed.
-# from nsfw_detector import predict  # Local package installation # FIXME: TODO: Uncomment once fixed.
-from rich.console import Console
-from silence_tensorflow import silence_tensorflow  # To suppress TF warnings
-
-# FIXME: TODO: Uncomment once fixed.
-# os.environ[
-#     "TF_FORCE_GPU_ALLOW_GROWTH"
-# ] = "true"  # To force nsfw_detector model to occupy only necessary GPU memory
-# silence_tensorflow()  # To suppress TF warnings
 
 # Local imports
 from tirtha.models import ARK, Contribution, Image, Mesh, Run
 
 from .alicevision import AliceVision
+from .postprocess import PostProcess
 from .utils import Logger
 from .utilsark import generate_noid, noid_check_digit
+
 
 STATIC = Path(settings.STATIC_ROOT)
 MEDIA = Path(settings.MEDIA_ROOT)
 LOG_DIR = Path(settings.LOG_DIR)
 ARCHIVE_ROOT = Path(settings.ARCHIVE_ROOT)
+GS_MAX_ITER = settings.GS_MAX_ITER
 MESHOPS_MIN_IMAGES = settings.MESHOPS_MIN_IMAGES
 ALICEVISION_DIRPATH = settings.ALICEVISION_DIRPATH
 NSFW_MODEL_DIRPATH = settings.NSFW_MODEL_DIRPATH
@@ -45,29 +36,33 @@ ARK_NAAN = settings.ARK_NAAN
 ARK_SHOULDER = settings.ARK_SHOULDER
 
 
-class MeshOps:
-    """
-    Mesh processing pipeline. Does the following:
-    - Runs the aliceVision pipeline on a given `models.Mesh`
-    - Runs `obj2gltf` to convert the obj file to gltf
-    - Runs `gltfpack` (meshopt) to optimize the gltf file
-    - Publishes the final output to the Tirtha site
+class BaseOps:
+    def __init__(self, meshID: str, kind: str = "aV") -> None:
+        """
+        Base class for all operations
 
-    """
+        Parameters
+        ----------
+        meshID : str
+            Mesh ID
+        kind : str
+            Kind of operation, one of ['aV', 'GS'], by default 'aV'
 
-    def __init__(self, meshID: str):
+        """
         self.meshID = meshID
         self.mesh = mesh = Mesh.objects.get(ID=meshID)
         self.meshVID = mesh.verbose_id
         self.meshStr = f"{self.meshVID} <=> {self.meshID}"  # Used in logging
 
         # Create new Run
-        self.run = run = Run.objects.create(mesh=mesh)
+        self.kind = kind
+        self.run = run = Run.objects.create(mesh=mesh, kind=kind)
         run.save()  # Creates run directory
         self.runID = runID = run.ID
+        self.runDir = STATIC / "models" / Path(run.directory)
 
         # Set up Logger
-        self.log_path = LOG_DIR / f"MeshOps/{meshID}/"
+        self.log_path = LOG_DIR / f"{kind}Ops/{meshID}" / self.runDir.stem
         if not self.log_path.exists():
             self.log_path.mkdir(parents=True, exist_ok=True)
 
@@ -79,12 +74,11 @@ class MeshOps:
         )
 
         # Source (images) & run directories
-        self.imageDir = MEDIA / f"models/{meshID}/images/good/"
-        self.runDir = STATIC / "models" / Path(run.directory)
+        self.imageDir = MEDIA / f"models/{meshID}/images/good"
 
-        cls.logger.info(f"Created new Run {runID} for mesh {self.meshStr}.")
-        cls.logger.info(f"Run directory: {self.runDir}")
-        cls.logger.info(f"Run log file: {cls.logger._log_file}")
+        cls.logger.info(f"Created new {kind} Run {runID} for mesh {self.meshStr}.")
+        cls.logger.info(f"{kind} Run directory: {self.runDir}")
+        cls.logger.info(f"{kind} Run log file: {cls.logger._log_file}")
         self._update_mesh_status("Processing")
 
         # Use image filenames (UUIDs in DB) to fetch images & corresponding contributors
@@ -107,63 +101,76 @@ class MeshOps:
             run.contributors.set(self.contributors)
             run.save()
             cls.logger.info(
-                f"Set the `images` & `contributors` attributes of Run {runID}."
+                f"Set the `images` & `contributors` attributes of {kind} Run {runID}."
             )
         except Exception as e:
             self._handle_error(excep=e, caller="Fetching images & contributors")
 
-        # Executables
-        self.aV_exec = Path(ALICEVISION_DIRPATH)
-        self.obj2gltf_exec = Path(OBJ2GLTF_PATH)
-        self.gltfpack_exec = Path(GLTFPACK_PATH)
-        self._check_exec(path=self.aV_exec)
-        self._check_exec(exe=self.obj2gltf_exec)
-        self._check_exec(exe=self.gltfpack_exec)
-
-        # Logger setup
-        MeshOps.av_logger = Logger(
-            log_path=self.runDir,
-            name=f"alicevision__{self.runID}",
-        )
-
         # Specify the run order (else alphabetical order)
-        self._run_order = [
-            "run_aliceVision",
-            "run_obj2gltf",
-            "run_meshopt",
+        self._run_order_suffix = [
             "run_cleanup",
             "run_ark",
             "run_finalize",
         ]
 
-    def _check_exec(self, exe: str = None, path: Path = None):
+    def _run_all(self) -> None:
         """
-        Checks if the executables exist and are valid
-
-        Parameters
-        ----------
-        exe : str, optional
-            Name of the executable, by default None
-        path : Path, optional
-            Path to the executable, by default None
+        Runs all the steps with default parameters.
 
         Raises
         ------
-        FileNotFoundError
-            If the path to any of the executables is not found
+        ValueError
+            If `_run_order` is not defined
+        Exception
+            If any exception is raised during the execution
 
         """
-        if path is not None and not path.exists():
-            self.logger.error(f"aliceVision executable not found: {path}")
-            raise FileNotFoundError(f"aliceVision executable not found: {path}")
+        try:
+            if self._run_order:
+                for step in self._run_order:
+                    getattr(self, step)()
+            else:
+                raise ValueError("_run_order is not defined.")
+        except Exception as e:
+            self._handle_error(excep=e, caller="_run_all")
 
-        if exe is not None:
-            exe = shutil.which(exe)
-            if not exe:
-                self.logger.error(f"Executable not found: {exe}")
-                raise FileNotFoundError(f"Executable not found: {exe}")
+    def _check_output(self, out: Path, src: str) -> None:
+        if not out.is_file():
+            self._handle_error(
+                FileNotFoundError(f"No output was produced by {src} at {out}."),
+                src,
+            )
 
-    def _update_mesh_status(self, status: str):
+    def _handle_error(self, excep: Exception, caller: str) -> None:
+        """
+        Handles errors during the worker execution
+
+        Parameters
+        ----------
+        excep : Exception
+            The exception that was raised
+        caller : str
+            The name of the function that raised the exception
+
+        Raises
+        ------
+        excep : Exception
+            The exception that was raised
+
+        """
+        # Log the error
+        self.logger.error(f"{caller} step failed.")
+        self.logger.error(f"{excep}", exc_info=True)
+
+        # Update statuses to 'Error'
+        self._update_mesh_status("Error")
+        self.run.ended_at = timezone.now()
+        self.run.save()
+        self._update_run_status("Error")
+
+        raise excep
+
+    def _update_mesh_status(self, status: str) -> None:
         """
         Updates the mesh status in the DB
 
@@ -173,14 +180,13 @@ class MeshOps:
             The status to update the mesh to
 
         """
-
         self.mesh.status = status
         self.mesh.save()  # NOTE: Consider the effect on signals.py when saving Mesh or any other model
         self.logger.info(
             f"Updated mesh.status to '{status}' for mesh {self.meshStr}..."
         )
 
-    def _update_run_status(self, status: str):
+    def _update_run_status(self, status: str) -> None:
         """
         Updates the run status in the DB
 
@@ -192,31 +198,9 @@ class MeshOps:
         """
         self.run.status = status
         self.run.save()
-        self.logger.info(f"Updated run.status to '{status}' for run {self.runID}...")
-
-    def _handle_error(self, excep: Exception, caller: str):
-        """
-        Handles errors during the worker execution
-
-        Parameters
-        ----------
-        excep : Exception
-            The exception that was raised
-        caller : str
-            The name of the function that raised the exception
-
-        """
-        # Log the error
-        self.logger.error(f"{caller} step failed for mesh {self.meshStr}.")
-        self.logger.error(f"{excep}", exc_info=True)
-
-        # Update statuses to 'Error'
-        self._update_mesh_status("Error")
-        self.run.ended_at = timezone.now()
-        self.run.save()
-        self._update_run_status("Error")
-
-        raise excep
+        self.logger.info(
+            f"Updated {self.kind} run.status to '{status}' for run {self.runID}..."
+        )
 
     @classmethod  # NOTE: Won't be picklable as a regular method
     def _serialRunner(cls, cmd: str, log_file: Path):
@@ -244,27 +228,242 @@ class MeshOps:
             cls.logger.error(
                 f"Error in command execution for {logger.name}. Check log file: {log_path}."
             )
-            # NOTE: Won't appear in VSCode's Jupyter Notebook (March 2023)
+            # NOTE: Won't appear in VSCode's Jupyter Notebook (May 2024)
             error.add_note(f"{logger.name} failed. Check log file: {log_path}.")
             raise error
 
-    def _run_all(self):
+    def run_cleanup(self) -> None:
         """
-        Runs all the steps with default parameters.
+        Does the following:
+        1. Cleans up older errored-out runs.
+        2. Copies current run's output to "published".
+        2. Archives current run.
+        NOTE: Errored-out runs are not deleted during their run, but only during the next run.
+        This is done to allow for debugging.
+
+        """
+        kind = self.kind
+        out_type = ".glb" if kind == "aV" else ".splat"  # Filetype of final output
+        meshStr = self.meshStr
+        curr_runID = self.runID
+        arcDir = ARCHIVE_ROOT / self.meshID / f"{kind.lower()}cache" / self.runDir.stem
+
+        self.logger.info(f"Cleaning up runs for mesh {meshStr}.")
+        try:
+            # 1. Delete errored-out runs (all kinds)
+            self.logger.info(
+                f"Looking up & deleting errored-out runs for mesh {meshStr}..."
+            )
+            runs = Run.objects.filter(mesh=self.mesh, status="Error").order_by(
+                "-ended_at"
+            )
+            if len(runs) > 0:
+                for run in runs:
+                    runDir = STATIC / "models" / Path(run.directory)
+                    self.logger.info(
+                        f"{run.kind} Run {run.ID} for mesh {meshStr} has errors. Deleting..."
+                    )
+                    shutil.rmtree(runDir)  # Delete folder
+                    run.delete()  # Delete from DB
+                    self.logger.info(
+                        f"Deleted {run.kind} run {run.ID} for mesh {meshStr}."
+                    )
+            self.logger.info(
+                f"Deleted {len(runs)} errored-out runs for mesh {meshStr}."
+            )
+
+            # 2. Copy current run's output to STATIC / "models" / meshID / "published" / output_name
+            self.logger.info(
+                f"Copying output for {kind} run {curr_runID} for mesh {meshStr}..."
+            )
+            src = self.opt_path / (
+                "decimatedOptGLB.glb" if kind == "aV" else "postprocessed.splat"
+            )
+            self.arkURL = (
+                f"models/{self.meshID}/published/{self.meshID}_{curr_runID}{out_type}"
+            )
+            dest = STATIC / self.arkURL
+            shutil.copy2(src, dest)
+            self.logger.info(
+                f"Copied output for {kind} run {curr_runID} for mesh {meshStr}."
+            )
+
+            # 3. Move everything else to arcDir
+            self.logger.info(
+                f"Archiving {kind} run {curr_runID} for mesh {meshStr} to {arcDir}."
+            )
+            shutil.move(self.runDir, arcDir)  # Move run folder to archive
+            self.run.directory = str(arcDir)  # Update run directory
+            self._update_run_status("Archived")  # Update run status & save
+            self.logger.info(
+                f"Archived {kind} run {curr_runID} for mesh {meshStr} to {arcDir}."
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error cleaning up runs for mesh {meshStr}.")
+            self._handle_error(e, "run_cleanup")
+        self.logger.info(f"Finished cleaning up runs for mesh {meshStr}.")
+
+    def run_ark(self, ark_len: int = 16) -> None:
+        """
+        Runs the ark generator to generate a unique ark for the run.
+
+        Parameters
+        ----------
+        ark_len : int
+            Length of the ark to be generated
+            Default: 16
+
+        """
+        kind = self.kind
+        arkURL, run, mesh, meshStr = self.arkURL, self.run, self.mesh, self.meshStr
+        naan, shoulder = ARK_NAAN, ARK_SHOULDER
+        run.ended_at = timezone.now()
+
+        # Create metadata
+        self.logger.info(
+            f"Creating metadata for ARK for {kind} run {run.ID} for mesh {meshStr}..."
+        )
+        def_commit = (
+            "This ARK was generated & is managed by Project Tirtha (https://smlab.niser.ac.in/project/tirtha/). "
+            + "We are committed to maintaining this ARK as per our Terms of Use (https://smlab.niser.ac.in/project/tirtha/#terms) "
+            + "and Privacy Policy (https://smlab.niser.ac.in/project/tirtha/#privacy)."
+        )
+
+        metadata = {
+            "monument": {
+                "name": str(mesh.name),
+                "location": f"{mesh.district}, {mesh.state}, {mesh.country}",  # LATE_EXP: f"{mesh.lat}, {mesh.lon}"
+                "verbose_id": str(mesh.verbose_id),
+                "thumbnail": f"{BASE_URL}{mesh.thumbnail.url}",
+                "description": str(mesh.description),
+                "completed": True if mesh.completed else False,
+            },
+            "run": {
+                "ID": str(run.ID),
+                "ended_at": str(run.ended_at),
+                "contributors": list(run.contributors.values_list("name", flat=True)),
+                "images": int(run.images.count()),
+            },
+            "notice": def_commit,
+        }
+        metadata_json = json.dumps(metadata)
+        self.logger.info(
+            f"Created metadata for ARK for {kind} run {run.ID} for mesh {meshStr}..."
+        )
+
+        # Generate ark - NOTE: Adapted from arklet
+        self.logger.info(
+            f"Generating ARK for {kind} run {run.ID} for mesh {meshStr}..."
+        )
+        ark, collisions = None, 0
+        while True:
+            noid = generate_noid(ark_len)
+            base_ark_string = f"{naan}{shoulder}{noid}"
+            check_digit = noid_check_digit(base_ark_string)
+            ark_string = f"{base_ark_string}{check_digit}"
+            try:
+                ark = ARK.objects.create(
+                    ark=ark_string,
+                    naan=naan,
+                    shoulder=shoulder,
+                    assigned_name=f"{noid}{check_digit}",
+                    url=f"{BASE_URL}/static/{arkURL}",
+                    metadata=metadata_json,
+                )
+                self.logger.info(f"ARK URL: {BASE_URL}/static/{arkURL}")
+                break
+            except IntegrityError:
+                collisions += 1
+                continue
+        msg = f"Generated ARK for {kind} run {run.ID} for mesh {meshStr} after {collisions} collision(s)."
+        if collisions == 0:
+            self.logger.info(msg)
+        else:
+            self.logger.warning(msg)
+
+        # Update run
+        run.ark = ark
+        run.save()
+        self.arkStr = str(ark_string)
+
+    def run_finalize(self) -> None:
+        """
+        Finalizes current run
+
+        """
+        kind = self.kind
+        self.logger.info(f"Finalizing {kind} run {self.runID} for mesh {self.meshStr}.")
+        self.mesh.reconstructed_at = datetime.now(pytz.timezone("Asia/Kolkata"))
+        self.logger.info(f"{kind} Run {self.runID} finished for mesh {self.meshStr}.")
+        self._update_mesh_status("Live")
+        self.logger.info(
+            f"Finished finalizing {kind} run {self.runID} for mesh {self.meshStr}."
+        )
+
+
+class MeshOps(BaseOps):
+    """
+    Mesh processing pipeline. Does the following:
+    - Runs the aliceVision pipeline on a given `models.Mesh`
+    - Runs `obj2gltf` to convert the obj file to gltf
+    - Runs `gltfpack` (meshopt) to optimize the gltf file
+    - Publishes the final output to the Tirtha site
+
+    """
+
+    def __init__(self, meshID: str) -> None:
+        super().__init__(meshID=meshID, kind="aV")
+
+        # Check if executables exist
+        self.aV_exec = Path(ALICEVISION_DIRPATH)
+        self.obj2gltf_exec = Path(OBJ2GLTF_PATH)
+        self.gltfpack_exec = Path(GLTFPACK_PATH)
+        self._check_exec(path=self.aV_exec)
+        self._check_exec(exe=self.obj2gltf_exec)
+        self._check_exec(exe=self.gltfpack_exec)
+
+        # Logger setup for `AliceVision`
+        MeshOps.av_logger = Logger(
+            log_path=self.runDir,
+            name=f"alicevision__{self.runID}",
+        )
+
+        # Specify the run order (else alphabetical order)
+        self._run_order = [
+            "run_aliceVision",
+            "run_obj2gltf",
+            "run_meshopt",
+        ] + self._run_order_suffix
+
+    def _check_exec(self, exe: str = None, path: Path = None) -> None:
+        """
+        Checks if the executables exist and are valid
+
+        Parameters
+        ----------
+        exe : str, optional
+            Name of the executable, by default None
+        path : Path, optional
+            Path to the executable, by default None
 
         Raises
         ------
-        ValueError
-            If `_run_order` is not defined
+        FileNotFoundError
+            If the path to any of the executables is not found
 
         """
-        if self._run_order:
-            for step in self._run_order:
-                getattr(self, step)()
-        else:
-            raise ValueError("_run_order is not defined.")
+        if path is not None and not path.exists():
+            self.logger.error(f"aliceVision executable not found: {path}")
+            raise FileNotFoundError(f"aliceVision executable not found: {path}")
 
-    def run_aliceVision(self):
+        if exe is not None:
+            exe = shutil.which(exe)
+            if not exe:
+                self.logger.error(f"Executable not found: {exe}")
+                raise FileNotFoundError(f"Executable not found: {exe}")
+
+    def run_aliceVision(self) -> None:
         """
         Runs the aliceVision pipeline
 
@@ -281,7 +480,7 @@ class MeshOps:
                 verboseLevel="trace" if mesh.status == "Error" else "info",
                 logger=MeshOps.av_logger,
             )
-        except Exception as e:
+        except Exception:
             self._handle_error(
                 Exception(f"aliceVision worker failed for mesh {meshStr}."),
                 "aliceVision",
@@ -318,13 +517,13 @@ class MeshOps:
                 f"Finished running aliceVision pipeline for mesh {meshStr}."
             )
 
-        except Exception as e:
+        except Exception:
             self._handle_error(
                 Exception(f"aliceVision pipeline failed for mesh {meshStr}."),
                 "aliceVision",
             )
 
-    def run_obj2gltf(self, options: Optional[dict] = {"secure": "true"}):
+    def run_obj2gltf(self, options: Optional[dict] = {"secure": "true"}) -> None:
         """
         Runs obj2gltf to create .glb in `static_dir` from .obj in `textured_path`
         For decimated mesh only
@@ -349,16 +548,12 @@ class MeshOps:
         inp = self.textured_path / "texturedDecimatedMesh/texturedMesh.obj"
         out = out_path / "decimatedGLB.glb"
         cmd = cmd_init + f"{inp} -o {out} {opts}"
-        log_path = out_path / f"obj2gltf.log"
+        log_path = out_path / "obj2gltf.log"
         self.logger.info(f"Running obj2gltf for mesh {self.meshStr}.")
         self.logger.info(f"Command: {cmd}")
         self._serialRunner(cmd, log_path)
 
-        # Check if output was produced
-        if not out.is_file():
-            self._handle_error(
-                FileNotFoundError(f"Output not produced for {out}."), "meshopt"
-            )
+        self._check_output(out, "obj2gltf")
 
         # Set for further processing
         self.glb_path = out_path
@@ -372,7 +567,7 @@ class MeshOps:
             "tc": "",  # No value needed
             "si": 0.6,  # Simplification factor
         },
-    ):
+    ) -> None:
         """
         Runs gltfpack's meshopt to compress and optimize glTF files
         For decimated mesh only
@@ -401,16 +596,12 @@ class MeshOps:
         inp = self.glb_path / "decimatedGLB.glb"
         out = out_path / "decimatedOptGLB.glb"
         cmd = cmd_init + f"{inp} -o {out} {opts}"
-        log_path = out_path / f"meshopt.log"
+        log_path = out_path / "meshopt.log"
         self.logger.info(f"Running meshopt (gltfpack) for mesh {self.meshStr}.")
         self.logger.info(f"Commands: {cmd}")
         self._serialRunner(cmd, log_path)
 
-        # Check if output was produced
-        if not out.is_file():
-            self._handle_error(
-                FileNotFoundError(f"Output not produced for {out}."), "meshopt"
-            )
+        self._check_output(out, "meshopt")
 
         # Set for further processing
         self.opt_path = out_path
@@ -419,343 +610,156 @@ class MeshOps:
             f"Finished running meshopt (gltfpack) for mesh {self.meshStr}."
         )
 
-    def run_cleanup(self):
-        """
-        Does the following:
-        1. Cleans up older errored-out runs.
-        2. Copies current run's .glb to "published".
-        2. Archives current run.
-        NOTE: Errored-out runs are not deleted during their run, but only during the next run.
-        This is done to allow for debugging.
 
-        """
-        meshStr = self.meshStr
-        curr_runID = self.runID
-        arcDir = ARCHIVE_ROOT / self.meshID / "cache" / curr_runID
+class GSOps(BaseOps):
+    """
+    Runs the Gaussian splatting pipeline
 
-        self.logger.info(f"Cleaning up runs for mesh {meshStr}.")
-        try:
-            # 1. Delete errored-out runs
-            self.logger.info(
-                f"Looking up & deleting errored-out runs for mesh {meshStr}..."
-            )
-            runs = Run.objects.filter(mesh=self.mesh, status="Error").order_by(
-                "-ended_at"
-            )
-            if len(runs) > 0:
-                for run in runs:
-                    runDir = STATIC / "models" / Path(run.directory)
-                    self.logger.info(
-                        f"Run {run.ID} for mesh {meshStr} has errors. Deleting..."
-                    )
-                    shutil.rmtree(runDir)  # Delete folder
-                    run.delete()  # Delete from DB
-                    self.logger.info(f"Deleted run {run.ID} for mesh {meshStr}.")
-            self.logger.info(
-                f"Deleted {len(runs)} errored-out runs for mesh {meshStr}."
-            )
+    """
 
-            # 2. Copy current run's .glb to STATIC / "models" / meshID / "published" / run.id.glb
-            self.logger.info(f"Copying .glb for run {curr_runID} for mesh {meshStr}...")
-            src = self.opt_path / "decimatedOptGLB.glb"
-            self.arkURL = (
-                f"models/{self.meshID}/published/{self.meshID}_{curr_runID}.glb"
-            )
-            dest = STATIC / self.arkURL
-            shutil.copy2(src, dest)
-            self.logger.info(f"Copied .glb for run {curr_runID} for mesh {meshStr}.")
+    def __init__(self, meshID: str) -> None:
+        super().__init__(meshID=meshID, kind="GS")
 
-            # 3. Move everything else to arcDir
-            self.logger.info(
-                f"Archiving run {curr_runID} for mesh {meshStr} to {arcDir}."
-            )
-            shutil.move(self.runDir, arcDir)  # Move run folder to archive
-            self.run.directory = str(arcDir)  # Update run directory
-            self._update_run_status("Archived")  # Update run status & save
-            self.logger.info(
-                f"Archived run {curr_runID} for mesh {meshStr} to {arcDir}."
-            )
+        # Check if nerfstudio is installed
+        from importlib.util import find_spec
 
-        except Exception as e:
-            self.logger.error(f"Error cleaning up runs for mesh {meshStr}.")
-            self._handle_error(e, "Archiver")
-        self.logger.info(f"Finished cleaning up runs for mesh {meshStr}.")
-
-    def run_ark(self, ark_len=16):
-        """
-        Runs the ark generator to generate a unique ark for the run.
-
-        Parameters
-        ----------
-        ark_len : int
-            Length of the ark to be generated
-            Default: 16
-
-        """
-        arkURL, run, mesh, meshStr = self.arkURL, self.run, self.mesh, self.meshStr
-        naan, shoulder = ARK_NAAN, ARK_SHOULDER
-        run.ended_at = timezone.now()
-
-        # Create metadata
-        self.logger.info(
-            f"Creating metadata for ARK for run {run.ID} for mesh {meshStr}..."
-        )
-        def_commit = (
-            "This ARK was generated & is managed by Project Tirtha (https://smlab.niser.ac.in/project/tirtha/). "
-            + "We are committed to maintaining this ARK as per our Terms of Use (https://smlab.niser.ac.in/project/tirtha/#terms) "
-            + "and Privacy Policy (https://smlab.niser.ac.in/project/tirtha/#privacy)."
-        )
-
-        metadata = {
-            "monument": {
-                "name": str(mesh.name),
-                "location": f"{mesh.district}, {mesh.state}, {mesh.country}",  # LATE_EXP: f"{mesh.lat}, {mesh.lon}"
-                "verbose_id": str(mesh.verbose_id),
-                "thumbnail": f"{BASE_URL}{mesh.thumbnail.url}",
-                "description": str(mesh.description),
-                "completed": True if mesh.completed else False,
-            },
-            "run": {
-                "ID": str(run.ID),
-                "ended_at": str(run.ended_at),
-                "contributors": list(run.contributors.values_list("name", flat=True)),
-                "images": int(run.images.count()),
-            },
-            "notice": def_commit,
-        }
-        metadata_json = json.dumps(metadata)
-        self.logger.info(
-            f"Created metadata for ARK for run {run.ID} for mesh {meshStr}..."
-        )
-
-        # Generate ark - NOTE: Adapted from arklet
-        self.logger.info(f"Generating ARK for run {run.ID} for mesh {meshStr}...")
-        ark, collisions = None, 0
-        while True:
-            noid = generate_noid(ark_len)
-            base_ark_string = f"{naan}{shoulder}{noid}"
-            check_digit = noid_check_digit(base_ark_string)
-            ark_string = f"{base_ark_string}{check_digit}"
-            try:
-                ark = ARK.objects.create(
-                    ark=ark_string,
-                    naan=naan,
-                    shoulder=shoulder,
-                    assigned_name=f"{noid}{check_digit}",
-                    url=f"{BASE_URL}/static/{arkURL}",
-                    metadata=metadata_json,
-                )
-                self.logger.info(f"ARK URL: {BASE_URL}/static/{arkURL}")
-                break
-            except IntegrityError:
-                collisions += 1
-                continue
-        msg = f"Generated ARK for run {run.ID} for mesh {meshStr} after {collisions} collision(s)."
-        if collisions == 0:
-            self.logger.info(msg)
+        if find_spec("nerfstudio"):
+            self.logger.info("nerf_studio is installed.")
         else:
-            self.logger.warning(msg)
+            self.logger.error("nerf_studio is not installed.")
+            self._handle_error(ImportError("nerf_studio is not installed."), "GSOps")
 
-        # Update run
-        run.ark = ark
-        run.save()
-        self.arkStr = str(ark_string)
+        # Specify the run order (else alphabetical order)
+        self._run_order = [
+            "run_splatfacto",
+            "run_postprocess",
+        ] + self._run_order_suffix
 
-    def run_finalize(self):
+    def run_splatfacto(self) -> None:
         """
-        Finalizes current run
+        Creates Gaussian Splats using the `splatfacto` library
 
         """
-        self.logger.info(f"Finalizing run {self.runID} for mesh {self.meshStr}.")
-        self.mesh.reconstructed_at = datetime.now(pytz.timezone("Asia/Kolkata"))
-        self.logger.info(f"Run {self.runID} finished for mesh {self.meshStr}.")
-        self._update_mesh_status("Live")
-        self.logger.info(
-            f"Finished finalizing run {self.runID} for mesh {self.meshStr}."
+        alpha_cull_thresh = settings.ALPHA_CULL_THRESH
+        cull_post_dens = settings.CULL_POST_DENS
+
+        log_path = self.log_path / "splatfacto.log"
+        sf_train_log_path = self.log_path / "splatfacto_train.log"
+        output_path = self.runDir / "output/"
+
+        # Process data
+        self.logger.info("Processing data for Splatfacto...")
+        cmd = (
+            "ns-process-data images --data "
+            + str(self.imageDir)
+            + " --output-dir "
+            + str(output_path)
         )
+        self._serialRunner(cmd, log_path)
+        self.logger.info("Processed data for Splatfacto.")
 
-
-# LATE_EXP: FIXME: This can be made faster:
-# 1. By incorporating with the task itself, and removing the need for model load for each new contribution.
-# 2. By batching images and inferencing on patches.
-class ImageOps:
-    """
-    Image pre-processing pipeline. Does the following:
-    - Passes images through a NSFW filter [1] and moves flagged images into `images/nsfw` folder for manual moderation.
-    - Sorts images into `images/[good / bad]` by Contrast-to-Noise ratio, Dynamic Range & results from No-Reference Image
-    Quality Assessment (MANIQA [2]) for each image in a contribution.
-
-    Parameters
-    ----------
-    contrib_id : str
-        Contribution ID
-
-    References
-    ----------
-    .. [1] NSFW Detector, Laborde, Gant; https://github.com/GantMan/nsfw_model
-    .. [2] Yang, S., Wu, T., Shi, S., Lao, S., Gong, Y., Cao, M., Wang, J.,
-        & Yang, Y. (2022). MANIQA: Multi-dimension Attention Network for
-        No-Reference Image Quality Assessment. In Proceedings of the IEEE/CVF
-        Conference on Computer Vision and Pattern Recognition (pp. 1191-1200).
-
-    """
-
-    def __init__(self, contrib_id: str):
-        self.logger = Logger(
-            log_path=Path(LOG_DIR) / "ImageOps",
-            name=f"{self.__class__.__name__}_{contrib_id[:8]}",
+        # Create GS
+        self.logger.info("Creating GS using Splatfacto...")
+        # NOTE: See https://docs.nerf.studio/nerfology/methods/splat.html#quality-and-regularization
+        reg_opts = (
+            # Threshold to delete translucent gaussians - lower values remove more (usually better quality)
+            " --pipeline.model.cull_alpha_thresh="
+            + str(alpha_cull_thresh)
+            # Disable culling after 15K steps
+            + " --pipeline.model.continue_cull_post_densification="
+            + str(cull_post_dens)
+            # Less spiky Gaussians
+            + " --pipeline.model.use_scale_regularization True"
         )
+        cmd = (
+            "ns-train splatfacto "
+            + reg_opts
+            + " --data "
+            + str(output_path)
+            + " --output-dir "
+            + str(output_path)
+            + ' --timestamp ""'
+            + f" --max-num-iterations {GS_MAX_ITER} "
+            # Quit after GS creation
+            # Also see: https://docs.nerf.studio/quickstart/viewer_quickstart.html#accessing-over-an-ssh-connection
+            + "--viewer.quit-on-train-completion True "
+            + "> "
+            + str(sf_train_log_path)
+        )
+        self.logger.info("Check log file: {sf_train_log_path}.")
+        self._serialRunner(cmd, log_path)
+        self.logger.info("Created GS using Splatfacto.")
+
+        # Export GS
+        self.logger.info("Exporting GS from Splatfacto...")
+        cmd = (
+            "ns-export gaussian-splat --load-config "
+            + str(output_path)
+            + "/output/splatfacto/config.yml "
+            + " --output-dir "
+            + str(output_path)
+        )
+        self._serialRunner(cmd, log_path)
+        self.logger.info("Exported GS from Splatfacto.")
+
+        export_path = self.runDir / "output/splat.ply"
+        self._check_output(export_path, "run_splatfacto")
+
+        self.logger.info("Finished running splatfacto.")
+
+    def run_postprocess(self) -> None:
+        """
+        Applies post-processing to the generated Gaussian Splat and converts to `.splat`
+
+        """
+        # Paths
+        out_path = self.runDir / "output/postprocessed/"
+        out_path.mkdir(parents=True, exist_ok=True)
+        inp = self.runDir / "output/splat.ply"
+        out = out_path / "postprocessed.splat"
 
         try:
-            self.logger.info(
-                f"Accessing DB to get the contribution object for Contribution ID, {contrib_id}..."
+            self.logger.info(f"Post-processing GS for {self.meshStr}.")
+            postproc = PostProcess(
+                input_path=inp,
+                output_path=out,
+                runDir=self.runDir,
+                log_path=self.log_path,
             )
-            self.contribution = Contribution.objects.get(ID=contrib_id)
-        except Contribution.DoesNotExist as excep:
-            self.logger.error(
-                f"Contribution with ID {contrib_id} does not exist in the DB.",
-                exc_info=True,
-            )
-            raise ValueError(f"Contribution {contrib_id} not found.") from excep
+            self.logger.info(f"Check log file: {postproc.log_path}.")
+            postproc.run_ops()
+        except Exception as e:
+            self._handle_error(e, "run_postprocess")
 
-        self.mesh = self.contribution.mesh
-        self.images = self.contribution.images.all()
-        self.size = len(self.images)
-        if self.size == 0:
-            msg = f"No images found for contribution {self.contribution.ID}."
-            self.logger.error(msg)
-            raise ValueError(msg)
-        self.logger.info(
-            f"Found {self.size} images for contribution {self.contribution.ID}."
-        )
+        self._check_output(out, "run_postprocess")
 
-        if NSFW_MODEL_DIRPATH is not None and not NSFW_MODEL_DIRPATH.exists():
-            self.logger.error(f"nsfw_detector model not found at {NSFW_MODEL_DIRPATH}.")
-            raise FileNotFoundError(
-                f"nsfw_detector model not found at {NSFW_MODEL_DIRPATH}."
-            )
+        # Set for further processing
+        self.opt_path = out_path
 
-        # Thresholds & Weights
-        self.thresholds = {"CS": 0.95, "DR": 100, "CNR": 17.5, "MANIQA": 0.6}
-
-        self.weights = {  # NOTE: TODO: Unused for now
-            "DR": 0.1,
-            "CNR": 0.15,
-            "MANIQA": 0.75,
-        }
-
-    def check_content_safety(self, img_path: str):
-        """
-        Runs content safety filters on 1 image
-
-        """
-        local_cs_model = predict.load_model(NSFW_MODEL_DIRPATH)
-        local_cs_res = predict.classify(local_cs_model, img_path).values()
-
-        for val in local_cs_res:
-            pos = val["neutral"] + val["drawings"]
-            # neg = val['hentai'] + val['porn'] + val['sexy']
-
-        return True if pos > self.thresholds["CS"] else False
-
-    def check_images(self):
-        """
-        Checks images for NSFW content & quality and sorts them into
-        `images/[good / bad]` folders.
-        NOTE: No sRGB linearization is done here, as decision boundaries
-        or thresholds are hard to delineate in linear sRGB space.
-
-        """
-        lg = self.logger
-        
-        # FIXME: TODO: Till the VRAM + concurrency issue is fixed, skip image checks.
-        # FIXME: TODO: Remove once fixed.
-        lg.info(f"NOTE: Skipping image checks for contribution {self.contribution.ID} due to VRAM + concurrency issues. FIXME:")
-
-        def _update_image(img, label, remark):
-            lg.info(f"Updating image {img.ID} with label {label} and remark {remark}.")
-            img.label = label
-            img.remark = remark
-            img.save()  # `pre_save`` signal handles moving file to the correct folder
-            lg.info(f"Updated image {img.ID} with label {label} and remark {remark}.")
-
-        # manr = MANIQAScore(ckpt_pth=MANIQA_MODEL_FILEPATH, cpu_num=32, num_crops=20)
-        # FIXME: TODO: Uncomment once fixed.
-        for idx, img in enumerate(self.images):
-            lg.info(f"Checking image {img.ID} | [{idx}/{self.size}]...")
-            # img_path = str((MEDIA / img.image.name).resolve()) # FIXME: TODO: Uncomment once fixed.
-
-            # FIXME: TODO: Remove (till `continue`) once fixed
-            # Skip & move image to good folder
-            _update_image(
-                img,
-                "good",
-                f"PASS -- SKIPPED"
-            )
-            continue
-
-            # Content safety check
-            if not self.check_content_safety(img_path):
-                _update_image(
-                    img, "nsfw", "NSFW content detected by local NSFW filter."
-                )
-                continue
-
-            # Quality check
-            rgb_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-            gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2GRAY)
-            # DR
-            dr = (gray_img.max() - gray_img.min()) * 100 / 255
-            if dr < self.thresholds["DR"]:
-                _update_image(
-                    img,
-                    "bad",
-                    f"FAIL -- DR: {dr:.4f}; Rejected by DR threshold: {self.thresholds['DR']}.",
-                )
-                continue
-
-            # CNR
-            cnr = gray_img.std() ** 2 / gray_img.mean()
-            if cnr < self.thresholds["CNR"]:
-                _update_image(
-                    img,
-                    "bad",
-                    f"FAIL -- DR: {dr:.4f}, CNR: {cnr:.4f}; Rejected by CNR threshold: {self.thresholds['CNR']}.",
-                )
-                continue
-
-            # MANIQA
-            iqa_score = float(manr.predict_one(img_path).detach().cpu().numpy())
-            if iqa_score < self.thresholds["MANIQA"]:
-                _update_image(
-                    img,
-                    "bad",
-                    f"FAIL -- DR: {dr:.4f}, CNR: {cnr:.4f}, MANIQA: {iqa_score:.4f}; Rejected by MANIQA threshold: {self.thresholds['MANIQA']}.",
-                )
-                continue
-
-            # If all pass, add dr, cnr, iqa_score as a remark to Image & move to good folder
-            _update_image(
-                img,
-                "good",
-                f"PASS -- DR: {dr:.4f}, CNR: {cnr:.4f}, MANIQA: {iqa_score:.4f}; Thresholds: {self.thresholds}.",
-            )
-
-        lg.info(f"Finished checking images for contribution {self.contribution.ID}.")
-        lg.info("Marking contribution as `processed` & updating `processed_at`.")
-        Contribution.objects.filter(
-            ID=self.contribution.ID
-        ).update(  # Does not trigger signals
-            processed=True, processed_at=timezone.now()
-        )
-        lg.info("Finished updating contribution.")
+        self.logger.info(f"Finished post-processing GS for {self.meshStr}.")
 
 
 """
 Tasks
 
 """
-def prerun_check(contrib_id):
+
+
+def prerun_check(contrib_id: str) -> tuple[bool, str]:
+    """
+    Checks if a contribution is ready for processing.
+
+    Parameters
+    ----------
+    contrib_id : str
+        Contribution ID
+
+    Returns
+    -------
+    tuple[bool, str]
+        (status, message)
+
+    """
     contrib = Contribution.objects.get(ID=contrib_id)
     mesh = contrib.mesh
     images_count = len(os.listdir(MEDIA / f"models/{mesh.ID}/images/good"))
@@ -776,34 +780,46 @@ def prerun_check(contrib_id):
     return True, "Mesh ready for processing."
 
 
-def mo_runner(contrib_id: str):
+def ops_runner(contrib_id: str, kind: str) -> None:
     """
-    Runs MeshOps on a `models.Mesh` and publishes the results.
+    Runs the appropriate operations on a `models.Mesh` and publishes the results.
+
+    Parameters
+    ----------
+    contrib_id : str
+        Contribution ID
+    kind : str
+        Kind of operation to run
+        Options: 'aV' (AliceVision) or 'GS' (Gaussian Splatting)
 
     """
+    OP = MeshOps if kind == "aV" else GSOps
+    op_name = OP.__name__
+
     contrib = Contribution.objects.get(ID=contrib_id)
     meshID = str(contrib.mesh.ID)
     meshVID = str(contrib.mesh.verbose_id)
 
     cons = Console()  # This appears as normal printed logs in celery logs.
-    cons.rule("MeshOps Runner Start")
+    cons.rule(f"{op_name} Runner Start")
     cons.print(
         f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Triggered by {contrib.ID} for Mesh {meshVID} <=> {meshID}."
     )
     cons.print(
-        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Starting MeshOps on Mesh {meshVID} <=> {meshID}."
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Starting {op_name} on Mesh {meshVID} <=> {meshID}."
     )
+
     try:
-        mO = MeshOps(meshID=meshID)
-        cons.print(f"Check {mO.log_path} for more details.")
-        mO._run_all()
+        op = OP(meshID=meshID)
+        cons.print(f"Check {op.log_path} for more details.")
+        op._run_all()
         cons.print(
-            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Finished MeshOps on {meshVID} <=> {meshID}."
-        )  # <----------------
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Finished {op_name} on {meshVID} <=> {meshID}."
+        )
     except Exception as e:
         cons.print(
-            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: ERROR encountered in MeshOps for {meshVID} <=> {meshID}!"
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: ERROR encountered in {op_name} for {meshVID} <=> {meshID}!"
         )
         cons.print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {e}")
         raise e
-    cons.rule("MeshOps Runner End")
+    cons.rule(f"{op_name} Runner End")

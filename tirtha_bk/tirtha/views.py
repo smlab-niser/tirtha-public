@@ -1,15 +1,18 @@
 # LATE_EXP: FIXME: This file requires a refactor. Too many indirections.
 # To fix:
-# * Too many different contexts for signin() and googleAuth().
 # * search()'s code is inconvenient (main.js).
 # * See FIXME:s and LATE_EXP:s below.
-from urllib.parse import unquote
 
-import pytz
+import uuid
+import logging
 from django.conf import settings
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_POST
+
+# OAuth Google SignIn
+from authlib.integrations.django_client import OAuth
 from google.auth.transport import requests
 from google.oauth2 import id_token
 
@@ -21,34 +24,35 @@ from .tasks import post_save_contrib_imageops
 from .utilsark import parse_ark
 
 
+LOG_LOCATION = settings.LOG_LOCATION
 PRE_URL = settings.PRE_URL
 GOOGLE_LOGIN = settings.GOOGLE_LOGIN
 ADMIN_MAIL = settings.ADMIN_MAIL
-GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+OAUTH_CONF = settings.OAUTH_CONF
 BASE_URL = settings.BASE_URL
 FALLBACK_ARK_RESOLVER = settings.FALLBACK_ARK_RESOLVER
 
+# OAuth App Setup
+oauth = OAuth()
+google = oauth.register(
+    "google",  # NOTE: More can be added
+    client_id=OAUTH_CONF.get("OAUTH2_CLIENT_ID"),
+    client_secret=OAUTH_CONF.get("OAUTH2_CLIENT_SECRET"),
+    client_kwargs={
+        "scope": OAUTH_CONF.get("OAUTH2_SCOPE"),
+    },
+    server_metadata_url=f'{OAUTH_CONF.get("OAUTH2_META_URL")}',
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    redirect_uri=OAUTH_CONF.get("OAUTH2_REDIRECT_URI"),
+)
 
-def competition(request):
-    """
-    Renders a static page with details about the Tirtha competition.
-
-    """
-    if request.method == "GET":
-        template = "tirtha/competition.html"
-        return render(request, template)
-    return handler403(request)  # FIXME: Change to 405
-
-
-def howto(request):
-    """
-    Renders a static page with instructions on how to use Tirtha.
-
-    """
-    if request.method == "GET":
-        template = "tirtha/howto.html"
-        return render(request, template)
-    return handler403(request)  # FIXME: Change to 405
+# Logger setup
+# Logging
+logging.basicConfig(
+    level=logging.NOTSET,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=LOG_LOCATION,
+)
 
 
 def index(request, vid=None, runid=None):
@@ -60,7 +64,7 @@ def index(request, vid=None, runid=None):
         "meshes": meshes,
         "signin_msg": "Please sign in to upload images.",
         "signin_class": "blur-form",
-        "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
+        "GOOGLE_CLIENT_ID": OAUTH_CONF.get("OAUTH2_CLIENT_ID"),
     }
 
     """
@@ -76,8 +80,14 @@ def index(request, vid=None, runid=None):
             runs_arks = list(
                 run.mesh.runs.filter(status="Archived")
                 .order_by("-ended_at")
-                .values_list("ark", flat=True)
+                .values_list("ark", "ended_at")
             )
+
+            # Move the selected run to the front
+            runs_arks = [
+                (ark, ended_at) for ark, ended_at in runs_arks if ark != run.ark.ark
+            ]
+            runs_arks.insert(0, (run.ark.ark, run.ended_at))
 
             context.update(
                 {
@@ -90,7 +100,7 @@ def index(request, vid=None, runid=None):
                 }
             )
         except Run.DoesNotExist as e:
-            handler404(request, e)
+            return handler404(request, e)
 
     elif runid is None:
         if vid is None:
@@ -99,7 +109,7 @@ def index(request, vid=None, runid=None):
             try:
                 mesh = Mesh.objects.get(verbose_id=vid)
             except Mesh.DoesNotExist as e:
-                handler404(request, e)
+                return handler404(request, e)
 
         # Add mesh info
         context.update(
@@ -121,8 +131,15 @@ def index(request, vid=None, runid=None):
             runs_arks = list(
                 mesh.runs.filter(status="Archived")
                 .order_by("-ended_at")
-                .values_list("ark", flat=True)
+                .values_list("ark", "ended_at")
             )
+
+            # Move the selected run to the front
+            runs_arks = [
+                (ark, ended_at) for ark, ended_at in runs_arks if ark != run.ark.ark
+            ]
+            runs_arks.insert(0, (run.ark.ark, run.ended_at))
+
         except Run.DoesNotExist:
             run = None
 
@@ -147,214 +164,260 @@ def index(request, vid=None, runid=None):
     # Check if contributor is signed in
     # For development only
     if not GOOGLE_LOGIN:
-        token = "INSECURE-DEFAULT-TOKEN"
-        request.session["auth_token"] = token
+        logging.info("index -- Google login is disabled.")
+        request.session["tirtha_user_info"] = None
 
-    token = request.session.get("auth_token", None)
-    if token:
-        output, contrib = _signin(token)
-        # Store JWT in session
+    user_info = request.session.get("tirtha_user_info", None)
+    logging.info(f"index -- User info: {user_info}")
+    if user_info:
+        logging.info("index -- User info exists. Continuing...")
+        output, contrib = _signin(user_info)
+        # Store user_info in session if contributor exists
         if contrib is not None:
-            request.session["auth_token"] = token
+            request.session["tirtha_user_info"] = user_info
             request.session.secure = True
             request.session.set_expiry(0)  # Session expires when browser closes
             context.update({"signin_msg": output})
 
             if not contrib.banned and contrib.active:
                 context.update({"signin_class": ""})
+    else:
+        logging.info("index -- No user is signed in.")
+
+    # Profile Image URL
+    if user_info is not None:
+        context["profile_image_url"] = user_info.get("picture")
 
     return render(request, template, context)
 
 
-def _signin(token, create=False):
+# TODO: FIXME: Commented out since no XHR to accommodate GS runs
+# @require_GET
+# def loadMesh(request):
+#     """
+#     Allows AJAX requests to load mesh.
+
+#     """
+#     vid = request.GET.get("vid", None)
+
+#     try:
+#         mesh = Mesh.objects.get(verbose_id=vid)
+#         runs_arks = list(
+#             mesh.runs.filter(status="Archived")
+#             .order_by("-ended_at")
+#             .values_list("ark", flat=True)
+#         )
+#         # Get latest successful run for mesh (among Run.status == "Archived")
+#         try:
+#             run = mesh.runs.filter(status="Archived").latest("ended_at")
+#         except Run.DoesNotExist:
+#             run = None
+
+#         # FIXME: LATE_EXP: Maybe remove default meshes and only allow runs to be loaded.
+#         # Having both is counter-intuitive.
+#         data = {
+#             "status": "Mesh found!",
+#             "mesh": {
+#                 "status": mesh.status,
+#                 "has_run": True if run else False,
+#                 "src": run.ark.url
+#                 if run
+#                 else PRE_URL + f"static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
+#                 "prev_url": mesh.preview.url,
+#                 "name": mesh.name,
+#                 "desc": mesh.description,
+#                 "last_recons": str(
+#                     mesh.reconstructed_at.astimezone(
+#                         pytz.timezone("Asia/Kolkata")
+#                     ).strftime("%B %d, %Y")
+#                 )
+#                 if mesh.reconstructed_at
+#                 else "Not reconstructed yet.",
+#                 "contrib_type": "run" if run else "mesh",
+#                 "runs_arks": runs_arks if runs_arks else ["N.A."],
+#                 "run_ark": f"{run.ark}" if run else "N.A.",
+#                 "run_ark_url": f"{BASE_URL}/{run.ark}" if run else "javascript:;",
+#                 "contrib_count": int(run.contributors.count())
+#                 if run
+#                 else mesh.contributions.count(),
+#                 "images_count": int(run.images.count())
+#                 if run
+#                 else Image.objects.filter(contribution__mesh=mesh).count(),
+#                 "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg"
+#                 if run
+#                 else f"{mesh.rotaZ}deg {mesh.rotaX}deg {mesh.rotaY}deg",
+#             },
+#         }
+#     except Mesh.DoesNotExist:
+#         data = {"status": "Mesh not found!", "mesh": None}
+
+#     return JsonResponse(data)
+
+
+# @require_GET
+# def loadRun(request):
+#     """
+#     Allows AJAX requests to load run.
+
+#     """
+#     runark = request.GET.get("runark", None)
+#     runark = "ark:/" + unquote(runark)
+
+#     try:
+#         naan, assigned_name = parse_ark(runark)
+#         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
+#         run = ark.run
+#         data = {
+#             "status": "Run found!",
+#             "run": {
+#                 "mesh_src": run.ark.url,
+#                 "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg",
+#                 "ended_at": str(
+#                     run.ended_at.astimezone(pytz.timezone("Asia/Kolkata")).strftime(
+#                         "%B %d, %Y"
+#                     )
+#                 ),
+#                 "contrib_count": int(run.contributors.count()),
+#                 "images_count": int(run.images.count()),
+#                 "contrib_type": "run",
+#                 "run_ark": f"{run.ark}",
+#                 "run_ark_url": f"{BASE_URL}/{run.ark}",
+#                 "mesh_name": run.mesh.name,
+#                 "runid": run.ID,
+#             },
+#         }
+
+#     except Run.DoesNotExist as e:
+#         data = {"status": "Run not found!", "run": None}
+
+#     return JsonResponse(data)
+
+
+def _signin(user_info: dict) -> tuple:
     """
-    Handles `Sign in with Google`. Does the following:
-    * Verifies `token`
-    * Check if contributor exists in DB using details from `token`
-    * If not, create new contributor if `create` is True, else return None
-    * If yes, check if contributor is inactive or banned
-        * If yes, return error
-        * If no, return success
+    Retrieves or creates the contributor.
 
     """
     # For development only
     if not GOOGLE_LOGIN:
+        logging.info("_signin -- Google login is disabled.")
         # Return default contributor
         contrib = Contributor.objects.get(email=ADMIN_MAIL)
         output = f"Signed-in as {ADMIN_MAIL}."
         return output, contrib
 
-    contrib = None
-    try:
-        # Verify token
-        idinfo = id_token.verify_oauth2_token(
-            token, requests.Request(), GOOGLE_CLIENT_ID
-        )
+    logging.info(f"_signin -- Google login is enabled. Signing in user: {user_info}")
+    # Get contributor info
+    email = user_info.get("email")
+    name = user_info.get("name")
 
-        # Get contributor info
-        name = idinfo["name"]
-        email = idinfo["email"]
+    # NOTE: Treating email as unique ID, both for our DB and Google's
+    # NOTE: Contributor is created as inactive | Manual activation required
+    # CHECK: TODO: Allow auto-activation after testing
+    # Get or create contributor
+    contrib, _ = Contributor.objects.get_or_create(
+        email=email, defaults={"active": False}
+    )
 
-        # Get or create contributor
-        try:
-            contrib = Contributor.objects.get(email=email)
-        except Contributor.DoesNotExist:
-            if create:
-                # NOTE: Treating email as unique ID, both for our DB and Google's
-                # NOTE: Contributor is created as inactive | Manual activation required
-                # CHECK: TODO: Allow auto-activation after testing
-                contrib = Contributor.objects.create(
-                    name=name, email=email, active=False
-                )
-            else:
-                output = "Contributor not found. Please sign in first."
-                return output, contrib
+    # If name has changed, update name
+    if name != contrib.name:
+        logging.info(f"Updating name for {email} from {contrib.name} to {name}.")
+        contrib.name = name
+        contrib.save()
 
-        # If name has changed, update name
-        if name != contrib.name:
-            contrib.name = name
-            contrib.save()
+    # Check if active
+    output = f"Signed-in as {email}."
+    if not contrib.active:
+        logging.info(f"{email} is not active.")
+        output = f"{email} is not active. Please contact the admin."
 
-        # Check if active
-        output = f"Signed-in as {email}."
-        if not contrib.active:
-            output = f"{email} is not active. Please contact the admin."
-
-        # Check if banned
-        if contrib.banned:
-            output = f"{email} has been banned. Please contact the admin."
-
-    except ValueError:  # Invalid token
-        output = "Please sign in again."
+    # Check if banned
+    if contrib.banned:
+        logging.info(f"{email} has been banned.")
+        output = f"{email} has been banned. Please contact the admin."
 
     return output, contrib
 
 
 @require_GET
-def googleAuth(request):
+def signin(request):
     """
-    Sets auth token cookie post Google Auth.
+    First step in OAuth2.0 flow. Redirects to Google's OAuth2.0 consent screen.
 
     """
-    token = request.GET["token"]
-    output, contrib = _signin(token, create=True)
+    # Build a full authorize callback URI using a new UUID
+    new_state = str(uuid.uuid4())
+    logging.info(f"signin -- Sent new_state: {new_state}")
 
-    context = {"output": output, "banned": False, "blur": False}
+    # Save the state and redirect to Google's OAuth2.0 consent screen
+    request.session["auth_random_state"] = new_state
+    redirect_uri = request.build_absolute_uri("/" + PRE_URL + "verifyToken/")
 
-    # Store JWT in session
-    if contrib is not None:
-        request.session["auth_token"] = token
-        request.session.set_expiry(0)  # Session expires when browser closes
-
-        if contrib.banned or not contrib.active:
-            context.update({"blur": True})
-
-    return JsonResponse(context)
+    return google.authorize_redirect(request, redirect_uri, state=new_state)
 
 
 @require_GET
-def loadMesh(request):
+def verifyToken(request):
     """
-    Allows AJAX requests to load mesh.
+    Second step in OAuth2.0 flow (Callback).
+    Authorizes & sets auth token with relavent user information
 
     """
-    vid = request.GET.get("vid", None)
+    request_state = request.session.get("auth_random_state", None)
+    received_state = request.GET.get("state", None)
+
+    key = f"_state_google_{received_state}"
+    request.session[key] = {
+        "data": {
+            "state": received_state,
+        }
+    }
+
+    logging.info(f"verifyToken -- Request state: {request_state}")
+    logging.info(f"verifyToken -- Received state: {received_state}")
+
+    if not received_state:
+        logging.error("Received state is empty. Aborting sign-in.")
+        return handler403(request)
+
+    if request_state is None or received_state != request_state:
+        logging.error("State mismatch. Aborting sign-in.")
+        return handler403(request)
 
     try:
-        mesh = Mesh.objects.get(verbose_id=vid)
-        runs_arks = list(
-            mesh.runs.filter(status="Archived")
-            .order_by("-ended_at")
-            .values_list("ark", flat=True)
+        logging.info("Verifying token...")
+        # NOTE: dict_keys(['access_token', 'expires_in', 'scope', 'token_type', 'id_token', 'expires_at'])
+        authlib_token = google.authorize_access_token(request)
+        # logging.debug(f"verifyToken -- authlib_token: {authlib_token}")
+
+        # Google OAuth2.0 token
+        google_token = authlib_token["id_token"]
+        # logging.debug(f"verifyToken -- google_token: {google_token}")
+
+        # Verify id_token
+        idinfo = id_token.verify_oauth2_token(
+            google_token, requests.Request(), OAUTH_CONF.get("OAUTH2_CLIENT_ID")
         )
-        # Get latest successful run for mesh (among Run.status == "Archived")
-        try:
-            run = mesh.runs.filter(status="Archived").latest("ended_at")
-        except Run.DoesNotExist:
-            run = None
-
-        # FIXME: LATE_EXP: Maybe remove default meshes and only allow runs to be loaded.
-        # Having both is counter-intuitive.
-        data = {
-            "status": "Mesh found!",
-            "mesh": {
-                "status": mesh.status,
-                "has_run": True if run else False,
-                "src": run.ark.url
-                if run
-                else PRE_URL + f"static/models/{mesh.ID}/published/{mesh.ID}__default.glb",
-                "prev_url": mesh.preview.url,
-                "name": mesh.name,
-                "desc": mesh.description,
-                "last_recons": str(
-                    mesh.reconstructed_at.astimezone(
-                        pytz.timezone("Asia/Kolkata")
-                    ).strftime("%B %d, %Y")
-                )
-                if mesh.reconstructed_at
-                else "Not reconstructed yet.",
-                "contrib_type": "run" if run else "mesh",
-                "runs_arks": runs_arks if runs_arks else ["N.A."],
-                "run_ark": f"{run.ark}" if run else "N.A.",
-                "run_ark_url": f"{BASE_URL}/{run.ark}" if run else "javascript:;",
-                "contrib_count": int(run.contributors.count())
-                if run
-                else mesh.contributions.count(),
-                "images_count": int(run.images.count())
-                if run
-                else Image.objects.filter(contribution__mesh=mesh).count(),
-                "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg"
-                if run
-                else f"{mesh.rotaZ}deg {mesh.rotaX}deg {mesh.rotaY}deg",
-            },
+        logging.debug(f"verifyToken -- idinfo: {idinfo}")
+        logging.info("Token verified. Adding to session...")
+        request.session["tirtha_user_info"] = {
+            "email": idinfo.get("email"),
+            "name": idinfo.get("name"),
+            "picture": idinfo.get("picture"),
         }
-    except Mesh.DoesNotExist:
-        data = {"status": "Mesh not found!", "mesh": None}
+        logging.info("Token added to session.")
 
-    return JsonResponse(data)
+    except ValueError as e:
+        request.session["tirtha_user_info"] = None
+        logging.error("ERROR in token verification:")
+        logging.error(e)
+        return handler403(request)
+
+    return redirect(index)
 
 
 @require_GET
-def loadRun(request):
-    """
-    Allows AJAX requests to load run.
-
-    """
-    runark = request.GET.get("runark", None)
-    runark = "ark:/" + unquote(runark)
-
-    try:
-        naan, assigned_name = parse_ark(runark)
-        ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
-        run = ark.run
-        data = {
-            "status": "Run found!",
-            "run": {
-                "mesh_src": run.ark.url,
-                "orientation": f"{run.rotaZ}deg {run.rotaX}deg {run.rotaY}deg",
-                "ended_at": str(
-                    run.ended_at.astimezone(pytz.timezone("Asia/Kolkata")).strftime(
-                        "%B %d, %Y"
-                    )
-                ),
-                "contrib_count": int(run.contributors.count()),
-                "images_count": int(run.images.count()),
-                "contrib_type": "run",
-                "run_ark": f"{run.ark}",
-                "run_ark_url": f"{BASE_URL}/{run.ark}",
-                "mesh_name": run.mesh.name,
-                "runid": run.ID,
-            },
-        }
-
-    except Run.DoesNotExist as e:
-        data = {"status": "Run not found!", "run": None}
-
-    return JsonResponse(data)
-
-
-@require_GET
-def pre_upload_check(request):
+def pre_upload_check(request) -> JsonResponse:
     """
     Pre-upload, checks if the mesh_vid is valid and if so, whether the mesh is "completed"
 
@@ -362,13 +425,13 @@ def pre_upload_check(request):
     verbose_id = request.GET["mesh_vid"]
 
     # Authenticate contributor
-    token = request.session.get("auth_token", None)
-    if token is None:
+    user_info = request.session.get("tirtha_user_info", None)
+    if user_info is None:
         return JsonResponse(
             {"allowupload": False, "blur": True, "output": "Please sign in again."}
         )
 
-    output, contrib = _signin(token)
+    output, contrib = _signin(user_info)
     if contrib is None:
         return JsonResponse({"allowupload": False, "blur": True, "output": output})
 
@@ -396,7 +459,7 @@ def pre_upload_check(request):
 
 
 @require_POST
-def upload(request):
+def upload(request) -> JsonResponse:
     """
     Handles `Upload` form. Does the following:
     * Authenticates contributor
@@ -406,15 +469,13 @@ def upload(request):
 
     """
     # Authenticate contributor
-    token = request.session.get("auth_token", None)
-    output, contrib = _signin(token)
+    user_info = request.session.get("tirtha_user_info", None)
+    output, contrib = _signin(user_info)
     if contrib is None:
         return JsonResponse({"output": output})
 
     # Match mesh
     verbose_id = request.POST["mesh_vid"]
-
-    # NOTE: try-block not needed due to pre_upload_check
     mesh = Mesh.objects.get(verbose_id__exact=verbose_id)
 
     # Create Contribution
@@ -442,9 +503,16 @@ def search(request):
     data = {"status": "Mesh not found!", "meshes_json": None}
 
     query = request.GET.get("query", None)
-    meshes = (
-        Mesh.objects.filter(name__icontains=query).exclude(hidden=True).order_by("name")
+
+    # Search by name, district, state, country
+    search_query = (
+        Q(name__icontains=query)
+        | Q(country__icontains=query)
+        | Q(state__icontains=query)
+        | Q(district__icontains=query)
     )
+    meshes = Mesh.objects.filter(search_query).exclude(hidden=True).order_by("name")
+
     meshes_json = dict()
 
     for mesh in meshes:
@@ -471,6 +539,7 @@ def resolveARK(request, ark: str):
     try:
         naan, assigned_name = parse_ark(ark)
     except ValueError as e:
+        logging.error(f"resolveARK -- ARK parsing error: {e}")
         return handler404(
             request, e
         )  # LATE_EXP: Maybe add a custom page saying the ARK is invalid
@@ -479,5 +548,30 @@ def resolveARK(request, ark: str):
         # Try to find the ARK in the database
         ark = ARK.objects.get(ark=f"{naan}/{assigned_name}")
         return redirect("indexMesh", vid=ark.run.mesh.verbose_id, runid=ark.run.ID)
-    except ARK.DoesNotExist as e:
+    except ARK.DoesNotExist:
+        logging.error(f"resolveARK -- ARK not found: {ark}")
         return redirect(f"{FALLBACK_ARK_RESOLVER}/{ark}")
+
+
+def competition(request):
+    """
+    Renders a static page with details about the Tirtha competition.
+
+    """
+    logging.info("competition -- Accessed.")
+    if request.method == "GET":
+        template = "tirtha/competition.html"
+        return render(request, template)
+    return handler403(request)  # FIXME: Change to 405
+
+
+def howto(request):
+    """
+    Renders a static page with instructions on how to use Tirtha.
+
+    """
+    logging.info("howto -- Accessed.")
+    if request.method == "GET":
+        template = "tirtha/howto.html"
+        return render(request, template)
+    return handler403(request)  # FIXME: Change to 405

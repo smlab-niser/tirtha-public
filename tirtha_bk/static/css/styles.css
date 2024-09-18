@@ -31,7 +31,8 @@
 
 html {
     box-sizing: border-box;
-    letter-spacing: 0; /* Firefox, Safari */
+    letter-spacing: 0;
+    /* Firefox, Safari */
 }
 
 body {
@@ -40,7 +41,7 @@ body {
     margin: var(--body-margin);
 
     display: grid;
-    grid-template-columns: minmax(22.5%, 25%) minmax(57.5%, 65%) minmax(8rem, 12rem);
+    grid-template-columns: minmax(22.5%, 25%) 1fr clamp(10%, 12.5rem, 15%);
     column-gap: 0.5vw;
 
     /* TODO: Dark mode */
@@ -64,7 +65,10 @@ body {
 }
 
 /* Link defaults */
-a:link, a:visited, a:hover, a:active  {
+a:link,
+a:visited,
+a:hover,
+a:active {
     color: var(--link-col);
 }
 
@@ -104,7 +108,8 @@ ol {
 
 /* buttons */
 .buttons {
-    all: unset; /* Reset all button styles */
+    all: unset;
+    /* Reset all button styles */
 
     display: flex;
     justify-content: center;
@@ -136,13 +141,14 @@ ol {
 .buttons:focus {
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
 }
+
 /* buttons ends here */
 
 /* ar-button & floating-controls */
 #ar-button {
     position: absolute;
     top: 0.2rem;
-    left: 0.2rem;
+    left: 0.5rem;
 
     padding: 0.4rem;
 
@@ -166,36 +172,22 @@ ol {
     transition: var(--default-transition);
 }
 
-#top-banner {
+#floating-banners {
     position: absolute;
-    top: 0;
+    left: 0;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    padding: clamp(0.4rem, 0.8rem, 1dvw);
-
-    font-size: clamp(0.75rem, 1rem, 1.5dvw);
-    font-weight: 600;
-    text-decoration: none;
-
-    border-radius: 5rem;
-    background-color: rgba(154, 245, 222, 0.5);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
     z-index: 100;
 
     transition: var(--default-transition);
 }
 
-#top-banner:hover {
-    box-shadow: 0 0 1rem 0.2rem rgba(0, 0, 0, 0.8);
-}
-
 #model-area:fullscreen #floating-controls {
     right: 0.5rem;
+}
+
+#model-area:fullscreen #floating-banners {
+    top: 0.5rem;
+    left: 0.5rem;
 }
 
 #model-area:fullscreen #ar-button {
@@ -203,11 +195,7 @@ ol {
     left: 0.5rem;
 }
 
-#model-area:fullscreen #top-banner {
-    top: 0.5rem;
-}
-
-#floating-controls div {
+#floating-controls div, #floating-banners a {
     width: 2rem;
     height: 2rem;
 
@@ -217,11 +205,11 @@ ol {
     place-content: center;
 
     background: transparent;
+    -webkit-backdrop-filter: var(--default-blur);
+    backdrop-filter: var(--default-blur);
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
     border: none;
     border-radius: 0.5rem;
-    -webkit-backdrop-filter: var(--default-blur);
-    backdrop-filter: var(--default-blur);
 
     cursor: pointer;
     user-select: none;
@@ -229,20 +217,28 @@ ol {
     transition: var(--default-transition);
 }
 
+#floating-banners a {
+    color: rgba(254, 45, 22, 0.95);
+    text-decoration: none;
+}
+
 #floating-controls div:hover,
-#floating-controls div:focus {
+#floating-controls div:focus,
+#floating-banners a:hover,
+#floating-banners a:focus {
     box-shadow: 0 0 1rem 0.2rem rgba(0, 0, 0, 0.8);
 }
 
 #floating-controls #menu {
     display: none;
 }
-/* floating-controls props end here */
+/* floating-controls & floating-banners props end here */
 
 /* ==================
    Combined props
   ================== */
-#side, nav {
+#side,
+nav {
     max-height: calc(100lvh - var(--body-margin) * 2);
 
     background-color: var(--fg-col);
@@ -259,7 +255,8 @@ ol {
 }
 
 /* Hide scrollbar - Safari */
-#side::-webkit-scrollbar, nav::-webkit-scrollbar {
+#side::-webkit-scrollbar,
+nav::-webkit-scrollbar {
     display: none;
 }
 
@@ -268,7 +265,7 @@ details {
     border-bottom: var(--details-default-border);
 }
 
-details > * {
+details>* {
     border-radius: 0.4rem;
 }
 
@@ -289,7 +286,8 @@ details summary::-webkit-details-marker {
     word-break: break-all;
 }
 
-details:last-child, #privacy {
+details:last-child,
+#privacy {
     border-bottom: none;
 }
 
@@ -341,11 +339,12 @@ details[open] #privacy {
     padding-left: clamp(1.25rem, 1.4rem, 1.5dvw);
 }
 
-.details-inner ul li, pre {
+.details-inner ul li,
+pre {
     margin: 0.3rem 0;
 }
 
-.details-inner .ul-inner > li {
+.details-inner .ul-inner>li {
     margin: 0.15rem 0;
 }
 
@@ -374,11 +373,11 @@ details[open] {
     box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
 }
 
-details[open] > summary {
+details[open]>summary {
     border-bottom: 1px dashed rgba(220, 20, 60, 0.6);
 }
 
-details[open] > summary:hover {
+details[open]>summary:hover {
     box-shadow: none;
     transform: none;
 }
@@ -401,6 +400,7 @@ details[open] summary::after {
     /* ✖, ✕ | 🞫 <- Not working */
     font-weight: 600;
 }
+
 /* #side > details ends here */
 
 /* ==================
@@ -495,7 +495,8 @@ details[open] summary::after {
     box-shadow: 0 0 2.5rem 0.4rem rgba(0, 0, 0, 0.8);
 }
 
-.model-preview-inner, .model-title {
+.model-preview-inner,
+.model-title {
     transition: var(--default-transition);
 }
 
@@ -541,6 +542,7 @@ details[open] summary::after {
     color: white;
     z-index: 2;
 }
+
 /* ==================
   nav props end here
   ================== */
@@ -596,9 +598,66 @@ model-viewer {
     height: 100%;
 }
 
+
+/* ==================
+   GS Viewer props
+  ================== */
+#gs-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#gs-progress-dialog {
+    position: relative;
+    top: -1rem;
+    width: 90%;
+
+    text-align: center;
+
+    color: white;
+    background-color: var(--bg-col);
+
+    border: none;
+}
+
+#gs-progress-indicator-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: red;
+}
+
+#gs-progress-indicator {
+    height: 0.3rem;
+
+    background-color: var(--bg-col);
+    color: var(--progress-bar-col);
+
+    border: none;
+    border-radius: 5px;
+}
+
+#gs-progress-indicator::-webkit-progress-bar {
+    background-color: var(--bg-col);
+    border-radius: 5px;
+}
+
+#gs-progress-indicator::-webkit-progress-value {
+    background-color: var(--progress-bar-col);
+    border-radius: 5px;
+}
+
+#gs-progress-indicator::-moz-progress-bar {
+    background-color: var(--progress-bar-col);
+    border-radius: 5px;
+}
+/* ==================
+   GS Viewer props end here
+  ================== */
+
 div.container > div.userInput.show {
     outline: none;
 }
+
 /* ==================
   model-area props end here
   ================== */
@@ -646,7 +705,7 @@ div.container > div.userInput.show {
 
     margin: 0 0.3rem;
 
-    background-color: #2967b8;
+    background-color: rgb(41, 103, 184);
     box-shadow: 0 0 0.2rem 0.2rem rgba(41, 103, 184, 0.8);
     border-radius: 0.4rem;
 
@@ -681,6 +740,7 @@ div.container > div.userInput.show {
 
     line-height: var(--info-line-height);
 }
+
 /* ==================
   side props end here
  ================== */
@@ -704,18 +764,22 @@ div.container > div.userInput.show {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
 }
+
 @keyframes fadeIn {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
 }
+
 #cont-form[open] {
     -webkit-animation: fadeIn 0.2s ease-in normal;
     animation: fadeIn 0.2s ease-in normal;
@@ -770,28 +834,60 @@ div.container > div.userInput.show {
     text-align: center;
     font-weight: 400;
 }
+
 /* ToS props end here */
 
 /* Upload form props - also see above */
-.upload-signin {
-    padding: clamp(0.5rem, 0.75rem, 1dvw) clamp(0rem, 1rem, 1dvw);
+
+/* ==================
+  Google SignIn button
+ ================== */
+#signin-button-container {
+    text-align: center;
 }
 
-/* Google Sign-in button */
-.upload-signin > div {
-    display: grid;
-    place-content: center;
-}
+#signin-button {
+    display: inline-flex;
+    align-content: center;
 
-.upload-signin > div > div {
-    border: 1px solid rgba(0, 0, 0, 0.5);
-    border-radius: 2rem;
-}
+    margin: 0 auto;
+    padding: 0.4rem 1.5rem;
 
-.upload-signin > div > div:hover,
-.upload-signin > div > div:focus {
+    color: beige;
+
+    text-align: center;
+    text-decoration: none;
+
+    background-color: #365bcc;
+    border-radius: 5rem;
+
     cursor: pointer;
-    box-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.8);
+    user-select: none;
+
+    transition: var(--default-transition);
+}
+
+#signin-button:hover,
+#signin-button:focus {
+    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.8);
+}
+
+#signin-button img.profile-image {
+    width: clamp(1.5rem, 1.75rem, 2rem);
+    height: clamp(1.5rem, 1.75rem, 2rem);
+
+    background-color: beige;
+    border: #4285f4 2px solid;
+    border-radius: 50%;
+
+    object-fit: contain;
+}
+
+#signin-button span {
+    display: inline-block;
+    padding: 0.4rem;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 #signin-status {
@@ -802,9 +898,12 @@ div.container > div.userInput.show {
     text-align: center;
     color: var(--output-col);
 
-    padding: 0 0 0.5rem;
+    padding: 0.5rem 0;
     border-bottom: 1px dashed rgba(0, 0, 0, 0.5);
 }
+/* ==================
+  Google SignIn button props end here
+ ================== */
 
 /* select-related props */
 #select-mesh-wrapper {
@@ -831,7 +930,8 @@ div.container > div.userInput.show {
     transition: all 1s ease;
 }
 
-#select-run { /* Run selection */
+#select-run {
+    /* Run selection */
     width: 100%;
     margin: clamp(0.6rem, 0.75rem, 1.1dvw) auto;
     margin-bottom: 0;
@@ -844,6 +944,7 @@ div.container > div.userInput.show {
 
     transition: all 0.2s ease;
 }
+
 /* select-related props end here */
 
 /* Uploaded image related props */
@@ -879,7 +980,6 @@ div.container > div.userInput.show {
 #upload-gallery a img {
     width: 100%;
     height: 100%;
-
     border-radius: 0.5rem;
 }
 
@@ -908,8 +1008,13 @@ div.container > div.userInput.show {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Progress bar */
@@ -937,6 +1042,7 @@ progress::-webkit-progress-value {
     background-color: var(--progress-bar-val-col);
     border-radius: 2rem;
 }
+
 /* Progress bar-related props end here */
 .remove {
     position: absolute;
@@ -980,6 +1086,7 @@ progress::-webkit-progress-value {
         -8px 8px 8px rgba(0, 0, 0, 0.4),
         -8px 3px 8px rgba(0, 0, 0, 0.4);
 }
+
 /* uploaded image related props end here */
 
 /* Hide the default file-picker button */
@@ -1029,16 +1136,16 @@ progress::-webkit-progress-value {
 }
 
 #agree-check {
-    margin: 0;
+    margin: 0 0.25rem 0 0;
 
     width: clamp(0.8rem, 1.1rem, 1.5dvw);
     height: clamp(0.8rem, 1.1rem, 1.5dvw);
 
     accent-color: var(--agree-text-col);
-    box-shadow:     ;
+    box-shadow: none;
 }
 
-#agree-check:checked + label {
+#agree-check:checked+label {
     color: var(--agree-text-col);
 }
 
@@ -1047,6 +1154,7 @@ progress::-webkit-progress-value {
     font-size: 90%;
     color: gray;
 }
+
 /* ToS Checkbox + License props end here */
 
 #submit-area {
@@ -1061,7 +1169,8 @@ progress::-webkit-progress-value {
 }
 
 /* Upload result + file-count - <output> */
-#upload-result, #file-count {
+#upload-result,
+#file-count {
     text-align: center;
     display: inline-block;
     width: 100%;
@@ -1070,6 +1179,7 @@ progress::-webkit-progress-value {
 
     margin: 0.1rem 0 0;
 }
+
 /* Upload form props end here */
 /* ==================
  Cont-dialog props end here
@@ -1090,7 +1200,8 @@ footer {
     border-radius: 0.4rem;
 }
 
-#footer-links, #footer-lic-icons {
+#footer-links,
+#footer-lic-icons {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1101,7 +1212,8 @@ footer {
     margin: 1.2rem 0 -0.5rem 0;
 }
 
-#footer-links a, #footer-lic-icons a {
+#footer-links a,
+#footer-lic-icons a {
     display: flex;
     margin: clamp(0.1rem, 0.2rem, 1dvw) clamp(0.2rem, 0.4rem, 1dvw);
 }
@@ -1125,6 +1237,7 @@ footer p a img {
     width: 10.6725vw;
     height: 6vw;
 }
+
 /* footer props end here */
 
 /* Related to media-rules / JS toggles */
@@ -1152,6 +1265,10 @@ footer p a img {
     transform: translateX(calc(-1 * var(--side-current-width)));
 }
 
+.hide-side-model-area #floating-banners {
+    margin-left: 0.4rem;
+}
+
 /* New pic added while uploading */
 .added-pic {
     background-size: cover;
@@ -1162,7 +1279,7 @@ footer p a img {
 }
 
 /* Blur when nav is open */
-.blur > *:not(nav) {
+.blur>*:not(nav) {
     filter: var(--default-blur);
     pointer-events: none;
     user-select: none;
@@ -1183,7 +1300,8 @@ footer p a img {
     filter: blur(2px);
 }
 
-.blur-form, .blur-form > * {
+.blur-form,
+.blur-form>* {
     pointer-events: none;
     user-select: none;
 }
@@ -1201,7 +1319,7 @@ footer p a img {
 @media screen and (max-width: 768px) {
     body {
         grid-template-areas: 'model'
-                             'info';
+            'info';
         grid-template-columns: unset;
 
         overflow-y: auto;
@@ -1250,6 +1368,7 @@ footer p a img {
     #info {
         padding: 0.4rem;
     }
+
     /* side props end here */
 
     /* model-area */
@@ -1271,12 +1390,14 @@ footer p a img {
     .controls .buttons {
         width: 100%;
     }
+
     /* model-area props end here */
 
     /* dialog props */
     #cont-inner {
         width: 84dvw;
     }
+
     /* dialog props end here */
 
     /* nav */
@@ -1288,6 +1409,7 @@ footer p a img {
 
         transition: var(--default-transition);
     }
+
     /* nav props end here */
 
     /* footer */
@@ -1299,5 +1421,58 @@ footer p a img {
         width: 10.6725rem;
         height: 6rem;
     }
+
     /* footer props end here */
+}
+
+
+/* NOTE: For GS Viewer */
+/* TODO: Shift this */
+#gs-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#gs-progress-dialog {
+    position: relative;
+    top: -1rem;
+    width: 90%;
+
+    text-align: center;
+
+    color: white;
+    background-color: var(--bg-col);
+
+    border: none;
+}
+
+#gs-progress-indicator-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: red;
+}
+
+#gs-progress-indicator {
+    height: 0.3rem;
+
+    background-color: var(--bg-col);
+    color: var(--progress-bar-col);
+
+    border: none;
+    border-radius: 5px;
+}
+
+#gs-progress-indicator::-webkit-progress-bar {
+    background-color: var(--bg-col);
+    border-radius: 5px;
+}
+
+#gs-progress-indicator::-webkit-progress-value {
+    background-color: var(--progress-bar-col);
+    border-radius: 5px;
+}
+
+#gs-progress-indicator::-moz-progress-bar {
+    background-color: var(--progress-bar-col);
+    border-radius: 5px;
 }

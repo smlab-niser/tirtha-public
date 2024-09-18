@@ -20,6 +20,16 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 ALLOWED_HOSTS = ["localhost", "0.0.0.0", os.getenv("HOST_IP", "127.0.0.1")]  # CHANGEME:
 
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
 # Application definition
 INSTALLED_APPS = [
     "tirtha.apps.TirthaConfig",
@@ -39,9 +49,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PRE_URL = os.getenv("PRE_URL", "")  # CHANGEME: e.g., "/tirtha/"
 
 PROD_DIR = "/var/www/tirtha/prod/"  # Short term storage for current runs # CHANGEME:
-LOG_DIR = f"{PROD_DIR}logs"
 NFS_DIR = "/var/www/tirtha/archive/"  # Long term storage for old runs # CHANGEME: Does not need to use NFS and can be on the same system
 ARCHIVE_ROOT = f"{NFS_DIR}archives"
+LOG_DIR = f"{PROD_DIR}logs"
+LOG_LOCATION = LOG_DIR + "/tirtha.log"
 
 # Static files
 STATICFILES_DIRS = [
@@ -64,10 +75,31 @@ ADMIN_MAIL = os.getenv("DEFAULT_USER_MAIL", "tadmin@example.com")  # CHANGEME:
 
 # Sign in with Google
 GOOGLE_LOGIN = os.getenv("GOOGLE_LOGIN", "False").lower() == "true"
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")  # CHANGEME: https://developers.google.com/identity/gsi/web/guides/overview
+GOOGLE_CLIENT_ID = os.getenv(
+    "GOOGLE_CLIENT_ID", ""
+)  # CHANGEME: https://developers.google.com/identity/gsi/web/guides/overview
+
+GOOGLE_CLIENT_SECRET = os.getenv(
+    "GOOGLE_CLIENT_SECRET", ""
+)  # CHANGEME: https://developers.google.com/identity/gsi/web/guides/overview
 COOKIE_EXPIRE_TIME = 3600  # 1 hour
-SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_SAMESITE = "Lax"  # NOTE: Lax needed for authlib | See: https://docs.djangoproject.com/en/5.1/ref/settings/#std-setting-SESSION_COOKIE_SAMESITE
 SESSION_COOKIE_SECURE = True if GOOGLE_LOGIN else False
+CSRF_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_PRELOAD = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year # NOTE: If sometime HTTPS is disabled, this should be removed
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+# OAuth app config
+OAUTH_CONF = {
+    "OAUTH2_CLIENT_ID": GOOGLE_CLIENT_ID,
+    "OAUTH2_CLIENT_SECRET": GOOGLE_CLIENT_SECRET,
+    "OAUTH2_META_URL": "https://accounts.google.com/.well-known/openid-configuration",
+    "OAUTH2_SCOPE": "openid profile email",
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -91,12 +123,16 @@ DATABASES = {
 
 # django-dbbackup
 DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
-DBBACKUP_STORAGE_OPTIONS = {"location": f"{NFS_DIR}/db_backups/"}  # CHANGEME: To store backups
+DBBACKUP_STORAGE_OPTIONS = {
+    "location": f"{NFS_DIR}/db_backups/"
+}  # CHANGEME: To store backups
 
 ## RabbitMQ + Celery
 RMQ_USER = os.getenv("RMQ_USER", "rmqtirthauser")  # CHANGEME:
 RMQ_PWD = os.getenv("RMQ_PWD", "rmqtirthapwd")  # CHANGEME:
-RMQ_VHOST = os.getenv("RMQ_VHOST", "rmqtirtha")  # CHANGEME: NOTE: You can also use the default vhost ("/").
+RMQ_VHOST = os.getenv(
+    "RMQ_VHOST", "rmqtirtha"
+)  # CHANGEME: NOTE: You can also use the default vhost ("/").
 CELERY_BROKER_URL = f"pyamqp://{RMQ_USER}:{RMQ_PWD}@localhost/{RMQ_VHOST}"
 CELERY_TASK_ACKS_LATE = True  # To prevent tasks from being lost
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Disable prefetching
@@ -106,6 +142,12 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
 
 ## Worker-related settings
+# GS
+GS_MAX_ITER = 20_000
+ALPHA_CULL_THRESH = 0.005  # Threshold to delete translucent gaussians - lower values remove more (usually better quality)
+CULL_POST_DENS = False  # Disable culling after 15K steps
+
+# MR
 # NOTE: Defaulting to Meshroom 2021 for now. 2023 will require further changes
 ALICEVISION_DIRPATH = BASE_DIR / "bin21"
 NSFW_MODEL_DIRPATH = (
@@ -115,16 +157,19 @@ MANIQA_MODEL_FILEPATH = BASE_DIR / "nn_models/MANIQA/ckpt_kadid10k.pt"
 OBJ2GLTF_PATH = "obj2gltf"  # NOTE: Ensure the binary is on system PATH
 GLTFPACK_PATH = "gltfpack"  # NOTE: Ensure the binary is on system PATH
 MESHOPS_MIN_IMAGES = 10  # CHANGEME: Minimum number of images required to run meshops
-MESHOPS_CONTRIB_DELAY = (
-    0.005  # 18 seconds for testing | Keep >= 1 hour(s) - CHANGEME: time to wait before running meshops after a new contribution
-)
-FILE_UPLOAD_MAX_MEMORY_SIZE = (
-    10485760  # 10 MiB (each file max size - post compression)
-)
+MESHOPS_CONTRIB_DELAY = 0.005  # 18 seconds for testing | Keep >= 1 hour(s) - CHANGEME: time to wait before running meshops after a new contribution
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MiB (each file max size - post compression)
 DATA_UPLOAD_MAX_NUMBER_FILES = 1_000  # CHANGEME: Max number of files per upload
 
 ## ARK settings
-BASE_URL = os.getenv("BASE_URL", f"http://{os.getenv('HOST_IP', '0.0.0.0')}:{os.getenv('GUNICORN_PORT', '8000')}")  # CHANGEME: NOTE: No trailing "/" | e.g., http://127.0.0.1
-ARK_NAAN = int(os.getenv("ARK_NAAN", "999999"))  # CHANGEME: Integer | NOTE: NAAN - 999999 does not exist; CHECK: https://arks.org/about/testing-arks/
-ARK_SHOULDER = os.getenv("ARK_SHOULDER", "/a")  # CHANGEME: | CHECK: https://arks.org/about/testing-arks/
+BASE_URL = os.getenv(
+    "BASE_URL",
+    f"http://{os.getenv('HOST_IP', '0.0.0.0')}:{os.getenv('GUNICORN_PORT', '8000')}",
+)  # CHANGEME: NOTE: No trailing "/" | e.g., http://127.0.0.1
+ARK_NAAN = int(
+    os.getenv("ARK_NAAN", "999999")
+)  # CHANGEME: Integer | NOTE: NAAN - 999999 does not exist; CHECK: https://arks.org/about/testing-arks/
+ARK_SHOULDER = os.getenv(
+    "ARK_SHOULDER", "/a"
+)  # CHANGEME: | CHECK: https://arks.org/about/testing-arks/
 FALLBACK_ARK_RESOLVER = "https://n2t.net"
