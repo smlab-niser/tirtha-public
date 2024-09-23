@@ -2,6 +2,10 @@
 Utility classes & functions
 
 """
+
+import psutil
+import subprocess as sp
+
 from logging import DEBUG, FileHandler, Formatter, Logger
 from pathlib import Path
 from typing import Union
@@ -13,7 +17,9 @@ class Logger(Logger):
 
     """
 
-    def __init__(self, name: str, log_path: Union[str, Path], level: str = DEBUG):
+    def __init__(
+        self, name: str, log_path: Union[str, Path], level: str = DEBUG
+    ) -> None:
         super().__init__(name, level)
 
         # Set up logging
@@ -28,3 +34,37 @@ class Logger(Logger):
         )
         fh.setFormatter(formatter)
         self.addHandler(fh)
+
+
+def _sysinfo() -> dict:
+    """
+    Get system info (CPU, RAM, GPU)
+
+    """
+    # CPU + RAM
+    cpu_util = psutil.cpu_percent(interval=0.5, percpu=True)
+    ram = psutil.virtual_memory()
+    ram = {
+        "total": f"{ram.total / 2**30:.2f} GB",
+        "available": f"{ram.available / 2**30:.2f} GB",
+        "used": f"{ram.used / 2**30:.2f} GB",
+        "free": f"{ram.free / 2**30:.2f} GB",
+    }
+    c_details = {
+        "cpu_util": cpu_util,
+        "mem": ram,
+    }
+
+    # GPU Details
+    cmd = "nvidia-smi --query-gpu=driver_version,pstate,temperature.gpu,utilization.gpu,memory.free,memory.used,memory.total --format=csv"
+    res = sp.check_output(cmd.split()).decode("ascii").split("\n")[:-1]
+    labels = res[0].split(", ")
+    vals = res[1].split(", ")
+    vdetails = dict(zip(labels, vals))
+
+    res = {
+        "cpu": c_details,
+        "gpu": vdetails,
+    }
+
+    return res

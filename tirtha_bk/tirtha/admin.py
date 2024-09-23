@@ -1,9 +1,24 @@
+import logging
+from django.conf import settings
 from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import mark_safe
 from django.utils.translation import ngettext
 
+# Local imports
 from .models import ARK, Contribution, Contributor, Image, Mesh, Run
+from .tasks import post_save_contrib_imageops, recon_runner_task
+
+
+# Logger setup
+# Logging
+ADMIN_LOG_LOCATION = settings.ADMIN_LOG_LOCATION
+
+logging.basicConfig(
+    level=logging.NOTSET,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename=ADMIN_LOG_LOCATION,
+)
 
 
 class ContributionsInline(admin.TabularInline):
@@ -355,6 +370,11 @@ class ContributionAdmin(admin.ModelAdmin):
 
     mesh_id_verbose.short_description = "Mesh ID (Verbose)"
 
+    def mesh_name(self, obj):
+        return obj.mesh.name
+
+    mesh_name.short_description = "Mesh Name"
+
     def image_count(self, obj):
         return obj.images.count()
 
@@ -379,7 +399,64 @@ class ContributionAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-    actions = [mark_processed]
+    @admin.action(
+        description="Trigger ImageOps & all reconstructions for selected contributions"
+    )
+    def trigger_imageops(self, request, queryset):
+        updated = queryset.update(processed=False)
+        for obj in queryset:
+            post_save_contrib_imageops.delay(
+                str(obj.ID), recons_type="all"
+            )  # This triggers ImageOps, which in turn triggers GSOPs or MeshOps
+            logging.info(
+                f"ADMIN -- ImageOps & all reconstructions successfully triggered for {obj.ID}."
+            )
+        self.message_user(
+            request,
+            ngettext(
+                "ImageOps & all reconstructions successfully triggered for %d contribution.",
+                "ImageOps & all reconstructions successfully triggered for %d contributions.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Trigger aVOps for selected contributions")
+    def trigger_aVOps(self, request, queryset):
+        count = queryset.count()
+        for obj in queryset:
+            recon_runner_task.delay(str(obj.ID), recons_type="aV")
+            logging.info(f"ADMIN -- aVOps successfully triggered for {obj.ID}.")
+        self.message_user(
+            request,
+            ngettext(
+                "aVOps successfully triggered for %d contribution.",
+                "aVOps successfully triggered for %d contributions.",
+                count,
+            )
+            % count,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Trigger GSOps for selected contributions")
+    def trigger_GSOps(self, request, queryset):
+        count = queryset.count()
+        for obj in queryset:
+            recon_runner_task.delay(str(obj.ID), recons_type="GS")
+            logging.info(f"ADMIN -- GSOps successfully triggered for {obj.ID}.")
+        self.message_user(
+            request,
+            ngettext(
+                "GSOps successfully triggered for %d contribution.",
+                "GSOps successfully triggered for %d contributions.",
+                count,
+            )
+            % count,
+            messages.SUCCESS,
+        )
+
+    actions = [mark_processed, trigger_imageops, trigger_aVOps, trigger_GSOps]
     readonly_fields = (
         "ID",
         "mesh",
@@ -407,10 +484,11 @@ class ContributionAdmin(admin.ModelAdmin):
     list_display = (
         "ID",
         "contributed_at",
-        "mesh_id_verbose",
+        "mesh_name",
         "contributor",
         "image_count",
         "images_good_count",
+        "processed_at",
         "processed",
     )
     list_per_page = 50

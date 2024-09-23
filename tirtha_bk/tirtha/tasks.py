@@ -9,16 +9,25 @@ from .utils import Logger
 cel_logger = get_task_logger(__name__)
 LOG_DIR = Path(settings.LOG_DIR)
 MESHOPS_CONTRIB_DELAY = settings.MESHOPS_CONTRIB_DELAY  # hours
-BACKUP_INTERVAL = crontab(minute=0, hour=0, day_of_week=0)  # Every 1 week at 00:00 on Sunday
+BACKUP_INTERVAL = crontab(
+    minute=0, hour=0, day_of_week=0
+)  # Every 1 week at 00:00 on Sunday
 DBCLEANUP_INTERVAL = crontab(
     minute=0, hour=0, day_of_week=0
 )  # Every week at 00:00 on Sunday
 
 
 @app.task
-def post_save_contrib_imageops(contrib_id: str) -> None:
+def post_save_contrib_imageops(contrib_id: str, recons_type: str = "all") -> None:
     """
     Triggers `ImageOps`, when a `Contribution` instance is created & saved.
+
+    Parameters
+    ----------
+    contrib_id : str
+        The `Contribution` instance's UUID.
+    recons_type : str, optional
+        The reconstruction type, by default "all" ["GS", "aV"].
 
     """
 
@@ -48,25 +57,38 @@ def post_save_contrib_imageops(contrib_id: str) -> None:
         f"post_save_contrib_imageops: Will trigger reconstruction pipelines for {contrib_id} after {MESHOPS_CONTRIB_DELAY} hours..."
     )
     recon_runner_task.apply_async(
-        args=(contrib_id,), countdown=MESHOPS_CONTRIB_DELAY * 60 * 60
+        args=(
+            contrib_id,
+            recons_type,
+        ),
+        countdown=MESHOPS_CONTRIB_DELAY * 60 * 60,
     )
 
 
 @app.task
-def recon_runner_task(contrib_id: str) -> None:
+def recon_runner_task(contrib_id: str, recons_type: str = "all") -> None:
     """
     Triggers `MeshOps` & `GSOps`, when a `Run` instance is created.
 
+    Parameters
+    ----------
+    contrib_id : str
+        The `Contribution` instance's UUID.
+    recons_type : str, optional
+        The reconstruction type, by default "all" ["GS", "aV"].
+
     """
+    ops = ["GS", "aV"] if recons_type == "all" else [recons_type]
+
     from .workers import prerun_check, ops_runner
 
     cel_logger.info(
         f"recon_runner_task: Running prerun checks for contrib_id: {contrib_id}..."
     )
-    chk, msg = prerun_check(contrib_id)
+    chk, msg = prerun_check(contrib_id, recons_type)
     cel_logger.info(f"recon_runner_task: {contrib_id} - {msg}")
     if chk:
-        for op in ["GS", "aV"]:
+        for op in ops:
             cel_logger.info(
                 f"recon_runner_task: Triggering {op}Ops for contrib_id: {contrib_id}."
             )

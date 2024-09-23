@@ -3,6 +3,7 @@ Python API for AliceVision (Meshroom)
 For Internal Use
 
 """
+
 from dataclasses import dataclass, field
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
@@ -15,12 +16,14 @@ from subprocess import (
     check_output,
 )
 from time import sleep
-from typing import Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Tuple, Union
 
 # Local imports
-from .utils import Logger
+from .utils import Logger, _sysinfo
 
 # NOTE: Tweak as needed
+MAX_RETRIES = 3  # For all nodes, except cameraInit
+RETRY_INTERVAL = 2  # seconds
 CAMERAINIT_MAX_RETRIES = 5
 CAMERAINIT_RETRY_INTERVAL = 1  # seconds
 CAMERAINIT_MAX_RUNTIME = 2  # seconds
@@ -37,9 +40,9 @@ class AliceVision:
     logger: Logger  # Logger object from the calling script
 
     # Optional
-    verboseLevel: Optional[
-        str
-    ] = "info"  # among "trace", "debug", "info", "warning", "error", "fatal" (decreasing verbosity)
+    verboseLevel: Optional[str] = (
+        "info"  # among "trace", "debug", "info", "warning", "error", "fatal" (decreasing verbosity)
+    )
     descPresets: Optional[Dict] = field(
         default_factory=lambda: {
             "Preset": "normal",
@@ -207,7 +210,7 @@ class AliceVision:
             raise RuntimeError(msg)
 
     @staticmethod  # NOTE: Won't be picklable as a regular method
-    def _serialRunner(cmd: str, log_file: Path):
+    def _serialRunner(cmd: str, log_file: Path) -> None:
         """
         Run a command serially and log the output
 
@@ -226,18 +229,47 @@ class AliceVision:
         """
         logger = Logger(log_file.stem, log_file.parent)
         log_path = Path(log_file).resolve()
-        try:
-            AliceVision.logger.info(
-                f"Starting command execution. Log file: {log_path}."
+        for i in range(MAX_RETRIES):
+            try:
+                AliceVision.logger.info(
+                    f"Starting command execution. Log file: {log_path}."
+                )
+                logger.info(f"Command:\n{cmd}")
+                output = check_output(cmd, shell=True, stderr=STDOUT)
+                logger.info(f"Output:\n{output.decode().strip()}")
+                AliceVision.logger.info(
+                    f"Finished command execution after {i} retries. Log file: {log_path}."
+                )
+                break
+            except CalledProcessError as error:
+                err = error.output.decode().strip()
+                sysinfo = _sysinfo()
+                logger.error(f"\n{err}")
+                logger.error(f"System Info:\n{sysinfo}")
+                AliceVision.logger.error(
+                    f"Error in command execution for {logger.name} for Try {i} / {MAX_RETRIES}. Check log file: {log_path}."
+                )
+                AliceVision.logger.error(f"System Info:\n{sysinfo}")
+                logger.error(f"Retrying in {RETRY_INTERVAL}s...")
+                AliceVision.logger.error(f"Retrying in {RETRY_INTERVAL}s...")
+                if i + 1 == MAX_RETRIES:  # If last try and still fails, raise error
+                    error.add_note(
+                        f"{logger.name} failed for Try {i} / {MAX_RETRIES}. Check log file: {log_path}."
+                    )
+                    AliceVision.state = {
+                        "error": True,
+                        "source": logger.name,
+                        "log_file": log_path,
+                    }
+                    raise error
+                sleep(RETRY_INTERVAL)
+        else:
+            logger.error(
+                f"{logger.name} command did not finish after {MAX_RETRIES} retries."
             )
-            logger.info(f"Command:\n{cmd}")
-            output = check_output(cmd, shell=True, stderr=STDOUT)
-            logger.info(f"Output:\n{output.decode().strip()}")
-            AliceVision.logger.info(
-                f"Finished command execution. Log file: {log_path}."
+            AliceVision.logger.error(
+                f"{logger.name} command did not finish after {MAX_RETRIES} retries."
             )
-        except CalledProcessError as error:
-            logger.error(f"\n{error.output.decode().strip()}")
             AliceVision.logger.error(
                 f"Error in command execution for {logger.name}. Check log file: {log_path}."
             )
@@ -246,12 +278,8 @@ class AliceVision:
                 "source": logger.name,
                 "log_file": log_path,
             }
-            error.add_note(
-                f"{logger.name} failed. Check log file: {log_path}."
-            )  # NOTE: Won't appear in VSCode's Jupyter Notebook (May 2024)
-            raise error
 
-    def _parallelRunner(self, cmd: str, log_path: Path, caller: str):
+    def _parallelRunner(self, cmd: str, log_path: Path, caller: str) -> None:
         """
         Run a command in parallel and log the output
 
@@ -276,7 +304,7 @@ class AliceVision:
         with Pool(self.cpu_count) as pool:
             pool.starmap(self._serialRunner, cmds_and_logs)  # NOTE: Blocking call
 
-    def _timeoutRunner(self, cmd: Iterable, timeout: int):
+    def _timeoutRunner(self, cmd: Iterable, timeout: int) -> str:
         """
         Run a command with a timeout
         NOTE: Mainly for cameraInit
@@ -321,7 +349,7 @@ class AliceVision:
         inp: Union[str, Path],
         alt: Optional[Union[str, Path]] = None,
         arg: Optional[str] = "-i",
-    ):
+    ) -> Tuple[str]:
         """
         Check if the input file exists and updates the command with the input file path.
 
@@ -351,7 +379,7 @@ class AliceVision:
 
         return cmd, inp
 
-    def _add_desc_presets(self, cmd: str, addAll: bool = False):
+    def _add_desc_presets(self, cmd: str, addAll: bool = False) -> str:
         """
         Add describer presets to the command.
 
@@ -375,7 +403,7 @@ class AliceVision:
 
     def _check_value(
         self, cmd: str, name: str, value: Union[int, float], rng: Iterable
-    ):
+    ) -> str:
         """
         Checks if value is in provided range.
 
@@ -403,7 +431,7 @@ class AliceVision:
 
         return cmd
 
-    def cameraInit(self):
+    def cameraInit(self) -> None:
         """
         Initializes the camera intrinsics from a set of images and
         save the result in a sfmData file, named `cameraInit.sfm`.
@@ -447,7 +475,7 @@ class AliceVision:
 
                 # Check if cameraInit.sfm is created
                 if not out_file.exists():
-                    logger.debug(
+                    logger.error(
                         f"cameraInit did not create cameraInit.sfm. Retrying in {ret_int}s..."
                     )
                     sleep(ret_int)
@@ -460,12 +488,17 @@ class AliceVision:
                 break
             except CalledProcessError as error:
                 # NOTE: Logging, but continuing execution till CAMERAINIT_MAX_RETRIES is reached
+                sysinfo = _sysinfo()
                 logger.error(f"\n{error.output.strip()}")
+                logger.error(f"System Info:\n{sysinfo}")
                 self.logger.error(
                     f"Error in command execution for {logger.name}. Check log file: {log_path}."
                 )
+                self.logger.error(f"System Info:\n{sysinfo}")
             except TimeoutExpired:
-                logger.debug(
+                sysinfo = _sysinfo()
+                logger.error(f"System Info:\n{sysinfo}")
+                logger.error(
                     f"cameraInit timed out {i + 1} time(s). Retrying in {ret_int}s..."
                 )
                 sleep(ret_int)
@@ -485,7 +518,7 @@ class AliceVision:
                 "log_file": log_path,
             }
 
-    def featureExtraction(self, inputSfm: Optional[Union[str, Path]] = None):
+    def featureExtraction(self, inputSfm: Optional[Union[str, Path]] = None) -> None:
         """
         Extracts features from a set of images using `aliceVision_featureExtraction`.
         Default location for the output file is `self.cache_dir`/02_featureExtraction/cameraInit.sfm.
@@ -516,7 +549,7 @@ class AliceVision:
         cmd = self._add_desc_presets(cmd, addAll=True)
 
         # Add other arguments
-        cmd += f" --forceCpuExtraction 0 --maxThreads 0"  # NOTE: maxThreads 0 means "automatic"
+        cmd += " --forceCpuExtraction 0 --maxThreads 0"  # NOTE: maxThreads 0 means "automatic"
 
         self._parallelRunner(cmd, out_path, "featureExtraction")
 
@@ -524,7 +557,7 @@ class AliceVision:
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         featuresFolders: Optional[Union[str, Path]] = None,
-    ):
+    ) -> None:
         """
         Matches features between images using `aliceVision_featureMatching`.
 
@@ -570,7 +603,7 @@ class AliceVision:
         inputSfm: Optional[Union[str, Path]] = None,
         featuresFolders: Optional[Union[str, Path]] = None,
         imagePairsList: Optional[Union[str, Path]] = None,
-    ):
+    ) -> None:
         """
         Matches features between images using `aliceVision_featureMatching`.
 
@@ -618,7 +651,7 @@ class AliceVision:
         cmd = self._add_desc_presets(cmd)
 
         # Add other arguments
-        cmd += f" --guidedMatching 1"  # NOTE: guidedMatching set to True
+        cmd += " --guidedMatching 1"  # NOTE: guidedMatching set to True
 
         self._parallelRunner(cmd, out_path, "featureMatching")
 
@@ -627,7 +660,7 @@ class AliceVision:
         inputSfm: Optional[Union[str, Path]] = None,
         featuresFolders: Optional[Union[str, Path]] = None,
         matchesFolders: Optional[Union[str, Path]] = None,
-    ):
+    ) -> None:
         """
         Computes structure from motion using `aliceVision_incrementalSfM`.
 
@@ -683,11 +716,11 @@ class AliceVision:
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         outputViewsAndPoses: Optional[Union[str, Path]] = None,
-        transformation: Optional[str] = None
+        transformation: Optional[str] = None,
         # applyRotation: Optional[bool], # Maybe in general API
         # applyScale: Optional[bool],
         # applyTranslation: Optional[bool]
-    ):
+    ) -> None:
         """
         Transforms the SfM data using `aliceVision_utils_sfmTransform`.
 
@@ -748,7 +781,7 @@ class AliceVision:
         outputViewsAndPoses: Optional[Union[str, Path]] = None,
         rotation: Optional[Iterable[float]] = [0.0, 0.0, 0.0],
         orientMesh: Optional[bool] = False,
-    ):
+    ) -> None:
         """
         Rotates the SfM data using `aliceVision_utils_sfmTransform`.
 
@@ -794,7 +827,7 @@ class AliceVision:
                     f"Rotation must be between 0 and 360 degrees, got {r}."
                 )
         rx, ry, rz = rotation
-        transformation = f"0,0,0,{rx},{ry},{rz},1" if orientMesh else f"0,0,0,0,0,0,1"
+        transformation = f"0,0,0,{rx},{ry},{rz},1" if orientMesh else "0,0,0,0,0,0,1"
         cmd += f" --method manual --manualTransform {transformation}"
 
         # Check & add outputViewsAndPoses
@@ -812,7 +845,7 @@ class AliceVision:
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         # imagesFolders: Optional[Union[str, Path]], # Maybe in general API
-    ):
+    ) -> None:
         """
         Prepares a dense scene using `aliceVision_prepareDenseScene`.
 
@@ -843,7 +876,7 @@ class AliceVision:
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         imagesFolders: Optional[Union[str, Path]] = None,
-    ):
+    ) -> None:
         """
         Computes depth maps using `aliceVision_depthMapEstimation`.
 
@@ -880,7 +913,7 @@ class AliceVision:
         )
 
         # Add other arguments
-        cmd += f" --nbGPUs 0"  # NOTE: `nbGPUs` = 0 means, use all available GPUs
+        cmd += " --nbGPUs 0"  # NOTE: `nbGPUs` = 0 means, use all available GPUs
 
         self._parallelRunner(cmd, out_path, "depthMapEstimation")
 
@@ -888,7 +921,7 @@ class AliceVision:
         self,
         inputSfm: Optional[Union[str, Path]] = None,
         depthMapsFolder: Optional[Union[str, Path]] = None,
-    ):
+    ) -> None:
         """
         Filters depth maps using `aliceVision_depthMapFiltering`.
 
@@ -935,7 +968,7 @@ class AliceVision:
         # maxPoints: Optional[int] = 0,
         # maxInputPoints: Optional[int] = 0,
         # seed: Optional[int] = 0
-    ):
+    ) -> None:
         """
         Computes a mesh using `aliceVision_meshing`.
 
@@ -991,7 +1024,7 @@ class AliceVision:
         self,
         inputMesh: Optional[Union[str, Path]] = None,
         keepLargestMeshOnly: Optional[Union[int, bool]] = 1,
-    ):
+    ) -> None:
         """
         Filters a mesh using `aliceVision_meshFiltering`.
 
@@ -1035,7 +1068,7 @@ class AliceVision:
         # Maybe in general API
         # nbVertices: Optional[int] = 0,
         # maxVertices: Optional[int] = 0,
-    ):
+    ) -> None:
         """
         Decimates a mesh using `aliceVision_meshDecimate`.
 
@@ -1081,7 +1114,7 @@ class AliceVision:
     #     # Maybe in general API
     #     # nbVertices: Optional[int] = 0,
     #     # maxVertices: Optional[int] = 0,
-    # ):
+    # ) -> None:
     #     """
     #     Resample a mesh.
 
@@ -1137,7 +1170,7 @@ class AliceVision:
         inputMesh: Optional[Union[str, Path]] = None,
         lmd: Optional[float] = 2.0,
         eta: Optional[float] = 1.5,
-    ):
+    ) -> None:
         """
         Denoises a mesh using `aliceVision_meshDenoising`.
         NOTE: Larger values of lambda or eta result in smoother meshes
@@ -1192,8 +1225,8 @@ class AliceVision:
         cmds.append(cmd)
 
         logs = [
-            out_path / f"meshDenoising.deci.log",
-            out_path / f"meshDenoising.raw.log",
+            out_path / "meshDenoising.deci.log",
+            out_path / "meshDenoising.raw.log",
         ]
         cmds_and_logs = list(zip(cmds, logs))
         with Pool(2) as pool:
@@ -1211,7 +1244,7 @@ class AliceVision:
         # imagesFolder: Optional[Union[str, Path]] = None, # NOTE: Replaces `inputDenseSfm` if used
         # downscale: Optional[int] = 1,
         # fillHoles: Optional[Union[int, bool]] = 1
-    ):
+    ) -> None:
         """
         Textures a mesh using `aliceVision_texturing`.
 
@@ -1285,7 +1318,7 @@ class AliceVision:
         cmd, _ = self._check_input(cmd, inputMesh, alt=alt, arg="--inputMesh")
         cmds.append(cmd)
 
-        logs = [out_path / f"texturing.deci.log", out_path / f"texturing.raw.log"]
+        logs = [out_path / "texturing.deci.log", out_path / "texturing.raw.log"]
         cmds_and_logs = list(zip(cmds, logs))
         with Pool(2) as pool:
             pool.starmap(self._serialRunner, cmds_and_logs)
@@ -1297,7 +1330,7 @@ class AliceVision:
         rotation: Optional[Iterable[float]] = [0.0, 0.0, 0.0],
         orientMesh: Optional[bool] = False,
         estimateSpaceMinObservationAngle: Optional[int] = 30,
-    ):
+    ) -> None:
         """
         Runs all the steps with default parameters.
 

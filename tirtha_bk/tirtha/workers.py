@@ -31,6 +31,7 @@ NSFW_MODEL_DIRPATH = settings.NSFW_MODEL_DIRPATH
 MANIQA_MODEL_FILEPATH = settings.MANIQA_MODEL_FILEPATH
 OBJ2GLTF_PATH = settings.OBJ2GLTF_PATH
 GLTFPACK_PATH = settings.GLTFPACK_PATH
+COLMAP_PATH = settings.COLMAP_PATH
 BASE_URL = settings.BASE_URL
 ARK_NAAN = settings.ARK_NAAN
 ARK_SHOULDER = settings.ARK_SHOULDER
@@ -654,6 +655,8 @@ class GSOps(BaseOps):
             + str(self.imageDir)
             + " --output-dir "
             + str(output_path)
+            + " --colmap-cmd "
+            + str(COLMAP_PATH)
         )
         self._serialRunner(cmd, log_path)
         self.logger.info("Processed data for Splatfacto.")
@@ -686,7 +689,7 @@ class GSOps(BaseOps):
             + "> "
             + str(sf_train_log_path)
         )
-        self.logger.info("Check log file: {sf_train_log_path}.")
+        self.logger.info(f"Check log file: {sf_train_log_path}.")
         self._serialRunner(cmd, log_path)
         self.logger.info("Created GS using Splatfacto.")
 
@@ -745,7 +748,7 @@ Tasks
 """
 
 
-def prerun_check(contrib_id: str) -> tuple[bool, str]:
+def prerun_check(contrib_id: str, recons_type: str) -> tuple[bool, str]:
     """
     Checks if a contribution is ready for processing.
 
@@ -753,6 +756,9 @@ def prerun_check(contrib_id: str) -> tuple[bool, str]:
     ----------
     contrib_id : str
         Contribution ID
+    recons_type : str
+        Reconstruction type
+        Options: 'GS', 'aV'
 
     Returns
     -------
@@ -775,7 +781,12 @@ def prerun_check(contrib_id: str) -> tuple[bool, str]:
             f"Not enough images to process mesh. Only {images_count} good images found.",
         )
     if mesh.reconstructed_at and (contrib.processed_at < mesh.reconstructed_at):
-        return False, "Mesh already reconstructed using current contribution."
+        runs = mesh.runs.filter(status="Archived").order_by("-ended_at")
+        if runs and (runs[0].kind == recons_type):
+            return (
+                False,
+                f"Mesh already reconstructed using {recons_type} using current contribution.",
+            )
 
     return True, "Mesh ready for processing."
 

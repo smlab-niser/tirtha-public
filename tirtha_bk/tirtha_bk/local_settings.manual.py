@@ -53,6 +53,7 @@ NFS_DIR = "/var/www/tirtha/archive/"  # Long term storage for old runs # CHANGEM
 ARCHIVE_ROOT = f"{NFS_DIR}archives"
 LOG_DIR = f"{PROD_DIR}logs"
 LOG_LOCATION = LOG_DIR + "/tirtha.log"
+ADMIN_LOG_LOCATION = LOG_LOCATION
 
 # Static files
 STATICFILES_DIRS = [
@@ -89,7 +90,9 @@ CSRF_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_SECONDS = 31536000  # 1 year # NOTE: If sometime HTTPS is disabled, this should be removed
+SECURE_HSTS_SECONDS = (
+    31536000  # 1 year # NOTE: If sometime HTTPS is disabled, this should be removed
+)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
@@ -143,6 +146,7 @@ CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
 
 ## Worker-related settings
 # GS
+COLMAP_PATH = "colmap"  # CHANGEME:
 GS_MAX_ITER = 20_000
 ALPHA_CULL_THRESH = 0.005  # Threshold to delete translucent gaussians - lower values remove more (usually better quality)
 CULL_POST_DENS = False  # Disable culling after 15K steps

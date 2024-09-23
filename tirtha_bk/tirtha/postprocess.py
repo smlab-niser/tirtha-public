@@ -33,7 +33,6 @@ Licensed under the MIT License
 #     ("rot_3", "f4"),
 # ]
 
-import signal
 import numpy as np
 from collections import deque
 from multiprocessing import Pool, cpu_count
@@ -45,14 +44,6 @@ from io import BytesIO
 
 # Local imports
 from .utils import Logger
-
-
-def _init_worker():
-    """
-    Ignore SIGINT signals in worker processes.
-
-    """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 class PostProcess:
@@ -67,8 +58,8 @@ class PostProcess:
     def __init__(self, input_path, output_path, runDir, log_path):
         self.input_path = input_path
         self.output_path = output_path
-        self.dens_filt_args = [1, 0.3]  # [voxel_size, thresh_percen]
-        self.rem_float_args = [25, 1.0]  # [k, threshold_factor]
+        self.dens_filt_args = [1, 0.32]  # [voxel_size, thresh_percen]
+        self.rem_float_args = [25, 10.5]  # [k, threshold_factor]
 
         self.runDir = runDir
         self.log_path = log_path
@@ -81,6 +72,8 @@ class PostProcess:
         # Load the input `.ply` file
         self.data = PlyData.read(input_path)["vertex"].data
         self.logger.info(f"Number of vertices in the header: {len(self.data)}")
+
+        self.num_cores = cpu_count() // 2
 
     def run_ops(self):
         """
@@ -95,9 +88,9 @@ class PostProcess:
             thresh_percen=float(thresh_percen),
         )
 
-        # # Remove floaters TODO: FIXME: This is unreasonably slow + Density filtering does a good job!
-        # k, threshold_factor = self.rem_float_args
-        # self.remove_floaters(k=int(k), threshold_factor=float(threshold_factor))
+        # Remove floaters
+        k, threshold_factor = self.rem_float_args
+        self.remove_floaters(k=int(k), threshold_factor=float(threshold_factor))
 
         # Convert the filtered `.ply` file to `.splat` format
         self.run_convert()
@@ -199,37 +192,66 @@ class PostProcess:
         num_chunks = (num_vertices + chunk_size - 1) // chunk_size
         masks = []
 
-        num_cores = max(1, cpu_count() - 1)  # Leaves one core free
-        with Pool(processes=num_cores, initializer=_init_worker) as pool:
-            for i in range(num_chunks):
-                start_idx = i * chunk_size
-                end_idx = min(
-                    start_idx + chunk_size, num_vertices
-                )  # Avoid going out of bounds
-                chunk_coords = np.vstack(
-                    (
-                        vertices["x"][start_idx:end_idx],
-                        vertices["y"][start_idx:end_idx],
-                        vertices["z"][start_idx:end_idx],
+        self.logger.info(
+            f"remove_floaters -- Pool -- Mapping knn_worker to {num_chunks} chunks."
+        )
+
+        with Pool(processes=self.num_cores) as pool:
+            try:
+                for i in range(num_chunks):
+                    self.logger.info(
+                        f"remove_floaters -- Pool -- Mapping knn_worker to chunk {i}."
                     )
-                ).T
 
-                # Compute k-NearestNeighbors for the chunk
-                nbrs = NearestNeighbors(n_neighbors=k + 1, algorithm="ball_tree").fit(
-                    chunk_coords
-                )
-                avg_distances = pool.map(
-                    self.knn_worker, [(coord, nbrs, k) for coord in chunk_coords]
-                )
+                    start_idx = i * chunk_size
+                    end_idx = min(
+                        start_idx + chunk_size, num_vertices
+                    )  # Avoid going out of bounds
+                    chunk_coords = np.vstack(
+                        (
+                            vertices["x"][start_idx:end_idx],
+                            vertices["y"][start_idx:end_idx],
+                            vertices["z"][start_idx:end_idx],
+                        )
+                    ).T
 
-                # Calculate the threshold for removal based on the mean and standard deviation of the average distances
-                threshold = np.mean(avg_distances) + threshold_factor * np.std(
-                    avg_distances
-                )
+                    # Compute k-NearestNeighbors for the chunk
+                    self.logger.info(
+                        f"remove_floaters -- Pool -- Computing NearestNeighbors for chunk {i}."
+                    )
+                    nbrs = NearestNeighbors(
+                        n_neighbors=k + 1, algorithm="ball_tree"
+                    ).fit(chunk_coords)
+                    self.logger.info(
+                        f"remove_floaters -- Pool -- Computed NearestNeighbors for chunk {i}."
+                    )
+                    self.logger.info(
+                        f"remove_floaters -- Pool -- Calculating average kNN distance for chunk {i}..."
+                    )
 
-                # Create a mask for points to retain for this chunk
-                mask = np.array(avg_distances) < threshold
-                masks.append(mask)
+                    # Ensure pool processes all chunks
+                    avg_distances = pool.map(
+                        self.knn_worker, [(coord, nbrs, k) for coord in chunk_coords]
+                    )
+                    self.logger.info(
+                        f"remove_floaters -- Pool -- Calculated average kNN distance for chunk {i}."
+                    )
+
+                    # Calculate the threshold for removal based on the mean and standard deviation of the average distances
+                    threshold = np.mean(avg_distances) + threshold_factor * np.std(
+                        avg_distances
+                    )
+
+                    # Create a mask for points to retain for this chunk
+                    mask = np.array(avg_distances) < threshold
+                    masks.append(mask)
+            except Exception as e:
+                self.logger.error(f"ERROR -- remove_floaters -- Pool: {e}")
+                pool.terminate()
+                raise e  # Re-raise the exception after logging - handled in workers.py
+            else:
+                pool.close()
+                pool.join()
 
         # Combine masks from all chunks
         combined_mask = np.concatenate(masks)
@@ -321,8 +343,11 @@ class PostProcess:
         coords, tree, _ = args
         coords = coords.reshape(1, -1)  # Reshape to a 2D array
         distances, _ = tree.kneighbors(coords)
+        avg_distance = np.mean(
+            distances[:, 1:]
+        )  # Average distance excluding the point itself
 
-        return np.mean(distances[:, 1:])  # Average distance excluding the point itself
+        return avg_distance
 
     def parallel_voxel_counting(
         self, vertices: np.ndarray, voxel_size: float = 1.0
@@ -343,26 +368,52 @@ class PostProcess:
             A dictionary of voxel coordinates to the number of points in that voxel
 
         """
-        num_processes = cpu_count()
-        chunk_size = len(vertices) // num_processes
+        self.logger.info("Executing parallel_voxel_counting...")
+
+        chunk_size = len(vertices) // self.num_cores
         chunks = [
             vertices[i : i + chunk_size] for i in range(0, len(vertices), chunk_size)
         ]
 
-        num_cores = max(1, cpu_count() - 1)
-        with Pool(processes=num_cores, initializer=_init_worker) as pool:
-            results = pool.starmap(
-                self.count_voxels_chunk, [(chunk, voxel_size) for chunk in chunks]
+        with Pool(processes=self.num_cores) as pool:
+            self.logger.info(
+                f"parallel_voxel_counting -- Pool -- Mapping count_voxels_chunk to {len(chunks)} chunks."
             )
+            try:
+                # Ensure pool processes all chunks
+                results = pool.starmap(
+                    self.count_voxels_chunk, [(chunk, voxel_size) for chunk in chunks]
+                )
+                self.logger.info(
+                    f"parallel_voxel_counting -- Pool -- Mapped count_voxels_chunk to {len(chunks)} chunks."
+                )
+            except Exception as e:
+                self.logger.error(f"ERROR -- parallel_voxel_counting -- Pool: {e}")
+                pool.terminate()
+                raise e  # Re-raise the exception after logging - handled in workers.py
+            else:
+                pool.close()
+                pool.join()
+
+        self.logger.info(
+            f"parallel_voxel_counting -- Results received from {len(results)} processes."
+        )
 
         # Aggregate results from all processes
         total_voxel_counts = {}
         for result in results:
+            self.logger.info(
+                f"parallel_voxel_counting -- Aggregating {len(result)} unique voxels."
+            )
             for k, v in result.items():
                 if k in total_voxel_counts:
                     total_voxel_counts[k] += v
                 else:
                     total_voxel_counts[k] = v
+
+        self.logger.info(
+            f"parallel_voxel_counting -- Completed with {len(total_voxel_counts)} unique voxels found."
+        )
 
         return total_voxel_counts
 
