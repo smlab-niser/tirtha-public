@@ -10,6 +10,8 @@ from typing import Optional
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils import timezone
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 # Local imports
 from tirtha.models import ARK, Contribution, Image, Mesh, Run
@@ -28,6 +30,8 @@ GS_MAX_ITER = settings.GS_MAX_ITER
 MESHOPS_MIN_IMAGES = settings.MESHOPS_MIN_IMAGES
 ALICEVISION_DIRPATH = settings.ALICEVISION_DIRPATH
 NSFW_MODEL_DIRPATH = settings.NSFW_MODEL_DIRPATH
+# VGGT_SCRIPT_PATH = settings.VGGT_SCRIPT_PATH
+# VGGT_ENV_PATH = settings.VGGT_ENV_PATH
 MANIQA_MODEL_FILEPATH = settings.MANIQA_MODEL_FILEPATH
 OBJ2GLTF_PATH = settings.OBJ2GLTF_PATH
 GLTFPACK_PATH = settings.GLTFPACK_PATH
@@ -244,7 +248,9 @@ class BaseOps:
 
         """
         kind = self.kind
-        out_type = ".glb" if kind == "aV" else ".splat"  # Filetype of final output
+        out_map = {"aV": ".glb", "GS": ".splat", "Point": ".ply"}
+        out_type = out_map[kind]
+        # out_type = ".glb" if kind == "aV" else ".splat"  # Filetype of final output
         meshStr = self.meshStr
         curr_runID = self.runID
         arcDir = ARCHIVE_ROOT / self.meshID / f"{kind.lower()}cache" / self.runDir.stem
@@ -277,9 +283,14 @@ class BaseOps:
             self.logger.info(
                 f"Copying output for {kind} run {curr_runID} for mesh {meshStr}..."
             )
-            src = self.opt_path / (
-                "decimatedOptGLB.glb" if kind == "aV" else "postprocessed.splat"
-            )
+
+            out_file_mapper = {
+                "aV": "decimatedOptGLB.glb",
+                "GS": "postprocessed.splat",
+                "Point": "Point_Voxel.ply",
+            }
+            out_file = out_file_mapper[kind]
+            src = self.opt_path / out_file
             self.arkURL = (
                 f"models/{self.meshID}/published/{self.meshID}_{curr_runID}{out_type}"
             )
@@ -288,7 +299,6 @@ class BaseOps:
             self.logger.info(
                 f"Copied output for {kind} run {curr_runID} for mesh {meshStr}."
             )
-
             # 3. Move everything else to arcDir
             self.logger.info(
                 f"Archiving {kind} run {curr_runID} for mesh {meshStr} to {arcDir}."
@@ -742,6 +752,55 @@ class GSOps(BaseOps):
         self.logger.info(f"Finished post-processing GS for {self.meshStr}.")
 
 
+class PointOps(BaseOps):
+    """
+    Runs the Gaussian splatting pipeline
+
+    """
+
+    def __init__(self, meshID: str) -> None:
+        super().__init__(meshID=meshID, kind="Point")
+        self.opt_path = ""
+        # Specify the run order (else alphabetical order)
+        self._run_order = [
+            "run_vggt",
+        ] + self._run_order_suffix
+
+    def run_vggt(self) -> None:
+        """
+        Creates PointCloud using VGGT
+        """
+        log_path = self.log_path / "VGGT.log"
+        output_path = self.runDir / "output/"
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Full paths from settings
+        # vggt_script = settings.VGGT_SCRIPT_PATH
+        # vggt_env = settings.VGGT_ENV_PATH
+        # venv_python = Path(vggt_env) / "bin/python"
+
+        # if not venv_python.exists():
+        #     self._handle_error(
+        #         FileNotFoundError(f"Python not found in {venv_python}"), "run_vggt"
+        #     )
+
+        # self.logger.info("Running VGGT pipeline...")
+
+        # # Compose the command
+        # cmd = f"{venv_python} {vggt_script} --image_dir {self.imageDir} --output_dir {output_path} --binary --prediction_mode 'Pointmap Branch'"
+
+        # self._serialRunner(cmd, log_path)
+
+        # # Check for expected output file
+        # expected_ply = output_path / "Point.ply"
+        # expected_voxel_ply = output_path / "Point_Voxel.ply"
+        # self._check_output(expected_ply, "run_vggt")
+
+        # self.logger.info("Finished running VGGT pipeline.")
+
+        # self.opt_path = output_path
+
+
 """
 Tasks
 
@@ -804,7 +863,8 @@ def ops_runner(contrib_id: str, kind: str) -> None:
         Options: 'aV' (AliceVision) or 'GS' (Gaussian Splatting)
 
     """
-    OP = MeshOps if kind == "aV" else GSOps
+    ops_map = {"aV": MeshOps, "GS": GSOps, "Point": PointOps}
+    OP = ops_map[kind]
     op_name = OP.__name__
 
     contrib = Contribution.objects.get(ID=contrib_id)
@@ -814,7 +874,7 @@ def ops_runner(contrib_id: str, kind: str) -> None:
     cons = Console()  # This appears as normal printed logs in celery logs.
     cons.rule(f"{op_name} Runner Start")
     cons.print(
-        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Triggered by {contrib.ID} for Mesh {meshVID} <=> {meshID}."
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Triggered by {contrib} for Mesh {meshVID} <=> {meshID}."
     )
     cons.print(
         f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Starting {op_name} on Mesh {meshVID} <=> {meshID}."
@@ -827,9 +887,49 @@ def ops_runner(contrib_id: str, kind: str) -> None:
         cons.print(
             f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Finished {op_name} on {meshVID} <=> {meshID}."
         )
+        """
+        #NOTE: Sending email to the contributor when the reconstruction is done.
+        """
+        reconstruction = {
+            "aV": "AliceVision",
+            "GS": "Gaussian Splatting",
+            "Point": "Point Cloud Reconstruction",
+        }
+        template = render_to_string(
+            "tirtha/email_template.html",
+            {
+                "name": contrib.contributor.name,
+                "meshVID": meshVID,
+                "meshID": meshID,
+                "reconstruction": reconstruction[kind],
+                "reconstruction_link": f"{BASE_URL}/models/{meshID}",  # NOTE: Add proper link when ready
+                "reconstruction_name": contrib.mesh.name,
+            },
+        )
+        email = EmailMultiAlternatives(
+            subject="Thank you for your contribution!",
+            body=(
+                f"Hi {contrib.contributor.name},\n\n"
+                f"Your reconstruction '{contrib.mesh.name}' has been successfully completed using the {reconstruction[kind]} method.\n"
+                f"View it here: {f'{BASE_URL}/models/{meshID}'}\n\n"
+                "Thank you for contributing to Project Tirtha!"
+            ),
+            from_email=settings.EMAIL_HOST_USER,
+            to=[contrib.contributor.email],
+            reply_to=[],
+        )
+
+        # Attach the HTML version
+        email.attach_alternative(template, "text/html")
+
+        try:
+            email.send()
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+
     except Exception as e:
         cons.print(
-            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: ERROR encountered in {op_name} for {meshVID} <=> {meshID}!"
+            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: ERROR encountered in {op_name} for {'meshVID'} <=> {'meshID'}!"
         )
         cons.print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: {e}")
         raise e

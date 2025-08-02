@@ -10,7 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
-from .local_settings import *
+from .local_settings_manual import *
+# from loguru import logger
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -82,3 +83,12 @@ USE_TZ = True  # NOTE: Also affects celery beat schedule
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# setting up email backend, add the required email credentials here
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # Use Gmail's SMTP server
+EMAIL_PORT = 587  # Standard port for TLS
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "tirthaemail@example.com"  # ChangeMe
+EMAIL_HOST_PASSWORD = "password_here"  # ChangeMe
+

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reconstruction Complete</title>
+    <style>
+        body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #f4f4f7;
+        color: #333;
+        padding: 20px;
+        }
+        .container {
+        max-width: 600px;
+        background-color: #ffffff;
+        margin: auto;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        h1 {
+        color: #2c3e50;
+        }
+        .highlight {
+        font-weight: bold;
+        color: #1e90ff;
+        }
+        .button {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 20px;
+        background-color: #1e90ff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        }
+        .footer {
+        margin-top: 40px;
+        font-size: 12px;
+        color: #999;
+        text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Thank You for Your Contribution!</h1>
+        <p>Dear {{name}},</p>
+        <p>We're excited to inform you that the reconstruction titled <span class="highlight">{{reconstruction_name}}</span> has been successfully completed using the <span class="highlight">{{reconstruction}}</span> method.</p>
+        <p>Your photo contributions were crucial in making this possible. You can now view the 3D reconstruction that you helped bring to life!</p>
+        <a class="button" href="{{ reconstruction_link }}" target="_blank">View Reconstruction</a>
+        <p class="footer">
+        This is an automated message from Project Tirtha.<br>
+        Thank you for supporting the preservation of cultural heritage!
+        </p>
+    </div>
+</body>
+</html>

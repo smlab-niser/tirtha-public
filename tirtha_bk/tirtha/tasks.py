@@ -2,11 +2,13 @@ from pathlib import Path
 
 from django.conf import settings
 
+from loguru import logger
+import sys
+
 # Local imports
-from .celery import app, crontab, get_task_logger
+from .celery import app, crontab
 from .utils import Logger
 
-cel_logger = get_task_logger(__name__)
 LOG_DIR = Path(settings.LOG_DIR)
 MESHOPS_CONTRIB_DELAY = settings.MESHOPS_CONTRIB_DELAY  # hours
 BACKUP_INTERVAL = crontab(
@@ -16,6 +18,18 @@ DBCLEANUP_INTERVAL = crontab(
     minute=0, hour=0, day_of_week=0
 )  # Every week at 00:00 on Sunday
 
+logger.remove()  # Remove default logger
+
+logger.add(
+    sink="/home/faiz/TirthaProject/tirtha-public/tirtha_bk/temp_storage/tasks_logs/tasks.log",         # Print to console (stdout)
+    level=0,            # integer level for NOTSET (0), DEBUG (10), INFO (20), WARNING (30), ERROR (40), CRITICAL (50)
+    colorize=True,          # Enable colorized output
+    format="<green>{time:HH:mm:ss}</green> | <level>{level} : {message}</level>",
+    filter=__name__,         # Optional: log only from tasks.py
+    backtrace=True,         # Enable exception tracebacks
+    rotation="100 MB",  # Rotate log file after 100 MB
+    retention="45 days",  # Keep logs for 45 days
+)
 
 @app.task
 def post_save_contrib_imageops(contrib_id: str, recons_type: str = "all") -> None:
@@ -32,29 +46,29 @@ def post_save_contrib_imageops(contrib_id: str, recons_type: str = "all") -> Non
     """
 
     # Check images
-    cel_logger.info(
-        f"post_save_contrib_imageops: Triggering ImageOps for contrib_id: {contrib_id}."
+    logger.info(
+        f"tasks.py: [post_save_contrib_imageops]: Triggering ImageOps for contrib_id: {contrib_id}."
     )
-    cel_logger.info(
-        f"post_save_contrib_imageops: Checking images for contrib_id: {contrib_id}..."
+    logger.info(
+        f"tasks.py: [post_save_contrib_imageops]: Checking images for contrib_id: {contrib_id}..."
     )
     from .imageops import ImageOps
 
     iops = ImageOps(contrib_id=contrib_id)
     # FIXME: TODO: Till the VRAM + concurrency issue is fixed, skipping image checks.
     iops.check_images()
-    # cel_logger.info(
+    # logger.info(
     #     f"post_save_contrib_imageops: Finished checking images for contrib_id: {contrib_id}."
     # )
-    cel_logger.info(
-        f"Skipping image checks for contrib_id: {contrib_id} due to VRAM + concurrency issues. FIXME:"
+    logger.info(
+        f"tasks.py: [Skipping image checks for contrib_id]: {contrib_id} due to VRAM + concurrency issues. FIXME:"
     )
 
     # FIXME: TODO: MESHOPS_CONTRIB_DELAY = 0.1 (6 minutes), till the image checks are fixed.
     # Create mesh after MESHOPS_CONTRIB_DELAY hours
 
-    cel_logger.info(
-        f"post_save_contrib_imageops: Will trigger reconstruction pipelines for {contrib_id} after {MESHOPS_CONTRIB_DELAY} hours..."
+    logger.info(
+        f"tasks.py: [post_save_contrib_imageops]: Will trigger reconstruction pipelines for {contrib_id} after {MESHOPS_CONTRIB_DELAY} hours..."
     )
     recon_runner_task.apply_async(
         args=(
@@ -78,24 +92,28 @@ def recon_runner_task(contrib_id: str, recons_type: str = "all") -> None:
         The reconstruction type, by default "all" ["GS", "aV"].
 
     """
-    ops = ["GS", "aV"] if recons_type == "all" else [recons_type]
+    ops = ["GS", "aV", "Point"] if recons_type == "all" else [recons_type]
 
     from .workers import prerun_check, ops_runner
 
-    cel_logger.info(
-        f"recon_runner_task: Running prerun checks for contrib_id: {contrib_id}..."
+    logger.info(
+        f"tasks.py: [recon_runner_task]: Running prerun checks for contrib_id: {contrib_id}..."
     )
-    chk, msg = prerun_check(contrib_id, recons_type)
-    cel_logger.info(f"recon_runner_task: {contrib_id} - {msg}")
-    if chk:
+    chk, msg = prerun_check(
+        contrib_id, recons_type
+    )  # NOTE: Triggers prerun_check(): function defined in workers.py
+    logger.info(f"tasks.py: [recon_runner_task]: {contrib_id} - {msg}")
+    if chk:  # NOTE: If checks pass (prerun_check() returns True is pass), run the ops
         for op in ops:
-            cel_logger.info(
-                f"recon_runner_task: Triggering {op}Ops for contrib_id: {contrib_id}."
+            logger.info(
+                f"tasks.py: [recon_runner_task]: Triggering {op}Ops for contrib_id: {contrib_id}."
             )
-            cel_logger.info(f"recon_runner_task: Running {op}Ops for {contrib_id}...")
-            ops_runner(contrib_id=contrib_id, kind=op)
-            cel_logger.info(
-                f"recon_runner_task: Finished running {op}Ops for {contrib_id}."
+            logger.info(f"tasks.py: [recon_runner_task]: Running {op}Ops for {contrib_id}...")
+            ops_runner(
+                contrib_id=contrib_id, kind=op
+            )  # NOTE: Triggers ops_runner(): function defined in workers.py, passes contrib_id and kind (op) as arguments
+            logger.info(
+                f"tasks.py: [recon_runner_task]: Finished running {op}Ops for {contrib_id}."
             )
 
 
@@ -111,13 +129,13 @@ def backup_task():
     bak_logger = Logger(name="db_backup", log_path=LOG_DIR)
 
     # Backup database & media files
-    bak_logger.info("backup_task: Backing up database & media files...")
-    cel_logger.info("backup_task: Backing up database & media files...")
+    bak_logger.info("tasks.py: [backup_task]: Backing up database & media files...")
+    logger.info("tasks.py: [backup_task]: Backing up database & media files...")
     call_command("dbbackup")  # LATE_EXP: Add other options
-    bak_logger.info("backup_task: Backed up database.")
+    bak_logger.info("tasks.py: [backup_task]: Backed up database.")
     call_command("mediabackup")  # LATE_EXP: Add other options
-    bak_logger.info("backup_task: Backed up media files.")
-    cel_logger.info("backup_task: Backed up database & media files.")
+    bak_logger.info("tasks.py: [backup_task]: Backed up media files.")
+    logger.info("tasks.py: [backup_task]: Backed up database & media files.")
 
 
 @app.task
@@ -128,7 +146,7 @@ def db_cleanup_task():
 
     """
     cln_logger = Logger(name="db_cleanup", log_path=LOG_DIR)
-    cln_logger.info("db_cleanup_task: Cleaning up database...")
+    cln_logger.info("tasks.py: [db_cleanup_task]: Cleaning up database...")
 
 
 @app.on_after_finalize.connect

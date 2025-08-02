@@ -6,6 +6,8 @@ For Internal Use
 
 from dataclasses import dataclass, field
 from multiprocessing import Pool, cpu_count
+
+from typing import Any
 from pathlib import Path
 from subprocess import (
     PIPE,
@@ -18,7 +20,7 @@ from subprocess import (
 from time import sleep
 from typing import Dict, Iterable, Optional, Tuple, Union
 
-# Local imports
+# # Local imports
 from .utils import Logger, _sysinfo
 
 # NOTE: Tweak as needed
@@ -175,7 +177,9 @@ class AliceVision:
         # Or, different ratios with respect to the max block size
         if self.inputSize <= self.minBlockSize:
             return self.inputSize
-        return self.inputSize // self.maxCores
+        # Ensure maxCores is at least 1 to avoid division by zero
+        max_cores = max(self.maxCores, 1)
+        return self.inputSize // max_cores
 
     @property
     def numBlocks(self):
@@ -188,8 +192,11 @@ class AliceVision:
             Number of blocks to process
 
         """
+        block_size = self.blockSize
+        if block_size == 0:
+            return 1  # At least one block if blockSize is 0
         return (
-            self.inputSize // self.blockSize
+            self.inputSize // block_size
         ) + 1  # NOTE: +1 to account for the remainder
 
     @classmethod
@@ -994,7 +1001,7 @@ class AliceVision:
         out_mesh = out_path / "rawMesh.obj"
 
         # Assemble command
-        cmd = f"{node_path} --output {out_dense_sfm} --outputMesh {out_mesh} --verboseLevel {self.verboseLevel}"
+        cmd = f"{node_path} --output {out_dense_sfm} --outputMesh {out_mesh} --verboseLevel {self.verboseLevel} --helperPointsGridSize 10"
 
         # Check & add input file
         cmd, inputSfm = self._check_input(

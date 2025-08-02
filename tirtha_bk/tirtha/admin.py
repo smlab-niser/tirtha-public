@@ -1,9 +1,10 @@
-import logging
+# import logging
 from django.conf import settings
 from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import mark_safe
 from django.utils.translation import ngettext
+from loguru import logger
 
 # Local imports
 from .models import ARK, Contribution, Contributor, Image, Mesh, Run
@@ -14,10 +15,16 @@ from .tasks import post_save_contrib_imageops, recon_runner_task
 # Logging
 ADMIN_LOG_LOCATION = settings.ADMIN_LOG_LOCATION
 
-logging.basicConfig(
-    level=logging.NOTSET,
-    format="%(asctime)s %(levelname)s %(message)s",
-    filename=ADMIN_LOG_LOCATION,
+# logging.basicConfig(
+#     level=logging.NOTSET,
+#     format="%(asctime)s %(levelname)s %(message)s",
+#     filename=ADMIN_LOG_LOCATION,
+# )
+logger.remove()  # Remove default logger
+logger.add(
+    ADMIN_LOG_LOCATION,
+    rotation="100 MB",
+    retention="90 days",
 )
 
 
@@ -408,7 +415,7 @@ class ContributionAdmin(admin.ModelAdmin):
             post_save_contrib_imageops.delay(
                 str(obj.ID), recons_type="all"
             )  # This triggers ImageOps, which in turn triggers GSOPs or MeshOps
-            logging.info(
+            logger.info(
                 f"ADMIN -- ImageOps & all reconstructions successfully triggered for {obj.ID}."
             )
         self.message_user(
@@ -427,7 +434,7 @@ class ContributionAdmin(admin.ModelAdmin):
         count = queryset.count()
         for obj in queryset:
             recon_runner_task.delay(str(obj.ID), recons_type="aV")
-            logging.info(f"ADMIN -- aVOps successfully triggered for {obj.ID}.")
+            logger.info(f"ADMIN -- aVOps successfully triggered for {obj.ID}.")
         self.message_user(
             request,
             ngettext(
@@ -444,7 +451,7 @@ class ContributionAdmin(admin.ModelAdmin):
         count = queryset.count()
         for obj in queryset:
             recon_runner_task.delay(str(obj.ID), recons_type="GS")
-            logging.info(f"ADMIN -- GSOps successfully triggered for {obj.ID}.")
+            logger.info(f"ADMIN -- GSOps successfully triggered for {obj.ID}.")
         self.message_user(
             request,
             ngettext(
