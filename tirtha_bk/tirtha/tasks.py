@@ -78,7 +78,7 @@ def recon_runner_task(contrib_id: str, recons_type: str = "all") -> None:
         The reconstruction type, by default "all" ["GS", "aV"].
 
     """
-    ops = ["GS", "aV"] if recons_type == "all" else [recons_type]
+    ops = ["Point","GS", "aV"] if recons_type == "all" else [recons_type]
 
     from .workers import prerun_check, ops_runner
 

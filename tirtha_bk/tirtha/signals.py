@@ -1,4 +1,5 @@
 import shutil
+import os
 from pathlib import Path
 
 from django.conf import settings
@@ -44,7 +45,8 @@ def post_migrate_create_defaults(sender, **kwargs):
         fname = f"{mesh_ID}__default.glb"
         src = source / f"{fname}"
         dest = STATIC / f"models/{mesh_ID}/published/{fname}"
-        shutil.copy2(src, dest)
+        if os.path.exists(src):
+            shutil.copy2(src, dest)
 
         # Copy default mesh thumbnail and preview images from STATIC to MEDIA
         source /= f"to_media"
@@ -52,7 +54,8 @@ def post_migrate_create_defaults(sender, **kwargs):
         dest = MEDIA / f"models/{mesh_ID}/"
         dest.mkdir(parents=True, exist_ok=True)
         for src in srcs:
-            shutil.copy2(src, dest)
+            if(os.path.exists(src)):
+                shutil.copy2(src, dest)
 
         # Create default mesh - shown on homepage
         mesh, _ = Mesh.objects.get_or_create(
@@ -62,8 +65,10 @@ def post_migrate_create_defaults(sender, **kwargs):
         mesh.preview = f"models/{mesh_ID}/{mesh_ID}_prev.jpg"
         mesh.thumbnail = f"models/{mesh_ID}/{mesh_ID}_thumb.jpg"
         mesh.minObsAng = 70
-        mesh.save()
-
+        if(os.path.exists(mesh.preview) and os.path.exists(mesh.thumbnail)):
+            mesh.save()
+        else:
+            pass
         # Create default contributor
         Contributor.objects.create(name=ADMIN_NAME, email=ADMIN_MAIL)
 

@@ -4,3 +4,6 @@
 [submodule "tirtha_bk/nn_models/nsfw_model"]
 	path = tirtha_bk/nn_models/nsfw_model
 	url = https://github.com/JeS24/nsfw_model.git
+[submodule "tirtha_bk/nn_models/vggt"]
+	path = tirtha_bk/nn_models/vggt
+	url = https://github.com/facebookresearch/vggt

@@ -302,10 +302,12 @@ def _signin(user_info: dict) -> tuple:
     if not GOOGLE_LOGIN:
         logging.info("_signin -- Google login is disabled.")
         # Return default contributor
+        print("Checking Admin Mail:",ADMIN_MAIL)
         contrib = Contributor.objects.get(email=ADMIN_MAIL)
         output = f"Signed-in as {ADMIN_MAIL}."
+        print("Inside not google, returned default:",output,contrib)
         return output, contrib
-
+    print("Inside SignIN function returned random shit")
     logging.info(f"_signin -- Google login is enabled. Signing in user: {user_info}")
     # Get contributor info
     email = user_info.get("email")
@@ -425,7 +427,8 @@ def pre_upload_check(request) -> JsonResponse:
     verbose_id = request.GET["mesh_vid"]
 
     # Authenticate contributor
-    user_info = request.session.get("tirtha_user_info", None)
+    # user_info = request.session.get("tirtha_user_info", None)
+    user_info = "om" #Just Setting User Info Manually for development
     if user_info is None:
         return JsonResponse(
             {"allowupload": False, "blur": True, "output": "Please sign in again."}
@@ -470,6 +473,7 @@ def upload(request) -> JsonResponse:
     """
     # Authenticate contributor
     user_info = request.session.get("tirtha_user_info", None)
+    print("Obtained User Info:",user_info)
     output, contrib = _signin(user_info)
     if contrib is None:
         return JsonResponse({"output": output})

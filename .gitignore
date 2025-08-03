@@ -4,6 +4,7 @@
 __pycache__/
 data/
 paper/
+LOGS/
 
 # Folders - django
 migrations/
@@ -36,3 +37,7 @@ todo.md
 *.log
 cert/
 artifacts/
+
+#Vggt venv
+tirtha_bk/venvs
+tirtha_bk/nn_models

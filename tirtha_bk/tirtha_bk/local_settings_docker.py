@@ -48,12 +48,13 @@ INSTALLED_APPS = [
 BASE_DIR = Path(__file__).resolve().parent.parent
 PRE_URL = os.getenv("PRE_URL", "")  # CHANGEME: e.g., "/tirtha/"
 
-PROD_DIR = "/var/www/tirtha/prod/"  # Short term storage for current runs # CHANGEME:
-NFS_DIR = "/var/www/tirtha/archive/"  # Long term storage for old runs # CHANGEME: Does not need to use NFS and can be on the same system
+PROD_DIR = "/home/om/tirtha-public/LOGS/prod"  # Short term storage for current runs # CHANGEME:
+NFS_DIR = "/home/om/tirtha-public/LOGS/archive"  # Long term storage for old runs # CHANGEME: Does not need to use NFS and can be on the same system
 ARCHIVE_ROOT = f"{NFS_DIR}archives"
 LOG_DIR = f"{PROD_DIR}logs"
 LOG_LOCATION = LOG_DIR + "/tirtha.log"
 ADMIN_LOG_LOCATION = LOG_LOCATION
+
 
 # Static files
 STATICFILES_DIRS = [
@@ -88,7 +89,7 @@ SESSION_COOKIE_SAMESITE = "Lax"  # NOTE: Lax needed for authlib | See: https://d
 SESSION_COOKIE_SECURE = True if GOOGLE_LOGIN else False
 CSRF_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_SECURE = True
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False
 SECURE_HSTS_PRELOAD = True
 SECURE_HSTS_SECONDS = (
     31536000  # 1 year # NOTE: If sometime HTTPS is disabled, this should be removed
@@ -110,8 +111,8 @@ OAUTH_CONF = {
 DB_NAME = os.getenv("DB_NAME", "dbtirtha")  # CHANGEME:
 DB_USER = os.getenv("DB_USER", "dbtirthauser")  # CHANGEME:
 DB_PWD = os.getenv("DB_PWD", "docker")  # CHANGEME:
-DB_HOST = os.getenv("DB_HOST", "localhost")  # CHANGEME:
-DB_PORT = os.getenv("DB_PORT", "")
+DB_HOST = os.getenv("DB_HOST", "db")  # CHANGEME:
+DB_PORT = os.getenv("DB_PORT", "5432")
 
 DATABASES = {
     "default": {
@@ -157,6 +158,8 @@ ALICEVISION_DIRPATH = BASE_DIR / "bin21"
 NSFW_MODEL_DIRPATH = (
     BASE_DIR / "nn_models/nsfw_model/mobilenet_v2_140_224/"
 )  # NOTE: See `Requirements` section in README.md
+VGGT_SCRIPT_PATH = BASE_DIR / "nn_models/vggt/vgg2col.py"
+VGGT_ENV_PATH = BASE_DIR / "venvs/vggt_env"
 MANIQA_MODEL_FILEPATH = BASE_DIR / "nn_models/MANIQA/ckpt_kadid10k.pt"
 OBJ2GLTF_PATH = "obj2gltf"  # NOTE: Ensure the binary is on system PATH
 GLTFPACK_PATH = "gltfpack"  # NOTE: Ensure the binary is on system PATH
