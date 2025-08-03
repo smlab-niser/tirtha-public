@@ -1,4 +1,4 @@
-<form id="upload-form" class={{ signin_class }} enctype="multipart/form-data" method="post" action=""/>
+<form id="upload-form" class="{{ signin_class }}" enctype="multipart/form-data" method="post" action="">
     {% csrf_token %}
     <div id="select-mesh-wrapper">
         <input id="select-mesh" placeholder="Model" list="meshes" name="mesh" required>
