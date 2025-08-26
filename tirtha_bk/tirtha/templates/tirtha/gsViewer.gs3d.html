@@ -74,6 +74,12 @@
             'progressiveLoad': true,
         })
         .then(() => {
+            // Removes keydown listeners that interfere with input
+            viewer.perspectiveControls.stopListenToKeyEvents();
+            viewer.orthographicControls.stopListenToKeyEvents();
+            window.removeEventListener('keydown', viewer.keyDownListener);
+
+            // Start the viewer render loop
             viewer.start();
         });
     </script>
