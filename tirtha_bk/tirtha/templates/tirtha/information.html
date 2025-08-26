@@ -1,4 +1,3 @@
-{% comment %} TODO: MARKED FOR REFACTOR along with views.py {% endcomment %}
 <details open id="mesh-details">
     {% block info %}
     {% if run %}
@@ -43,8 +42,7 @@
         <p id="mesh-info">
             {{ mesh.description | safe }}
         </p>
-        {% comment %} NOTE: Following is needed for XHR {% endcomment %}
-        {% comment %} TODO: FIXME: NOTE: Not doing XHR anymore for GS Runs {% endcomment %}
+        {% comment %} NOTE: Not doing XHR anymore for GS Runs {% endcomment %}
         <hgroup>
             <h4 id="info-h4">Model Statistics</h4>
             <select id="select-run" title="Select a run">
