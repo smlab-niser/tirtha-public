@@ -15,11 +15,78 @@ const PRE_URL = "/project/tirtha"
 const expandBtn = $("#expand");
 const expParent = expandBtn.parent();
 
+// Keep a saved canvas size to restore after exiting fullscreen
+let _savedCanvasSize = null;
+
+/**
+ * Reset any inline width/height on the GS viewer canvas and dispatch a
+ * window resize, so that, Three.js-based viewers can recompute their size.
+ */
+let _resetViewerCanvasTimer = null;
+let _lastResetAt = 0;
+function resetViewerCanvas() {
+    // Debounced reset to avoid multiple rapid runs from fullscreenchange events
+    // If a reset happened very recently, skip scheduling another one
+    const now = Date.now();
+    if (now - _lastResetAt < 300) return;
+
+    if (_resetViewerCanvasTimer) {
+        clearTimeout(_resetViewerCanvasTimer);
+    }
+
+    _resetViewerCanvasTimer = setTimeout(() => {
+        _resetViewerCanvasTimer = null;
+        try {
+            const gsCanvas = doc.querySelector('#gs-viewer canvas');
+            console.log('resetViewerCanvas | ', { gsCanvas });
+            if (!gsCanvas) return;
+
+            // Clear inline CSS size so layout rules apply
+            gsCanvas.style.removeProperty('width');
+            gsCanvas.style.removeProperty('height');
+
+            // Use boundingClientRect to get the actual displayed size
+            const rect = gsCanvas.getBoundingClientRect();
+            const w = Math.max(1, Math.round(rect.width));
+            const h = Math.max(1, Math.round(rect.height));
+
+            console.log(`resetViewerCanvas | Initial canvas size ${gsCanvas.width}x${gsCanvas.height}`);
+
+            // Only write if different to avoid unnecessary redraws
+            if (gsCanvas.width !== w || gsCanvas.height !== h) {
+                gsCanvas.width = w;
+                gsCanvas.height = h;
+                console.log(`resetViewerCanvas | set canvas size to ${gsCanvas.width}x${gsCanvas.height}`);
+            } else {
+                console.log('resetViewerCanvas | canvas size already matches');
+            }
+
+            // Give the browser a frame to settle, then dispatch resize so viewers update
+            requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+            _lastResetAt = Date.now();
+        } catch (e) {
+            console.warn('resetViewerCanvas error', e);
+        }
+    }, 120);
+}
+
 function isInFullScreen() {
     return (doc.fullScreenElement && doc.fullScreenElement !== null) || (doc.mozFullScreen || doc.webkitIsFullScreen);
 }
 
 function requestFullScreen() {
+    // Save displayed canvas size before entering fullscreen so we can restore it
+    try {
+        const gsCanvas = doc.querySelector('#gs-viewer canvas');
+        if (gsCanvas) {
+            const r = gsCanvas.getBoundingClientRect();
+            _savedCanvasSize = { w: Math.max(1, Math.round(r.width)), h: Math.max(1, Math.round(r.height)) };
+            console.log('requestFullScreen | saved canvas size', _savedCanvasSize);
+        }
+    } catch (e) {
+        console.warn('requestFullScreen save error', e);
+    }
+
     el = modelArea;
     var requestMethod = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullScreen;
     requestMethod.call(el);
@@ -38,6 +105,25 @@ function exitFullScreen() {
     setTimeout(() => {
         model.classList.remove("model-fs");
         $(".controls").css("display", "flex");
+        // Reset Gaussian Splats / Three.js canvas sizing after exiting FS
+        // First reset to let layout settle
+        resetViewerCanvas();
+        // Then restore the saved size if available (guard against null)
+        try {
+            const gsCanvas = doc.querySelector('#gs-viewer canvas');
+            if (gsCanvas && _savedCanvasSize) {
+                if (gsCanvas.width !== _savedCanvasSize.w || gsCanvas.height !== _savedCanvasSize.h) {
+                    gsCanvas.width = _savedCanvasSize.w;
+                    gsCanvas.height = _savedCanvasSize.h;
+                    console.log('exitFullScreen | restored canvas size', _savedCanvasSize);
+                    // dispatch resize after restoration
+                    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+                }
+                _savedCanvasSize = null;
+            }
+        } catch (e) {
+            console.warn('exitFullScreen restore error', e);
+        }
     }, 100);
 }
 
@@ -62,9 +148,29 @@ function exitIfFS() {
             expParent.css("top", "0");
             model.classList.remove("model-fs");
             $(".controls").css("display", "flex");
+            // Reset canvas sizing in case the viewer left inline fullscreen sizes
+            resetViewerCanvas();
+            // Try to restore saved size (if any)
+            try {
+                const gsCanvas = doc.querySelector('#gs-viewer canvas');
+                if (gsCanvas && _savedCanvasSize) {
+                    if (gsCanvas.width !== _savedCanvasSize.w || gsCanvas.height !== _savedCanvasSize.h) {
+                        gsCanvas.width = _savedCanvasSize.w;
+                        gsCanvas.height = _savedCanvasSize.h;
+                        console.log('exitIfFS | restored canvas size', _savedCanvasSize);
+                        requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+                    }
+                    _savedCanvasSize = null;
+                }
+            } catch (e) {
+                console.warn('exitIfFS restore error', e);
+            }
         }, 100);
     }
 }
+
+// Ensure the viewer also adapts on window resize
+window.addEventListener('resize', resetViewerCanvas);
 
 $(doc).on("fullscreenchange webkitfullscreenchange mozfullscreenchange MSFullscreenChange", exitIfFS);
 // ========================== FS END ==========================
