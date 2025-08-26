@@ -6,9 +6,10 @@ Utility classes & functions
 import psutil
 import subprocess as sp
 
-from logging import DEBUG, FileHandler, Formatter, Logger
 from pathlib import Path
 from typing import Union
+from logging import DEBUG, Formatter, Logger
+from logging.handlers import RotatingFileHandler
 
 
 class Logger(Logger):
@@ -27,7 +28,12 @@ class Logger(Logger):
         self._log_file = Path(log_path) / f"{name}.log"
         self._log_file.touch(exist_ok=True)
 
-        fh = FileHandler(self._log_file)
+        fh = RotatingFileHandler(
+            self._log_file,
+            maxBytes=10**8,  # 100 MB
+            backupCount=5,  # Keep 5 backups
+            encoding="utf-8",
+        )
         fh.setLevel(level)
         formatter = Formatter(
             "%(asctime)s | %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S %Z"

@@ -390,6 +390,9 @@ class Run(models.Model):
         max_length=50, blank=False, choices=status_options, default="Processing"
     )
 
+    # Whether to hide the Run from the frontend
+    hidden = models.BooleanField(default=False, verbose_name="Hidden")
+
     # Metadata
     contributors = models.ManyToManyField(
         Contributor, verbose_name="Contributors", related_name="runs"
@@ -406,6 +409,24 @@ class Run(models.Model):
     rotaZ = models.IntegerField(
         default=0, null=True, verbose_name="Rotation about Z-axis"
     )
+    
+    # GS Viewer settings
+    camUpX = models.FloatField(default=0.0, null=True, verbose_name="Camera Up X")
+    camUpY = models.FloatField(default=1.0, null=True, verbose_name="Camera Up Y")
+    camUpZ = models.FloatField(default=0.0, null=True, verbose_name="Camera Up Z")
+    
+    initCamPosX = models.FloatField(default=0.0, null=True, verbose_name="Init Camera Pos X")
+    initCamPosY = models.FloatField(default=0.0, null=True, verbose_name="Init Camera Pos Y")
+    initCamPosZ = models.FloatField(default=5.0, null=True, verbose_name="Init Camera Pos Z")
+    
+    initCamLookAtX = models.FloatField(default=0.0, null=True, verbose_name="Init Camera LookAt X")
+    initCamLookAtY = models.FloatField(default=0.0, null=True, verbose_name="Init Camera LookAt Y")
+    initCamLookAtZ = models.FloatField(default=0.0, null=True, verbose_name="Init Camera LookAt Z")
+    
+    antialiased = models.BooleanField(default=True, verbose_name="Antialiased")
+    sphDegree = models.IntegerField(default=2, verbose_name="Spherical Harmonics Degree (0/1/2)")
+    focalAdjustment = models.FloatField(default=10.0, verbose_name="Focal Length Adjustment")
+    # focalAdjustment = 10.0 is hacky, but increasing helps with sharper small details. Default: 1.0.
 
     class Meta:
         ordering = ["-started_at"]

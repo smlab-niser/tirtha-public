@@ -60,7 +60,15 @@ class BaseOps:
         self.run = run = Run.objects.create(mesh=mesh, kind=kind)
         run.save()  # Creates run directory
         self.runID = runID = run.ID
-        self.runDir = STATIC / "models" / Path(run.directory)
+
+        # Ensure run.directory is relative path for new runs
+        run_dir_path = Path(run.directory)
+        if run_dir_path.is_absolute():
+            # This should not happen for new runs, but handle gracefully
+            raise ValueError(
+                f"New run directory should be relative, got absolute path: {run.directory}"
+            )
+        self.runDir = STATIC / "models" / run_dir_path
 
         # Set up Logger
         self.log_path = LOG_DIR / f"{kind}Ops/{meshID}" / self.runDir.stem
@@ -260,11 +268,20 @@ class BaseOps:
             )
             if len(runs) > 0:
                 for run in runs:
-                    runDir = STATIC / "models" / Path(run.directory)
+                    # Handle both relative and absolute paths in run.directory
+                    run_dir_path = Path(run.directory)
+                    if run_dir_path.is_absolute():
+                        # Already an absolute path (archived run)
+                        runDir = run_dir_path
+                    else:
+                        # Relative path (active run)
+                        runDir = STATIC / "models" / run_dir_path
+
                     self.logger.info(
                         f"{run.kind} Run {run.ID} for mesh {meshStr} has errors. Deleting..."
                     )
-                    shutil.rmtree(runDir)  # Delete folder
+                    if runDir.exists():
+                        shutil.rmtree(runDir)  # Delete folder
                     run.delete()  # Delete from DB
                     self.logger.info(
                         f"Deleted {run.kind} run {run.ID} for mesh {meshStr}."
@@ -294,7 +311,9 @@ class BaseOps:
                 f"Archiving {kind} run {curr_runID} for mesh {meshStr} to {arcDir}."
             )
             shutil.move(self.runDir, arcDir)  # Move run folder to archive
-            self.run.directory = str(arcDir)  # Update run directory
+            # Store relative path to avoid creating nested directory structures in STATIC
+            relative_arc_path = arcDir.relative_to(ARCHIVE_ROOT)
+            self.run.directory = str(relative_arc_path)  # Update run directory
             self._update_run_status("Archived")  # Update run status & save
             self.logger.info(
                 f"Archived {kind} run {curr_runID} for mesh {meshStr} to {arcDir}."
@@ -668,14 +687,15 @@ class GSOps(BaseOps):
             # Threshold to delete translucent gaussians - lower values remove more (usually better quality)
             " --pipeline.model.cull_alpha_thresh="
             + str(alpha_cull_thresh)
-            # Disable culling after 15K steps
+            # Disable culling after 15K steps - # NOTE: Only for splatfacto-w(-light)
             + " --pipeline.model.continue_cull_post_densification="
             + str(cull_post_dens)
             # Less spiky Gaussians
             + " --pipeline.model.use_scale_regularization True"
         )
+
         cmd = (
-            "ns-train splatfacto "
+            "ns-train splatfacto-big "
             + reg_opts
             + " --data "
             + str(output_path)
@@ -686,6 +706,9 @@ class GSOps(BaseOps):
             # Quit after GS creation
             # Also see: https://docs.nerf.studio/quickstart/viewer_quickstart.html#accessing-over-an-ssh-connection
             + "--viewer.quit-on-train-completion True "
+            # TODO: Uncomment these with newer nerfstudio
+            # + "--eval-mode fraction"
+            # + "--train-split-fraction 1"
             + "> "
             + str(sf_train_log_path)
         )
@@ -701,7 +724,11 @@ class GSOps(BaseOps):
             + "/output/splatfacto/config.yml "
             + " --output-dir "
             + str(output_path)
+            # + " --obb_center 0.0000000000 0.0000000000 0.0000000000"
+            # + " --obb_rotation 0.0000000000 0.0000000000 0.0000000000"
+            # + " --obb_scale 1.0000000000 1.0000000000 1.0000000000"
         )
+
         self._serialRunner(cmd, log_path)
         self.logger.info("Exported GS from Splatfacto.")
 
@@ -780,13 +807,14 @@ def prerun_check(contrib_id: str, recons_type: str) -> tuple[bool, str]:
             False,
             f"Not enough images to process mesh. Only {images_count} good images found.",
         )
-    if mesh.reconstructed_at and (contrib.processed_at < mesh.reconstructed_at):
-        runs = mesh.runs.filter(status="Archived").order_by("-ended_at")
-        if runs and (runs[0].kind == recons_type):
-            return (
-                False,
-                f"Mesh already reconstructed using {recons_type} using current contribution.",
-            )
+    # TODO: Uncomment after testing
+    # if mesh.reconstructed_at and (contrib.processed_at < mesh.reconstructed_at):
+    #     runs = mesh.runs.filter(status="Archived").order_by("-ended_at")
+    #     if runs and (runs[0].kind == recons_type):
+    #         return (
+    #             False,
+    #             f"Mesh already reconstructed using {recons_type} using current contribution.",
+    #         )
 
     return True, "Mesh ready for processing."
 

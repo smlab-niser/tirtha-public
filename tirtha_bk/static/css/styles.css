@@ -907,7 +907,7 @@ div.container > div.userInput.show {
 
 /* select-related props */
 #select-mesh-wrapper {
-    width: 90%;
+    width: 95%;
     margin: clamp(0.75rem, 1rem, 1.2dvw) auto;
 
     display: flex;
@@ -1426,7 +1426,7 @@ footer p a img {
 }
 
 
-/* NOTE: For GS Viewer */
+/* NOTE: For gsplat GS Viewer */
 /* TODO: Shift this */
 #gs-canvas {
     width: 100%;
@@ -1476,3 +1476,35 @@ footer p a img {
     background-color: var(--progress-bar-col);
     border-radius: 5px;
 }
+
+/* NOTE: For mkkellogg/GaussianSplats3D GS Viewer */
+/* #gs-load-button, #button-load {
+    position: relative;
+    top: 50%;
+    left: 50%;
+
+    padding: 10px;
+    background-color: #d8bc2d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+
+    font-weight: 600;
+} */
+
+#gs-viewer-wrapper {
+    height: 100%;
+    width: 100%;
+
+    margin: 0;
+}
+
+#gs-viewer {
+    height: 100%;
+    width: 100%;
+}
+
+/* #button-load {
+    width: 5rem;
+} */

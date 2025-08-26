@@ -35,8 +35,7 @@
 ---
 
 > [!important]
-> Please go here for the Tirtha site: https://smlab.niser.ac.in/project/tirtha/.
-> New features will be added to the dev site first: https://smlab.niser.ac.in/project/tirtha/dev/.
+> Please go here for the Tirtha website: https://smlab.niser.ac.in/project/tirtha/.
 
 ---
 
@@ -170,7 +169,7 @@ We also thank Odisha State Archaeology for their support.
 
 ---
 
-&copy; 2023-24 Project Tirtha,
+&copy; 2023-25 Project Tirtha,
 [Subhankar Mishra's Lab](https://www.niser.ac.in/~smishra/),
 [School of Computer Sciences](https://oldsite.niser.ac.in/scps/), NISER.
 All rights reserved.

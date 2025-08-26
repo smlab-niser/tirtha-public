@@ -91,7 +91,7 @@ class AliceVision:
             self.logger.error(err)
             raise FileNotFoundError(err)
 
-        self.cache_dir = Path(self.cache_dir)
+        self.cache_dir = Path(self.cache_dir).resolve()
         if (
             not self.cache_dir.exists()
         ):  # TODO: Redundant check, since Run.save() creates runDir.

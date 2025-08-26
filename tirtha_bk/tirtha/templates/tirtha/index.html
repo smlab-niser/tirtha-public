@@ -37,18 +37,14 @@
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
     <!-- Scripts -->
-    <!-- TODO: FIXME: Needed for GS Viewer 2 -->
-    <!-- <script type="importmap">
-        { 
+    <script type="importmap" crossorigin="anonymous">
+        {
             "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.164/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164/examples/jsm/",
-                "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.module.js"
+                "three": "https://unpkg.com/three/build/three.module.js"
             }
         }
-    </script> -->
-    <!-- TODO: // "https://unpkg.com/browse/@mkkellogg/gaussian-splats-3d@0.4.1/build/gaussian-splats-3d.module.js" -->
-    <script type="module" src="https://www.unpkg.com/@google/model-viewer@3.1.0/dist/model-viewer.min.js"></script>
+    </script>
+    <script type="module" crossorigin="anonymous" src="https://www.unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
 
     <title>
         {% block title %}
@@ -111,7 +107,8 @@
             {% if run.kind == 'aV' %}
                 {% include "tirtha/modelViewer.html" %}
             {% elif run.kind == 'GS' %}
-                {% include "tirtha/gsViewer.html" %}
+                {% comment %} {% include "tirtha/gsViewer.gsplat.html" %} {% endcomment %}
+                {% include "tirtha/gsViewer.gs3d.html" %}
             {% endif %}
         {% else %}
             {% comment %} TODO: This can be made better. {% endcomment %}
@@ -176,7 +173,7 @@
         </div>
         {% include 'tirtha/modelList.html' %}
     </nav>
-    <script src="https://unpkg.com/jquery@3.6.3/dist/jquery.js"></script>
+    <script crossorigin="anonymous" src="https://unpkg.com/jquery@3.6.3/dist/jquery.js"></script>
     <script type="text/javascript" src="{% static 'js/copyExifNoOrient.js' %}" ></script>
     <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
 </body>

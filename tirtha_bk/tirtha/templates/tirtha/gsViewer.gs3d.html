@@ -1,0 +1,81 @@
+<div id="model">
+    {% block model %}
+    {% comment %} Script tag to store the splat URL {% endcomment %}
+    {{ run.ark.url|json_script:"splatURL" }}
+    {% comment %} GS Viewer Settings {% endcomment %}
+    {{ run.camUpX|json_script:"camUpX" }}
+    {{ run.camUpY|json_script:"camUpY" }}
+    {{ run.camUpZ|json_script:"camUpZ" }}
+    {{ run.initCamPosX|json_script:"initCamPosX" }}
+    {{ run.initCamPosY|json_script:"initCamPosY" }}
+    {{ run.initCamPosZ|json_script:"initCamPosZ" }}
+    {{ run.initCamLookAtX|json_script:"initCamLookAtX" }}
+    {{ run.initCamLookAtY|json_script:"initCamLookAtY" }}
+    {{ run.initCamLookAtZ|json_script:"initCamLookAtZ" }}
+    {{ run.antialiased|json_script:"antialiased" }}
+    {{ run.focalAdjustment|json_script:"focalAdjustment" }}
+    {{ run.sphDegree|json_script:"sphDegree" }}
+
+    <!-- Element to show the GS -->
+    <div id="gs-viewer-wrapper">
+        <div id="gs-viewer"></div>
+    </div>
+
+    <script type="module">
+        import * as GaussianSplats3D from 'https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js';
+        import * as THREE from 'three';
+
+        // Get the data from the script tag
+        const splatURL = JSON.parse(document.getElementById('splatURL').textContent);
+
+        // Load GS viewer settings from backend-provided json_script tags.
+        // Use sensible defaults if any field is missing/null.
+        const camUpX = parseFloat(JSON.parse(document.getElementById('camUpX').textContent) || 0.0);
+        const camUpY = parseFloat(JSON.parse(document.getElementById('camUpY').textContent) || 1.0);
+        const camUpZ = parseFloat(JSON.parse(document.getElementById('camUpZ').textContent) || 0.0);
+
+        const initCamPosX = parseFloat(JSON.parse(document.getElementById('initCamPosX').textContent) || 0.0);
+        const initCamPosY = parseFloat(JSON.parse(document.getElementById('initCamPosY').textContent) || -6.57396);
+        const initCamPosZ = parseFloat(JSON.parse(document.getElementById('initCamPosZ').textContent) || 4.09160);
+
+        const initCamLookAtX = parseFloat(JSON.parse(document.getElementById('initCamLookAtX').textContent) || 0.0);
+        const initCamLookAtY = parseFloat(JSON.parse(document.getElementById('initCamLookAtY').textContent) || 0.54756);
+        const initCamLookAtZ = parseFloat(JSON.parse(document.getElementById('initCamLookAtZ').textContent) || -2.08443);
+
+        const antialiased = JSON.parse(document.getElementById('antialiased').textContent);
+        const sphDegree = parseInt(JSON.parse(document.getElementById('sphDegree').textContent) || 2, 10);
+        const focalAdjustment = parseFloat(JSON.parse(document.getElementById('focalAdjustment').textContent) || 10.0);
+
+        const viewer = new GaussianSplats3D.Viewer({
+            'rootElement': document.getElementById('gs-viewer'),
+            'cameraUp': [camUpX, camUpY, camUpZ],
+            'initialCameraPosition': [initCamPosX, initCamPosY, initCamPosZ],
+            'initialCameraLookAt': [initCamLookAtX, initCamLookAtY, initCamLookAtZ],
+            'integerBasedSort': false,
+            // FIXME: // BUG: Blocks interaction with scene
+            // 'webXRMode': GaussianSplats3D.WebXRMode.AR, // AR, VR
+            'sceneRevealMode': GaussianSplats3D.SceneRevealMode.Default,
+            'sceneFadeInRateMultiplier': 1.0,
+            'antialiased': Boolean(antialiased),
+            'focalAdjustment': focalAdjustment,
+            'logLevel': GaussianSplats3D.LogLevel.Warning,
+            'sphericalHarmonicsDegree': sphDegree,
+            'freeIntermediateSplatData': true,
+            // `GaussianSplats3D.SplatRenderMode.TwoD` for 2DGS
+            'splatRenderMode': GaussianSplats3D.SplatRenderMode.ThreeD,
+        });
+
+        viewer.addSplatScene(splatURL, {
+            'splatAlphaRemovalThreshold': 5,
+            'showLoadingUI': true,
+            'position': [0, 1, 0],
+            // 'rotation': q.toArray(),
+            'scale': [1.5, 1.5, 1.5],
+            'progressiveLoad': true,
+        })
+        .then(() => {
+            viewer.start();
+        });
+    </script>
+    {% endblock %}
+</div>

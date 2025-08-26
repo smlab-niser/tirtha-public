@@ -676,11 +676,34 @@ class RunAdmin(admin.ModelAdmin):
                     ("started_at", "ended_at"),
                     ("directory"),
                     ("image_count"),
+                    ("hidden"),
+                    # <model-viewer>'s orientation
                     (
                         "rotaZ",
                         "rotaX",
                         "rotaY",
-                    ),  # Used only for <model-viewer>'s orientation
+                    ),  
+                    # GS Viewer Settings
+                    (
+                        "initCamPosX",
+                        "initCamPosY",
+                        "initCamPosZ",
+                    ),
+                    (
+                        "initCamLookAtX",
+                        "initCamLookAtY",
+                        "initCamLookAtZ",
+                    ),
+                    (
+                        "camUpX",
+                        "camUpY",
+                        "camUpZ",
+                    ),
+                    (
+                        "sphDegree",
+                        "focalAdjustment",
+                        "antialiased",
+                    ),
                 )
             },
         ),

@@ -10,6 +10,7 @@ from .models import Contribution, Contributor, Image, Mesh, Run
 
 STATIC = Path(settings.STATIC_ROOT)
 MEDIA = Path(settings.MEDIA_ROOT)
+# ARCHIVE = Path(settings.ARCHIVE_ROOT)
 DEFAULT_MESH_NAME = settings.DEFAULT_MESH_NAME
 DEFAULT_MESH_ID = settings.DEFAULT_MESH_ID
 ADMIN_NAME = settings.ADMIN_NAME
@@ -167,9 +168,67 @@ def post_del_run(sender, instance, **kwargs):
     Deletes the run folder, when a `Run` instance is deleted.
 
     """
-    run_dir = STATIC / f"models/{instance.directory}"
+    runID = instance.ID
 
-    # Delete only if the run is not archived
-    # NOTE: These runs had succeeded, so ARKs were generated. Have to keep them.
-    if run_dir.exists() and instance.status != "Archived":
-        shutil.rmtree(run_dir)
+    if instance.status != "Archived":
+        run_dir = STATIC / f"models/{instance.directory}"
+
+        if run_dir.exists():
+            try:
+                shutil.rmtree(run_dir)
+                print(
+                    f"post_del_run | Run ID: {runID} | Deleted run directory {run_dir}"
+                )
+            except Exception as e:
+                print(
+                    f"post_del_run | Run ID: {runID} | Error deleting run directory {run_dir}: {e}"
+                )
+
+    else:
+        meshID = instance.mesh.ID
+
+        # 1. Deletes the published files for a run
+        kind = instance.kind.lower()
+        suffix = (
+            "glb" if kind == "av" else "splat"
+        )  # TODOLATER: Update when PointMaps are added
+        pub_fpath = Path(
+            f"{STATIC}/models/{meshID}/published/{meshID}_{runID}.{suffix}"
+        )
+
+        if pub_fpath.exists():
+            try:
+                pub_fpath.unlink()
+                print(
+                    f"post_del_run | Run ID: {runID} | Deleted published file {pub_fpath}"
+                )
+            except Exception as e:
+                print(
+                    f"post_del_run | Run ID: {runID} | Error deleting published file {pub_fpath}: {e}"
+                )
+
+        # 2. Deletes the cached folder for a run
+        # ARCHIVE/{meshID}/{kind}cache/{instance.started_at.strftime("%Y-%m-%d-%H-%M-%S")}__{instance.ID}
+        cache_dir = Path(instance.directory)
+
+        if cache_dir.exists():
+            try:
+                shutil.rmtree(cache_dir)
+                print(
+                    f"post_del_run | Run ID: {runID} | Deleted cache directory {cache_dir}"
+                )
+            except Exception as e:
+                print(
+                    f"post_del_run | Run ID: {runID} | Error deleting cache directory {cache_dir}: {e}"
+                )
+
+        # 3. Deletes the associated ARK
+        try:
+            instance.ark.delete()
+            print(
+                f"post_del_run | Run ID: {runID} | Deleted ARK {instance.ark.name} for run {runID}"
+            )
+        except Exception as e:
+            print(
+                f"post_del_run | Run ID: {runID} | Error deleting ARK for run {runID}: {e}"
+            )
