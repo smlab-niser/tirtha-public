@@ -396,11 +396,15 @@ def upload(request):
 
 @require_GET
 def search(request):
-    """Search meshes by name, country, state, or district."""
+    """
+    Search meshes by name, country, state, or district
+    
+    """
     query = request.GET.get("query", "").strip()
 
     if not query:
-        return JsonResponse({"status": "No query provided", "meshes_json": {}})
+        # Treat empty query as "return all" — leave query as empty string so icontains matches all
+        query = ""
 
     # Search across multiple fields
     search_query = (
