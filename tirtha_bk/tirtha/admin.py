@@ -557,6 +557,7 @@ class ContributorAdmin(admin.ModelAdmin):
         "ID",
         "name",
         "email",
+        "created_at",
         "updated_at",
         "contrib_count",
         "image_count",

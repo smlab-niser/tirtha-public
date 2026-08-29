@@ -34,12 +34,14 @@ tdenv/
 venv/
 bk*/
 local/
-todo.md
+todo*.md
 *.log
 cert/
 artifacts/
 tests/
 restore/
+frgs*/
+colmap_vocab_trees/
 
 # Related to Competitions
 comp-*

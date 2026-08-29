@@ -138,11 +138,23 @@ DATABASES = {
     }
 }
 
-# django-dbbackup
-DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
-DBBACKUP_STORAGE_OPTIONS = {
-    "location": os.getenv("DBBACKUP_LOCATION", f"{NFS_DIR}/db_backups/")
-}  # CHANGEME: To store backups
+# django-dbbackup (migrated to Django STORAGES)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {"location": MEDIA_ROOT},
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "OPTIONS": {"location": STATIC_ROOT},
+    },
+    "dbbackup": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": os.getenv("DBBACKUP_LOCATION", f"{NFS_DIR}/db_backups/")
+        },
+    },
+}
 
 ## RabbitMQ + Celery
 RMQ_USER = os.getenv("RMQ_USER", "rmqtirthauser")  # CHANGEME:
